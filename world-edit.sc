@@ -32,6 +32,8 @@ help()->print(
         '/world-edit set_block block replace/keep: Will set the first position to \'block\'.\n'+
         'TEMP: As of now, you can\'t enter block properties.\n'+//Todo add block properties
         '/world-edit fill_blocks block replace/keep: Will fill in the blocks with \'block\'.\n'+
+        '/world-edit pos1: Sets first position to your current coordinates\n'+
+        '/world-edit pos2: Sets second position to your current coordinates\n'+
         'TEMP: As of now, you can\'t enter block properties.\n'+
         '/world-edit replace_keep \'replace\'/\'keep\': If it\'s \'replace\', the replace/keep option in the commands will replace all blocks of that type\n'+
         'If it\'s \'keep\', it will replace all blocks other than that one.\n'+
@@ -56,7 +58,19 @@ fill_blocks(block,replace)->(
     );
     global_player_data:player():'history':length(global_player_data:player():'history')=history;//For the Undo function
     print(str('Successfully filled %d out of %d blocks',success,_vol(global_player_data:player():'positions':0,global_player_data:player():'positions':1)))
-)
+);
+
+pos1()->(
+    player=player();
+    global_player_data:player:'positions':0=pos(block);
+    print('Set first position to '+pos(block))
+);
+
+pos2()->(
+    player=player();
+    global_player_data:player:'positions':1=pos(block);
+    print('Set second position to '+pos(block))
+);
 
 replace_keep(type)->global_player_data:player():'replace_keep'=type;
 
