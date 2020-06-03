@@ -1,3 +1,5 @@
+//World edit
+
 __command()->help();
 __config()->m(l('stay_loaded','true'),l('scope','global'));
 //Global Variables
@@ -26,7 +28,7 @@ __on_player_right_clicks_block(player, item_tuple, hand, block, face, hitvec)->(
 //Command functions
 
 help()->print(
-        'Welcome to World Edit by Ghoulboy!\n'+
+        'Welcome to World Edit by Ghoulboy and Firigion \'n others!\n'+
         'Commands:\n'+
         '/world-edit help: Displays this help page\n'+
         '/world-edit set_block block replace/keep: Will set the first position to \'block\'.\n'+
@@ -62,14 +64,16 @@ fill_blocks(block,replace)->(
 
 pos1()->(
     player=player();
-    global_player_data:player:'positions':0=pos(block);
-    print('Set first position to '+pos(block))
+    pos=pos(block(pos(player)));
+    global_player_data:player:'positions':0=pos;
+    print('Set first position to '+pos)
 );
 
 pos2()->(
     player=player();
-    global_player_data:player:'positions':1=pos(block);
-    print('Set second position to '+pos(block))
+    pos(block(pos(player)));
+    global_player_data:player:'positions':1=pos;
+    print('Set second position to '+pos)
 );
 
 replace_keep(type)->global_player_data:player():'replace_keep'=type;

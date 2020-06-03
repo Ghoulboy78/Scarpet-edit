@@ -9,3 +9,4 @@ Some formatting with `help`
 
 #0.0.3
 Added `pos1` and `pos2` commands.
+Updated credits
