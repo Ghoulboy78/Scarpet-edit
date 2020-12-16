@@ -1,10 +1,6 @@
 # World edit scarpet
- World edit with scarpet.
- 
-I know that another person did this (SnaveSutit), but they aren't updating it, and plus I wanted to do it with the new functionalities added recently to scarpet.
+World edit with scarpet.
 
-Gnembon's scarpet repo: https://github.com/gnembon/scarpet
+To install and use, create a file called world_edit.sc, and copy paste code from world_edis.sc
 
-The licence is the same as gnembon's repo for obvious reasons
-
-Please don't sue me.
+For instructions on how to install scarpet scripts: https://github.com/gnembon/fabric-carpet/wiki/Installing-carpet-scripts-in-your-world
