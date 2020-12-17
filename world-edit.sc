@@ -73,15 +73,17 @@ fill_blocks(block,replace)->(
 pos1()->(
     player=player();
     pos=pos(block(pos(player)));
-    global_player_data:player:'positions':0=pos;
-    print('Set first position to '+pos)
+    __set_selection_pos(0,player,pos);
+    print('Set first position to '+pos);
+    null;
 );
 
 pos2()->(
     player=player();
     pos(block(pos(player)));
-    global_player_data:player:'positions':1=pos;
-    print('Set second position to '+pos)
+    __set_selection_pos(1,player,pos);
+    print('Set second position to '+pos);
+    null;
 );
 
 replace_keep(type)->global_player_data:player():'replace_keep'=type;
