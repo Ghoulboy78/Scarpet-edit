@@ -10,17 +10,23 @@ global_wand='wooden_axe';
 
 //Events
 
+__set_selection_pos(index,player,pos) -> (
+    if(!has(global_player_data,player),global_player_data:player = {});
+    if(!has(global_player_data:player,'positions'),global_player_data:player:'positions' = {});
+    global_player_data:player:'positions':index = pos;
+);
+
 __on_player_breaks_block(player,block)->(
-    if(player~'holds'==global_wand,
-        global_player_data:player:'positions':0=pos(block);
-        without_updates(set(pos(block),block));
+    if(player~'holds':0==global_wand,
+        __set_selection_pos(0,player,pos(block));
+        schedule(0,_(block)->without_updates(set(pos(block),block)),block);
         print('Set first position to '+pos(block))
     )
 );
 
 __on_player_right_clicks_block(player, item_tuple, hand, block, face, hitvec)->(
     if(item_tuple:0==global_wand,
-        global_player_data:player:'positions':1=pos(block);
+        __set_selection_pos(1,player,pos(block));
         print('Set second position to '+pos(block))
     )
 );
@@ -44,13 +50,14 @@ help()->print(
     );
 
 set_block(block,replace)->(
-    if(global_positions:player():'positions':0,pos=global_player_data:player():'positions':0,return(print('No position defined')))
+    if(global_positions:player():'positions':0,pos=global_player_data:player():'positions':0,return(print('No position defined')));
     global_player_data:player():'history':length(global_player_data:player():'history')=l(l(pos(block),block));//For the Undo function
     success=_set_block(pos,block,replace);
-    if(success,print('Successfully set 1 block'),print('Unable to set block, replacement block found'))
+    if(success,print('Successfully set 1 block'),print('Unable to set block, replacement block found'));
 );
 
 fill_blocks(block,replace)->(
+    if(!global_player_data:player():'replace_keep',global_player_data:player():'replace_keep' = 'replace'); //default to replace mode if nothing selected yet
     if(global_player_data:player():'positions':0,l(x1,y1,z1)=global_player_data:player():'positions':0,return(print('No position 1 selected')));
     if(global_player_data:player():'positions':1,l(x2,y2,z2)=global_player_data:player():'positions':1,return(print('No position 2 selected')));
     success=0;
@@ -59,7 +66,8 @@ fill_blocks(block,replace)->(
         success+=_set_block(pos(_),block,replace)
     );
     global_player_data:player():'history':length(global_player_data:player():'history')=history;//For the Undo function
-    print(str('Successfully filled %d out of %d blocks',success,_vol(global_player_data:player():'positions':0,global_player_data:player():'positions':1)))
+    print(format(str('l Successfully filled %d out of %d blocks',success,_vol(global_player_data:player():'positions':0,global_player_data:player():'positions':1))));
+    null;
 );
 
 pos1()->(
@@ -88,18 +96,18 @@ undo(num)->(
         for(global_player_data:player():'history':length(global_player_data:player():'history')-num,
             l(pos,block)=_;
             set(pos,block)
-        )
+        );
         delete(global_player_data:player():'history':length(global_player_data:player():'history')-num)
     );
     print(str('Successfully undid %d operations',num))
-)
+);
 
 //Other functions
-_vol(pos1,pos2)->return(abs(pos1:0-pos2:0)*abs(pos1:1-pos2:1)*abs(pos1:2-pos2:2))
+_vol(pos1,pos2)->reduce(map(pos1-pos2,abs(_)+1),_a*_,1);
 
 
 _set_block(pos,block,replace)->( //So I can have a separate command called set_block
-    if((block(pos)==replace&&global_player_data:player():'replace_keep'=='replace')||(block(pos)!=replace&&global_player_data:player():'replace_keep'=='keep'),
+    if((block(pos)==replace && global_player_data:player():'replace_keep'=='replace')||(block(pos)!=replace&&global_player_data:player():'replace_keep'=='keep'),
         set(pos,block);
         return(1);
     );
