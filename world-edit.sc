@@ -11,9 +11,25 @@ __config()->{
         'replacement'->{'type'->'blockpredicate'};
     }
 };
-//Global Variables
+//Setting up player data
 
 global_player_data={};
+
+create_player_data(player)->(
+    global_player_data:player={
+        'wand'->'wooden_sword',
+        'history'->[],
+        'positions'->[]
+    }
+);
+
+for(player('all'),create_player_data(_));//todo change to a load player data command later when we save to disk
+
+__on_player_connects(player) ->(
+    if(!has(global_player_data,player),
+        create_player_data(player)
+    )
+);
 
 //Block-selection
 
@@ -27,14 +43,14 @@ _select_pos(player,pos)->(//in case first position is not selected
 );
 
 __on_player_clicks_block(player, block, face) ->(
-    if(player~'holds'==global_player_data:player:'wand',
+    if(player~'holds':0==global_player_data:player:'wand',
         global_player_data:player:'positions':0=pos(block);
         print('Set first position to '+pos(block))
     )
 );
 
 __on_player_breaks_block(player, block) ->(
-    if(player~'holds'==global_player_data:player:'wand',
+    if(player~'holds':0==global_player_data:player:'wand',
         global_player_data:player:'positions':0=pos(block);
         without_updates(set(pos(block),block));
         print('Set first position to '+pos(block))
@@ -43,29 +59,20 @@ __on_player_breaks_block(player, block) ->(
 
 __on_player_right_clicks_block(player, item_tuple, hand, block, face, hitvec)->(
     if(item_tuple:0==global_player_data:player:'wand',
-        _select_pos(pos(block))
+        _select_pos(player, pos(block))
     )
 );
 
 __on_player_uses_item(player, item_tuple, hand) ->(
-    if(item_tuple:0==global_player_data:player:'wand',
+    if(item_tuple:0==global_player_data:player:'wand'&&query(player,'trace',5,'blocks')==null,//to make sure we r not triggering click block event
         pos=pos(block(pos(player)+[0,player~'eye_height',0]+player~'look'*5));//doing a pos(block(pos)) to get a properly rounded pos
-        _select_pos(pos)
+        _select_pos(player, pos)
     )
 );
 
 //Command processing functions
 
-create_player_data(player)->(
-    global_player_data:player={
-        'wand'->'wooden_sword',
-        'history'->[],
-        'positions'->[]
-    }
-);
-
 add_to_history(command,player)->(
-    if(!has(global_player_data,player),create_player_data(player));
 
     affected_positions=command:'affected_positions';
 
@@ -78,7 +85,7 @@ set_block(pos,block,replacement)->(//use this function, by doing affected+=set_b
     success=null;
     existing = block(pos);
     if(block != existing && (!replacement || _block_matches(existing, replacement) ),
-        set(existing,block)
+        set(existing,block);
         success=existing
     );
     success
@@ -94,10 +101,11 @@ _block_matches(existing, block_predicate) ->
     (!tag || tag_matches(block_data(existing), tag))
 );
 
-_assert_player_positions(player)->(
+_get_player_positions(player)->(
     pos=global_player_data:player:'positions';
     if(length(pos)==0,
-        exit('No points selected for player '+player)
+        exit(print(player,format('r No points selected for player '+player))),
+        print(pos)
     );
     start_pos=pos:0;
     end_pos=if(pos:1,pos:1,pos(player));
@@ -109,7 +117,8 @@ _assert_player_positions(player)->(
 
 fill(block,replacement)->(
     player=player();
-    [pos1,pos2]=_assert_player_positions(player)
+    [pos1,pos2]=_get_player_positions(player);
+    print([pos1,pos2]);
     affected=[];
     volume(pos1,pos2,if(set_block(_,block,replacement),affected+=block(_)));
     command={
