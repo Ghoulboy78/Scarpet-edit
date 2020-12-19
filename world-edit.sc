@@ -119,13 +119,14 @@ add_to_history(command,player)->(
 undo(moves)->(
     player=player();
     history=global_player_data:player:'history';
+    if(length(history)==0,exit(print('No actions to undo for player '+player)));
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
         command = history:(moves-(_+1));//to get last item of list properly
 
         for(command:'affected_positions',
-            affected+=set_block(_:0,_:2,_:1)!=null;//replacing only block that was there before not to interfre with buildings
+            affected+=set_block(_:0,_:2,null)!=null;//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
         );
 
         delete(history,(moves-(_+1)))
