@@ -6,13 +6,22 @@ __config()->{
     'commands'->{
         'fill <block>'->['fill',null],
         'fill <block> <replacement>'->'fill',
-        'undo all'->['undo',0],
-        'undo last'->['undo',1],
-        'undo <moves>'->'undo'
+        'undo all'->['undo', 0, null],
+        'undo last'->['undo', 1, null],
+        'undo <moves>'->['undo',null],
+        'undo <moves> <player>'->'undo'
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
-        'moves'->{'type'->'int','min'->1,'suggest'->[]}//todo decide on whether or not to add max undo
+        'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
+        'player' -> {
+           'type' -> 'term',
+           'suggester' -> _(args) -> (
+              nameset = {'Steve', 'Alex'};
+              for(player('all'), nameset += _);
+              keys(nameset)
+           ),
+        }
     }
 };
 //Setting up player data
@@ -116,10 +125,12 @@ add_to_history(command,player)->(
 
 //Command functions
 
-undo(moves)->(
-    player=player();
+undo(moves, player)->(
+    exec_player = player();//this is player running command, as opposed player whose moves are being undone (they may be the same, but jic they aren't)
+    player=if(!player,player());
+    if(exec_player!=player&&exec_player~'permission_level'<2,exit(print(exec_player,format('r You do not have permission to perform this command')))));//incase non-op tries to undo other player's moves. Same error as vanilla btw
     history=global_player_data:player:'history';
-    if(length(history)==0,exit(print('No actions to undo for player '+player)));
+    if(length(history)==0,exit(print(exec_player,format('r No actions to undo for player '+player)));//incase an op was running command, we want to print error to them
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
@@ -131,7 +142,7 @@ undo(moves)->(
 
         delete(history,(moves-(_+1)))
     );
-    print(player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
+    print(exec_player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
 );
 
 fill(block,replacement)->(
