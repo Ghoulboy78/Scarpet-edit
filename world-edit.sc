@@ -10,16 +10,22 @@ __config()->{
         'undo last'->['undo', 1],
         'undo <moves>'->'undo',
         'undo history'->'print_history',
-        'wand <wand>'->_(wand)->(global_player_data:'wand'=wand),
+        'wand <wand>'->_(wand)->(global_player_data:'wand'=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-        'clone <pos>'->'clone'
+        'clone <pos>'->'clone',
+        'stack'->'stack',
+        'stack <stackcount>'->['stack',null],
+        'stack <stackcount> <direction>'->'stack',
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
         'degrees'->{'type'->'int','suggest'->[]},
         'axis'->{'type'->'term','options'->['x','y','z']},
-        'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']}
+        'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
+        'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
+        'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
+        'flags'->{'type'->'text'}
     }
 };
 //Setting up player data
@@ -63,7 +69,7 @@ __on_player_clicks_block(player, block, face) ->(
 __on_player_breaks_block(player, block) ->(//incase we made an oopsie with a non-sword want item
     if(player~'holds':0==global_player_data:'wand',
         global_player_data:'positions':0=pos(block);
-        without_updates(set(pos(block),block));
+        schedule(0,_(block)->without_updates(set(pos(block),block)),block);
         print('Set first position to '+pos(block))
     )
 );
@@ -85,6 +91,11 @@ set_block(pos,block,replacement)->(//use this function, by doing affected+=set_b
     );
     success
 );
+
+set_block_with_flag(pos,block,replacement,flags) -> (
+    null;
+);
+
 
 _block_matches(existing, block_predicate) ->
 (
@@ -221,11 +232,7 @@ clone(new_pos)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
     affected=[];
-    min_pos=[//i feel like theres a smarter way to do this.
-        min(pos1:0,pos2:0),
-        min(pos1:1,pos2:1),
-        min(pos1:2,pos2:2)
-    ];
+    min_pos=map(pos1,min(_,pos2:_i));
     clone_map={};
     translation_vector=new_pos-min_pos;
 
@@ -246,3 +253,42 @@ clone(new_pos)->(
     )
 );
 
+stack(count,direction) -> (
+    player=player();
+    direction = if(direction == null, get_look_direction(player), pos_offset([0,0,0],direction));
+    [pos1,pos2]=_get_player_positions(player);
+    affected=[];
+    min_pos=map(pos1,min(_,pos2:_i));
+    clone_map={};
+    translation_vector=new_pos-min_pos;
+
+    volume(pos1,pos2,
+        put(clone_map,pos(_)+translation_vector,block(_))//not setting now cos still querying, could mess up and set block we wanted to query
+    );
+
+    for(clone_map,
+        preblock=block(_);
+        if(set_block(_,clone_map:_,null)!=null,affected+=[_,block(_),preblock])
+    );
+    if(affected,
+        command={
+            'type'->'clone',
+            'affected_positions'->affected
+        };
+        add_to_history(command, player)
+    )
+);
+
+
+//Misc functions
+get_look_direction(player) -> (
+    look = player~'look';
+    mi = reduce(look,if(abs(look:_a)<=abs(_),_i,_a),0);
+    dir = [0,0,0];
+    dir:mi = look:mi/abs(look:mi);
+    dir;
+);
+
+parse_flags(flags) -> (
+null;
+);
