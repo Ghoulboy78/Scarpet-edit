@@ -10,12 +10,14 @@ __config()->{
         'undo last'->['undo', 1],
         'undo <moves>'->'undo',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand),
-        'rotate <pos> <degrees>'->'rotate'
+        'rotate <pos> <degrees> <axis>'->['rotate',false],//will replace old stuff if need be
+        'rotate <pos> <degrees> <axis> set_air'->['rotate',true]//set old stuff to air and rotate
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
         'degrees'->{'type'->'int','options'->[90,180,270]},
+        'axis'->{'type'->'term','options'->['x','y','z']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']}
     }
 };
@@ -144,9 +146,53 @@ fill(block,replacement)->(
     )
 );
 
-rotate(centre, degrees)->(
+rotate(centre, degrees, axis, setair)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
     affected=[];
+    rotation_map={};
+    rotation_matrix=if(
+        axis=='x',
+        [
+            [1,0,0],
+            [0,cos(degrees),-sin(degrees)],
+            [0,sin[degrees],cos(degrees)]
+        ],
+        axis=='y',
+        [
+            [cos(degrees),0,sin(degrees)],
+            [0,1,0],
+            [-sin[degrees],0,cos(degrees)]
+        ],//axis=='z'
+        [
+            [cos(degrees),-sin(degrees),0],
+            [sin[degrees],cos(degrees),0]
+            [0,0,1],
+        ]
+    );
 
+    volume(pos1,pos2,
+        block=block(_);//todo rotating stairs etc.
+        prev_pos=pos(_);
+        subtracted_pos=prev_pos-centre;
+        rotated_matrix=rotation_matrix*[subtracted_pos,subtracted_pos,subtracted_pos];//cos matrix multiplication dont work in scarpet, yet...
+        new_pos=[];
+        for(rotated_matrix,
+            new_pos+=reduce(_,_a+_,0)
+        );
+        new_pos+=centre;
+        if(setair,affected+=set_block(prev_pos,'air',null));
+        put(rotation_map,new_pos,block)//not setting now cos still querying, could mess up and set block we wanted to query
+    );
+
+    for(rotation_map,
+        affected+=set_block(_,rotation_map:_,null)
+    );
+    if(affected,
+        command={
+            'type'->'rotate',
+            'affected_positions'->affected
+        };
+        add_to_history(command, player)
+    )
 );
