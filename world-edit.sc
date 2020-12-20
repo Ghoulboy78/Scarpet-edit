@@ -98,11 +98,6 @@ set_block(pos,block,replacement)->(//use this function to set blocks
     bool(success)//cos undo uses this
 );
 
-set_block_with_flag(pos,block,replacement,flags) -> (
-    null;
-);
-
-
 _block_matches(existing, block_predicate) ->
 (
     [name, block_tag, properties, nbt] = block_predicate;
@@ -178,7 +173,7 @@ undo(moves)->(
 fill(block,replacement)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
-    volume(pos1,pos2,set_block(_,block,replacement));
+    volume(pos1,pos2,set_block(pos(_),block,replacement));
 
     add_to_history('fill', player)
 );
@@ -231,7 +226,7 @@ rotate(centre, degrees, axis)->(
 clone(new_pos, move)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
-    
+
     min_pos=map(pos1,min(_,pos2:_i));
     clone_map={};
     translation_vector=new_pos-min_pos;
