@@ -140,13 +140,13 @@ undo(moves)->(
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
-        command = history:(length(history)-(_+1));//to get last item of list properly
+        command = history:(length(history)-1);//to get last item of list properly
 
         for(command:'affected_positions',
             affected+=set_block(_:0,_:2,null)!=null;//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
         );
 
-        delete(history,(length(history)-(_+1)))
+        delete(history,(length(history)-1))
     );
     print(player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
 );
