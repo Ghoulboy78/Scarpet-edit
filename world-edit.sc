@@ -58,16 +58,16 @@ global_affected_blocks=[];
 _select_pos(player,pos)->(//in case first position is not selected
     if(length(global_player_data:'positions')==0,
         global_player_data:'positions':0=pos;
-        print('Set first position to '+pos),
+        _print(player, 'pos1', pos),
         global_player_data:'positions':1=pos;
-        print('Set second position to '+pos)
+        _print(player, 'pos2', pos)
     )
 );
 
 __on_player_clicks_block(player, block, face) ->(
     if(player~'holds':0==global_player_data:'wand',
         global_player_data:'positions':0=pos(block);
-        print('Set first position to '+pos(block))
+        _print(player, 'pos1', pos(block))
     )
 );
 
@@ -75,7 +75,7 @@ __on_player_breaks_block(player, block) ->(//incase we made an oopsie with a non
     if(player~'holds':0==global_player_data:'wand',
         global_player_data:'positions':0=pos(block);
         schedule(0,_(block)->without_updates(set(pos(block),block)),block);
-        print('Set first position to '+pos(block))
+        _print(player, 'pos1', pos)
     )
 );
 
@@ -111,7 +111,7 @@ _block_matches(existing, block_predicate) ->
 _get_player_positions(player)->(
     pos=global_player_data:'positions';
     if(length(pos)==0,
-        exit(print(player,format('r No points selected for player '+player)))
+        exit(_print(player, 'nopos', player))
     );
     start_pos=pos:0;
     end_pos=if(pos:1,pos:1,pos(player));
@@ -126,7 +126,7 @@ add_to_history(function,player)->(
         'affected_positions'->global_affected_blocks
     };
 
-    print(player,format('gi Filled '+length(global_affected_blocks)+' blocks'));
+    _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_player_data:'history'+=command;
 );
@@ -134,18 +134,13 @@ add_to_history(function,player)->(
 print_history()->(
     player=player();
     history = global_player_data:'history';
-    if(length(history)==0||history==null,print(player,'No undo history to show for player '+player));
-    if(length(history)>10,print('Undo history for player '+player+' is very long, showing only the last ten items'));
+    if(length(history)==0||history==null,_print(player, 'no_undo_history', player));
+    if(length(history)>10,_print(player, 'many_undo', player));
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        print(player,str(
-            '%s: type: %s\n'+
-            '    affected positions: %s',
-            history~command+1,command:'type',length(command:'affected_positions')
-        ))
+        _print(player, 'entry_undo', history~command+1,command:'type', length(command:'affected_positions'))
     )
-
 );
 
 //Command functions
@@ -153,8 +148,8 @@ print_history()->(
 undo(moves)->(
     player = player();
     history=global_player_data:'history';
-    if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));//incase an op was running command, we want to print error to them
-    if(length(history)<moves,print(player,'Too many moves to undo, undoing all moves for '+player);moves=0);
+    if(length(history)==0||history==null,exit(_print(player, 'no_undo', player)));//incase an op was running command, we want to print error to them
+    if(length(history)<moves,_print(player, 'more_moves_undo', player);moves=0);
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
@@ -167,7 +162,7 @@ undo(moves)->(
         delete(history,(length(history)-1))
     );
     global_affected_blocks=[];
-    print(player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
+    _print(player, 'success_undo', moves, affected);
 );
 
 fill(block,replacement)->(
@@ -261,6 +256,54 @@ stack(count,direction) -> (
     add_to_history('stack', player)
 );
 
+//Config Parser
+
+_parse_config(config) -> (
+    if(type(config) != 'list', config = [config]);
+    ret = {};
+    for(config,
+        if(_ ~ '^\\w+ ?= *.+$' != null,
+            key = _ ~ '^\\w+(?= ?= *.+)';   
+            value = _ ~ ('(?<='+key+' ?= ?) *([^ ].*)');
+            ret:key = value
+        )
+    );
+    ret
+);
+
+//Translations
+
+global_lang_ids = ['en_us'];
+global_langs = {};
+for(global_lang_ids,
+    global_langs:_ = read_file(_, 'text');
+    if(global_langs:_ == null, 
+        write_file(_, 'text', global_langs:_ = [
+            'language_code =    en_us',
+            'language =         english',
+
+            'pos1 =             w Set first position to %s',                             // [x, y, z]
+            'pos2 =             w Set second position to %s',                            // [x, y, z]
+            'nopos =            r No points selected for player %s',                     // player 
+            'filled =           gi Filled %d blocks',                                    // blocks number 
+            'no_undo_history =  w No undo history to show for player %s',                // player 
+            'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player 
+            'entry_undo =       w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
+            'no_undo =          r No actions to undo for player %s',                     // player
+            'more_moves_undo =  w Too many moves to undo, undoing all moves for %s',     // player
+            'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+        ])
+    );
+    global_langs:_ = _parse_config(global_langs:_)
+);
+_translate(key, replace_list) -> (
+    print(player(),key+' '+replace_list);
+    lang_id = global_player_data:'lang';
+    if(lang_id == null || !has(global_lang_ids, lang_id),
+        lang_id = global_lang_ids:0);
+    str(global_langs:lang_id:key, replace_list)
+);
+_print(player, key, ... replace) -> print(player, format(_translate(key, replace)));
 
 //Misc functions
 get_look_direction(player) -> (
