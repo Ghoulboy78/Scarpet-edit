@@ -137,6 +137,7 @@ undo(moves)->(
     player = player();
     history=global_player_data:'history';
     if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));//incase an op was running command, we want to print error to them
+    if(length(history)<moves,print(player,'Too many moves to undo, undoing all moves for '+player);moves=0);
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
