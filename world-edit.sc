@@ -11,7 +11,7 @@ __config()->{
         'redo last'->['redo', 1],
         'redo <moves>'->'redo',
         'undo history'->'print_history',
-        'wand <wand>'->_(wand)->(global_player_data:'wand'=wand:0),
+        'wand <wand>'->_(wand)->(global_wand=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
         'stack'->['stack',1,null],
         'stack <stackcount>'->['stack',null],
