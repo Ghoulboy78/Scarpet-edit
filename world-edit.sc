@@ -1,8 +1,6 @@
 //World edit
 
 __config()->{
-    'stay_loaded'->true,
-    'scope'->'player',
     'commands'->{
         'fill <block>'->['fill',null],
         'fill <block> <replacement>'->'fill',
