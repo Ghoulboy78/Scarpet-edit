@@ -12,7 +12,8 @@ __config()->{
         'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-        'clone <pos>'->'clone'
+        'clone <pos>'->['clone',false],
+        'move <pos>'->['clone',true]
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -217,7 +218,7 @@ rotate(centre, degrees, axis)->(
     )
 );
 
-clone(new_pos)->(
+clone(new_pos, move)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
     affected=[];
@@ -231,6 +232,7 @@ clone(new_pos)->(
 
     volume(pos1,pos2,
         put(clone_map,pos(_)+translation_vector,block(_))//not setting now cos still querying, could mess up and set block we wanted to query
+        set(_,if(has(block_state(_),'waterlogged'),'water','air'));//check for waterlog
     );
 
     for(clone_map,
@@ -239,7 +241,7 @@ clone(new_pos)->(
     );
     if(affected,
         command={
-            'type'->'clone',
+            'type'->if(move,'move','clone'),
             'affected_positions'->affected
         };
         add_to_history(command, player)
