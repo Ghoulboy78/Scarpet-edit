@@ -11,7 +11,7 @@ __config()->{
         'redo last'->['redo', 1],
         'redo <moves>'->'redo',
         'undo history'->'print_history',
-        'wand <wand>'->_(wand)->(global_player_data:'wand'=wand:0),
+        'wand <wand>'->_(wand)->(global_wand=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
         'stack'->['stack',1,null],
         'stack <stackcount>'->['stack',null],
@@ -30,26 +30,13 @@ __config()->{
         'flags'->{'type'->'text'}
     }
 };
-//Setting up player data
+//player globals
 
-global_player_data={};
+global_wand = 'wooden_sword';
+global_history = [];
+global_undo_history = [];
+global_positions = [];
 
-create_player_data()->(
-    global_player_data={
-        'wand'->'wooden_sword',
-        'history'->[],
-        'undo_history'->[],
-        'positions'->[]
-    }
-);
-
-create_player_data();//todo change to a load player data command later when we figure out when/how to save to disk
-
-__on_player_connects(player) ->(
-    if(!global_player_data,
-        create_player_data()
-    )
-);
 
 //Extra boilerplate
 
@@ -58,31 +45,31 @@ global_affected_blocks=[];
 //Block-selection
 
 _select_pos(player,pos)->(//in case first position is not selected
-    if(length(global_player_data:'positions')==0,
-        global_player_data:'positions':0=pos;
+    if(length(global_positions)==0,
+        global_positions:0=pos;
         print('Set first position to '+pos),
-        global_player_data:'positions':1=pos;
+        global_positions:1=pos;
         print('Set second position to '+pos)
     )
 );
 
 __on_player_clicks_block(player, block, face) ->(
-    if(player~'holds':0==global_player_data:'wand',
-        global_player_data:'positions':0=pos(block);
+    if(player~'holds':0==global_wand,
+        global_positions:0=pos(block);
         print('Set first position to '+pos(block))
     )
 );
 
 __on_player_breaks_block(player, block) ->(//incase we made an oopsie with a non-sword want item
-    if(player~'holds':0==global_player_data:'wand',
-        global_player_data:'positions':0=pos(block);
+    if(player~'holds':0==global_wand,
+        global_positions:0=pos(block);
         schedule(0,_(block)->without_updates(set(pos(block),block)),block);
         print('Set first position to '+pos(block))
     )
 );
 
 __on_player_uses_item(player, item_tuple, hand) ->(
-    if(item_tuple:0==global_player_data:'wand'&&(block=query(player,'trace',128,'blocks')),
+    if(item_tuple:0==global_wand&&(block=query(player,'trace',128,'blocks')),
         _select_pos(player, pos(block))
     )
 );
@@ -121,7 +108,7 @@ _block_matches(existing, block_predicate) ->
 );
 
 _get_player_positions(player)->(
-    pos=global_player_data:'positions';
+    pos=global_positions;
     if(length(pos)==0,
         exit(print(player,format('r No points selected for player '+player)))
     );
@@ -140,12 +127,12 @@ add_to_history(function,player)->(
 
     print(player,format('gi Filled '+length(global_affected_blocks)+' blocks'));
     global_affected_blocks=[];
-    global_player_data:'history'+=command;
+    global_history+=command;
 );
 
 print_history()->(
     player=player();
-    history = global_player_data:'history';
+    history = global_history;
     if(length(history)==0||history==null,print(player,'No undo history to show for player '+player));
     if(length(history)>10,print('Undo history for player '+player+' is very long, showing only the last ten items'));
     total=min(length(history),10);//total items to print
@@ -164,7 +151,7 @@ print_history()->(
 
 undo(moves)->(
     player = player();
-    history=global_player_data:'history';
+    history=global_history;
     if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));
     if(length(history)<moves,print(player,'Too many moves to undo, undoing all moves for '+player);moves=0);
     if(moves==0,moves=length(history));
@@ -177,14 +164,14 @@ undo(moves)->(
 
         delete(history,(length(history)-1))
     );
-    global_player_data:'undo_history'+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
+    global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
     print(player,format('gi Successfully undid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
     global_affected_blocks=[];
 );
 
 redo(moves)->(
     player=player();
-    history=global_player_data:'undo_history';
+    history=global_undo_history;
     if(length(history)==0||history==null,exit(print(player,format('r No actions to redo for player '+player))));
     if(length(history)<moves,print(player,'Too many moves to redo, redoing all moves for '+player);moves=0);
     if(moves==0,moves=length(history));
@@ -197,7 +184,7 @@ redo(moves)->(
 
         delete(history,(length(history)-1))
     );
-    global_player_data:'history'+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
+    global_history+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
     print(player,format('gi Successfully redid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
     global_affected_blocks=[];
 );
