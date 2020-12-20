@@ -10,13 +10,12 @@ __config()->{
         'undo last'->['undo', 1],
         'undo <moves>'->'undo',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand),
-        'rotate <pos> <degrees> <axis>'->['rotate',false],//will replace old stuff if need be
-        'rotate <pos> <degrees> <axis> set_air'->['rotate',true]//set old stuff to air and rotate
+        'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
-        'degrees'->{'type'->'int','options'->[90,180,270]},
+        'degrees'->{'type'->'int','suggest'->[]},
         'axis'->{'type'->'term','options'->['x','y','z']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']}
     }
@@ -33,7 +32,7 @@ create_player_data()->(
     }
 );
 
-create_player_data;//todo change to a load player data command later when we figure out when/how to save to disk
+create_player_data();//todo change to a load player data command later when we figure out when/how to save to disk
 
 __on_player_connects(player) ->(
     if(!global_player_data,
@@ -117,7 +116,7 @@ add_to_history(command,player)->(
 
 undo(moves)->(
     player = player();history=global_player_data:'history';
-    if(length(history)==0||history==null,exit(print(exec_player,format('r No actions to undo for player '+player))));//incase an op was running command, we want to print error to them
+    if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));//incase an op was running command, we want to print error to them
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
@@ -146,27 +145,27 @@ fill(block,replacement)->(
     )
 );
 
-rotate(centre, degrees, axis, setair)->(
+rotate(centre, degrees, axis)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
     affected=[];
     rotation_map={};
-    rotation_matrix=if(
-        axis=='x',
-        [
+    rotation_matrix=[];
+    if( axis=='x',
+        rotation_matrix=[
             [1,0,0],
             [0,cos(degrees),-sin(degrees)],
-            [0,sin[degrees],cos(degrees)]
+            [0,sin(degrees),cos(degrees)]
         ],
         axis=='y',
-        [
+        rotation_matrix=[
             [cos(degrees),0,sin(degrees)],
             [0,1,0],
-            [-sin[degrees],0,cos(degrees)]
+            [-sin(degrees),0,cos(degrees)]
         ],//axis=='z'
-        [
+        rotation_matrix=[
             [cos(degrees),-sin(degrees),0],
-            [sin[degrees],cos(degrees),0]
+            [sin(degrees),cos(degrees),0]
             [0,0,1],
         ]
     );
@@ -180,13 +179,13 @@ rotate(centre, degrees, axis, setair)->(
         for(rotated_matrix,
             new_pos+=reduce(_,_a+_,0)
         );
-        new_pos+=centre;
-        if(setair,affected+=set_block(prev_pos,'air',null));
+        new_pos=new_pos+centre;
         put(rotation_map,new_pos,block)//not setting now cos still querying, could mess up and set block we wanted to query
     );
 
     for(rotation_map,
-        affected+=set_block(_,rotation_map:_,null)
+        preblock=block(_);
+        if(set_block(_,rotation_map:_,null)!=null,affected+=[_,block(_),preblock])
     );
     if(affected,
         command={
