@@ -11,6 +11,7 @@ __config()->{
         'undo <moves>'->'undo',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
+        'clone <pos>'->'clone'
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -115,7 +116,8 @@ add_to_history(command,player)->(
 //Command functions
 
 undo(moves)->(
-    player = player();history=global_player_data:'history';
+    player = player();
+    history=global_player_data:'history';
     if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));//incase an op was running command, we want to print error to them
     if(moves==0,moves=length(history));
     affected=0;
@@ -195,3 +197,33 @@ rotate(centre, degrees, axis)->(
         add_to_history(command, player)
     )
 );
+
+clone(new_pos)->(
+    player=player();
+    [pos1,pos2]=_get_player_positions(player);
+    affected=[];
+    min_pos=[//i feel like theres a smarter way to do this.
+        min(pos1:0,pos2:0),
+        min(pos1:1,pos2:1),
+        min(pos1:2,pos2:2)
+    ];
+    clone_map={};
+    translation_vector=new_pos-min_pos;
+
+    volume(pos1,pos2,
+        put(clone_map,pos(_)+translation_vector,block(_))//not setting now cos still querying, could mess up and set block we wanted to query
+    );
+
+    for(clone_map,
+        preblock=block(_);
+        if(set_block(_,clone_map:_,null)!=null,affected+=[_,block(_),preblock])
+    );
+    if(affected,
+        command={
+            'type'->'clone',
+            'affected_positions'->affected
+        };
+        add_to_history(command, player)
+    )
+);
+
