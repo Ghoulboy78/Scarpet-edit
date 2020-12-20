@@ -40,10 +40,10 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
          the undo command to work.
           
             ```
-         //Whenever you want to set a block (assume 'pos' to be the position in which you want to set the block)...
+         //Whenever you want to set a block (assume 'pos' to be the position in which you want to set the block)
          preblock=block(pos);//saves the block that was there before
             if(set_block(pos,block,replacement)!=null,//this ensures that you only add blocks to undo list that were actually able to be set
-               affected+=[pos,preblock,block(pos)]//This way the undo command ahs all the info necessary to undo the command
+               affected+=[pos,preblock,block(pos)]//This way the undo command has all the info necessary to undo the command
           );         
          //Continue with function...
             ```
@@ -59,9 +59,9 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
             add_to_history(command, player)
          )
          ```
-3. Add a command. If you are submitting a pr, then please don't worry about this if you don't understand, the contributors
-   can do it for you. Otherwise, define it below the existing ones, and add extra arguments underneath as well. Existing
-   arg types are there too, if you feel like using them.
+3. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
+   about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
+   and add extra arguments underneath as well. Existing arg types are there too, if you feel like using them.
    
 #### Other functions
 
