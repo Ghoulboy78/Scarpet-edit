@@ -33,19 +33,20 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
     - If you're setting blocks, you need to be able to undo that. Here's how:
       1. Create an empty list at the top of the function:
         
-        `affected=[]`
+         `affected=[]`
+        
       2. When running your function, use the following format to set blocks and save them to that list at the same time.
          It is important that you save the block that was there before as well as the one that you just set after, for 
          the undo command to work.
           
-         ```
+            ```
          //Whenever you want to set a block (assume pos to the position in which you want to set the block)...
          preblock=block(pos);//saves the block that was there before
-         if(set_block(pos,block,replacement)!=null,//this ensures that you only add blocks to undo list that were actually able to be set
-            affected+=[pos,preblock,block(pos)]//This way the undo command ahs all the info necessary to undo the command
-         );         
+            if(set_block(pos,block,replacement)!=null,//this ensures that you only add blocks to undo list that were actually able to be set
+               affected+=[pos,preblock,block(pos)]//This way the undo command ahs all the info necessary to undo the command
+          );         
          //Continue with function...
-         ```
+            ```
       3. Lastly, you have to save your command to the player history, so they can undo it. This is an O(n) operation, so
          don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, save
          the variable `affected` to a map, along with the name of the function, with the key `'type'`
