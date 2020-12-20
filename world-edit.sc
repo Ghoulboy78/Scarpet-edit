@@ -9,6 +9,9 @@ __config()->{
         'undo all'->['undo', 0],
         'undo last'->['undo', 1],
         'undo <moves>'->'undo',
+        'redo all'->['redo', 0],
+        'redo last'->['redo', 1],
+        'redo <moves>'->'redo',
         'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
@@ -37,6 +40,7 @@ create_player_data()->(
     global_player_data={
         'wand'->'wooden_sword',
         'history'->[],
+        'undo_history'->[],
         'positions'->[]
     }
 );
@@ -85,6 +89,16 @@ __on_player_uses_item(player, item_tuple, hand) ->(
     )
 );
 
+//Misc functions
+
+get_look_direction(player) -> (
+    look = player~'look';
+    mi = reduce(look,if(abs(look:_a)<=abs(_),_i,_a),0);
+    dir = [0,0,0];
+    dir:mi = look:mi/abs(look:mi);
+    dir;
+);
+
 //Command processing functions
 
 set_block(pos,block,replacement)->(//use this function to set blocks
@@ -93,7 +107,7 @@ set_block(pos,block,replacement)->(//use this function to set blocks
     if(block != existing && (!replacement || _block_matches(existing, replacement) ),
         postblock=set(existing,block);
         success=existing;
-        global_affected_blocks+=[pos,existing,postblock];
+        global_affected_blocks+=[pos,postblock,existing];//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
     );
     bool(success)//cos undo uses this
 );
@@ -153,21 +167,41 @@ print_history()->(
 undo(moves)->(
     player = player();
     history=global_player_data:'history';
-    if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));//incase an op was running command, we want to print error to them
+    if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));
     if(length(history)<moves,print(player,'Too many moves to undo, undoing all moves for '+player);moves=0);
     if(moves==0,moves=length(history));
-    affected=0;
     for(range(moves),
         command = history:(length(history)-1);//to get last item of list properly
 
         for(command:'affected_positions',
-            affected+=set_block(_:0,_:1,null);//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
+            set_block(_:0,_:2,null)//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
         );
 
         delete(history,(length(history)-1))
     );
+    global_player_data:'undo_history'+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
+    print(player,format('gi Successfully undid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
     global_affected_blocks=[];
-    print(player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
+);
+
+redo(moves)->(
+    player=player();
+    history=global_player_data:'undo_history';
+    if(length(history)==0||history==null,exit(print(player,format('r No actions to redo for player '+player))));
+    if(length(history)<moves,print(player,'Too many moves to redo, redoing all moves for '+player);moves=0);
+    if(moves==0,moves=length(history));
+    for(range(moves),
+        command = history:(length(history)-1);//to get last item of list properly
+
+        for(command,
+            set_block(_:0,_:2,null);
+        );
+
+        delete(history,(length(history)-1))
+    );
+    global_player_data:'history'+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
+    print(player,format('gi Successfully redid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
+    global_affected_blocks=[];
 );
 
 fill(block,replacement)->(
@@ -233,7 +267,7 @@ clone(new_pos, move)->(
 
     volume(pos1,pos2,
         put(clone_map,pos(_)+translation_vector,block(_));//not setting now cos still querying, could mess up and set block we wanted to query
-        set(_,if(has(block_state(_),'waterlogged'),'water','air'));//check for waterlog
+        set_block(pos(_),if(has(block_state(_),'waterlogged'),'water','air'),null)//check for waterlog
     );
 
     for(clone_map,
@@ -259,14 +293,4 @@ stack(count,direction) -> (
         );
     );
     add_to_history('stack', player)
-);
-
-
-//Misc functions
-get_look_direction(player) -> (
-    look = player~'look';
-    mi = reduce(look,if(abs(look:_a)<=abs(_),_i,_a),0);
-    dir = [0,0,0];
-    dir:mi = look:mi/abs(look:mi);
-    dir;
 );
