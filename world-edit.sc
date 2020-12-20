@@ -9,6 +9,7 @@ __config()->{
         'undo all'->['undo', 0],
         'undo last'->['undo', 1],
         'undo <moves>'->'undo',
+        'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
         'clone <pos>'->'clone'
@@ -113,6 +114,23 @@ add_to_history(command,player)->(
     global_player_data:'history'+=command;
 );
 
+print_history()->(
+    player=player();
+    history = global_player_data:'history';
+    if(length(history)==0||history==null,print(player,'No undo history to show for player '+player));
+    if(length(history)>10,print('Undo history for player '+player+' is very long, showing only the last ten items'));
+    total=min(length(history),10);//total items to print
+    for(range(total),
+        command=history:(length(history)-(_+1));//getting last 10 items in reverse order
+        print(player,str(
+            '%s: type: %s\n'+
+            '    affected positions: %s',
+            history~command+1,command:'type',length(command:'affected_positions')
+        ))
+    )
+
+);
+
 //Command functions
 
 undo(moves)->(
@@ -122,13 +140,13 @@ undo(moves)->(
     if(moves==0,moves=length(history));
     affected=0;
     for(range(moves),
-        command = history:(moves-(_+1));//to get last item of list properly
+        command = history:(length(history)-(_+1));//to get last item of list properly
 
         for(command:'affected_positions',
             affected+=set_block(_:0,_:2,null)!=null;//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
         );
 
-        delete(history,(moves-(_+1)))
+        delete(history,(length(history)-(_+1)))
     );
     print(player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
 );
