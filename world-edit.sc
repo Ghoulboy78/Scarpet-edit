@@ -12,10 +12,11 @@ __config()->{
         'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-        'clone <pos>'->'clone',
         'stack'->'stack',
         'stack <stackcount>'->['stack',null],
         'stack <stackcount> <direction>'->'stack',
+        'clone <pos>'->['clone',false],
+        'move <pos>'->['clone',true]
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -47,6 +48,10 @@ __on_player_connects(player) ->(
         create_player_data()
     )
 );
+
+//Extra boilerplate
+
+global_affected_blocks=[];
 
 //Block-selection
 
@@ -82,14 +87,15 @@ __on_player_uses_item(player, item_tuple, hand) ->(
 
 //Command processing functions
 
-set_block(pos,block,replacement)->(//use this function, by doing affected+=set_block(pos, block, replacement)
+set_block(pos,block,replacement)->(//use this function to set blocks
     success=null;
     existing = block(pos);
     if(block != existing && (!replacement || _block_matches(existing, replacement) ),
-        set(existing,block);
-        success=existing
+        postblock=set(existing,block);
+        success=existing;
+        global_affected_blocks+=[pos,existing,postblock];
     );
-    success
+    bool(success)//cos undo uses this
 );
 
 set_block_with_flag(pos,block,replacement,flags) -> (
@@ -117,11 +123,16 @@ _get_player_positions(player)->(
     [start_pos,end_pos]
 );
 
-add_to_history(command,player)->(
+add_to_history(function,player)->(
 
-    affected_positions=command:'affected_positions';
+    if(length(global_affected_blocks)==0,return());//not gonna add empty list to undo ofc...
+    command={
+        'type'->function,
+        'affected_positions'->global_affected_blocks
+    };
 
-    print(player,format('gi Filled '+length(affected_positions)+' blocks'));
+    print(player,format('gi Filled '+length(global_affected_blocks)+' blocks'));
+    global_affected_blocks=[];
     global_player_data:'history'+=command;
 );
 
@@ -155,32 +166,27 @@ undo(moves)->(
         command = history:(length(history)-1);//to get last item of list properly
 
         for(command:'affected_positions',
-            affected+=set_block(_:0,_:2,null)!=null;//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
+            affected+=set_block(_:0,_:2,null);//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
         );
 
         delete(history,(length(history)-1))
     );
+    global_affected_blocks=[];
     print(player,format('gi Successfully undid '+moves+' operations, filling '+affected+' blocks'));
 );
 
 fill(block,replacement)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
-    affected=[];
-    volume(pos1,pos2,preblock=block(_);if(set_block(_,block,replacement)!=null,affected+=[pos(_),preblock,block(_)]));
-    if(affected,//not gonna add null action to undo history ofc...
-        command={
-            'type'->'fill',//may be useful later...
-            'affected_positions'->affected
-        };
-        add_to_history(command, player)
-    )
+    volume(pos1,pos2,set_block(_,block,replacement));
+
+    add_to_history('fill', player)
 );
 
 rotate(centre, degrees, axis)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
-    affected=[];
+
     rotation_map={};
     rotation_matrix=[];
     if( axis=='x',
@@ -216,19 +222,13 @@ rotate(centre, degrees, axis)->(
     );
 
     for(rotation_map,
-        preblock=block(_);
-        if(set_block(_,rotation_map:_,null)!=null,affected+=[_,block(_),preblock])
+        set_block(_,rotation_map:_,null)
     );
-    if(affected,
-        command={
-            'type'->'rotate',
-            'affected_positions'->affected
-        };
-        add_to_history(command, player)
-    )
+
+    add_to_history('rotate', player)
 );
 
-clone(new_pos)->(
+clone(new_pos, move)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
     affected=[];
@@ -264,19 +264,14 @@ stack(count,direction) -> (
 
     volume(pos1,pos2,
         put(clone_map,pos(_)+translation_vector,block(_))//not setting now cos still querying, could mess up and set block we wanted to query
+        set(_,if(has(block_state(_),'waterlogged'),'water','air'));//check for waterlog
     );
 
     for(clone_map,
-        preblock=block(_);
-        if(set_block(_,clone_map:_,null)!=null,affected+=[_,block(_),preblock])
+        set_block(_,clone_map:_,null)
     );
-    if(affected,
-        command={
-            'type'->'clone',
-            'affected_positions'->affected
-        };
-        add_to_history(command, player)
-    )
+
+    add_to_history(if(move,'move','clone'), player)
 );
 
 
