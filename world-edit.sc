@@ -12,7 +12,7 @@ __config()->{
         'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_player_data:'wand'=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-        'stack'->'stack',
+        'stack'->['stack',1,null],
         'stack <stackcount>'->['stack',null],
         'stack <stackcount> <direction>'->'stack',
         'clone <pos>'->['clone',false],
@@ -166,7 +166,7 @@ undo(moves)->(
         command = history:(length(history)-1);//to get last item of list properly
 
         for(command:'affected_positions',
-            affected+=set_block(_:0,_:2,null);//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
+            affected+=set_block(_:0,_:1,null);//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
         );
 
         delete(history,(length(history)-1))
@@ -231,39 +231,13 @@ rotate(centre, degrees, axis)->(
 clone(new_pos, move)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
-    affected=[];
+    
     min_pos=map(pos1,min(_,pos2:_i));
     clone_map={};
     translation_vector=new_pos-min_pos;
 
     volume(pos1,pos2,
-        put(clone_map,pos(_)+translation_vector,block(_))//not setting now cos still querying, could mess up and set block we wanted to query
-    );
-
-    for(clone_map,
-        preblock=block(_);
-        if(set_block(_,clone_map:_,null)!=null,affected+=[_,block(_),preblock])
-    );
-    if(affected,
-        command={
-            'type'->'clone',
-            'affected_positions'->affected
-        };
-        add_to_history(command, player)
-    )
-);
-
-stack(count,direction) -> (
-    player=player();
-    direction = if(direction == null, get_look_direction(player), pos_offset([0,0,0],direction));
-    [pos1,pos2]=_get_player_positions(player);
-    affected=[];
-    min_pos=map(pos1,min(_,pos2:_i));
-    clone_map={};
-    translation_vector=new_pos-min_pos;
-
-    volume(pos1,pos2,
-        put(clone_map,pos(_)+translation_vector,block(_))//not setting now cos still querying, could mess up and set block we wanted to query
+        put(clone_map,pos(_)+translation_vector,block(_));//not setting now cos still querying, could mess up and set block we wanted to query
         set(_,if(has(block_state(_),'waterlogged'),'water','air'));//check for waterlog
     );
 
@@ -274,6 +248,24 @@ stack(count,direction) -> (
     add_to_history(if(move,'move','clone'), player)
 );
 
+stack(count,direction) -> (
+    player=player();
+    translation_vector = if(direction == null, get_look_direction(player), pos_offset([0,0,0],direction));
+    [pos1,pos2]=_get_player_positions(player);
+    clone_map={};
+    translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
+
+
+    loop(count,
+        c = _;
+        offset = translation_vector*(c+1);
+        volume(pos1,pos2,
+            set_block(pos(_)+offset,_,null);
+        );
+    );
+    add_to_history('stack', player)
+);
+
 
 //Misc functions
 get_look_direction(player) -> (
@@ -282,8 +274,4 @@ get_look_direction(player) -> (
     dir = [0,0,0];
     dir:mi = look:mi/abs(look:mi);
     dir;
-);
-
-parse_flags(flags) -> (
-null;
 );
