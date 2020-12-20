@@ -35,7 +35,7 @@ __config()->{
 global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
-global_positions = [];
+global_selection = [];
 
 
 //Extra boilerplate
@@ -45,24 +45,24 @@ global_affected_blocks=[];
 //Block-selection
 
 _select_pos(player,pos)->(//in case first position is not selected
-    if(length(global_positions)==0,
-        global_positions:0=pos;
+    if(length(global_selection)==0,
+        global_selection:0=pos;
         print('Set first position to '+pos),
-        global_positions:1=pos;
+        global_selection:1=pos;
         print('Set second position to '+pos)
     )
 );
 
 __on_player_clicks_block(player, block, face) ->(
     if(player~'holds':0==global_wand,
-        global_positions:0=pos(block);
+        global_selection:0=pos(block);
         print('Set first position to '+pos(block))
     )
 );
 
 __on_player_breaks_block(player, block) ->(//incase we made an oopsie with a non-sword want item
     if(player~'holds':0==global_wand,
-        global_positions:0=pos(block);
+        global_selection:0=pos(block);
         schedule(0,_(block)->without_updates(set(pos(block),block)),block);
         print('Set first position to '+pos(block))
     )
@@ -108,7 +108,7 @@ _block_matches(existing, block_predicate) ->
 );
 
 _get_player_positions(player)->(
-    pos=global_positions;
+    pos=global_selection;
     if(length(pos)==0,
         exit(print(player,format('r No points selected for player '+player)))
     );
