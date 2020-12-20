@@ -31,35 +31,17 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
         `[pos1,pos2]=_get_player_positions(player);`
 
     - If you're setting blocks, you need to be able to undo that. Here's how:
-      1. Create an empty list at the top of the function:
         
-         `affected=[]`
-        
-      2. When running your function, use the following format to set blocks and save them to that list at the same time.
-         It is important that you save the block that was there before as well as the one that you just set after, for 
-         the undo command to work.
-          
-            ```
-         //Whenever you want to set a block (assume 'pos' to be the position in which you want to set the block)
-         preblock=block(pos);//saves the block that was there before
-            if(set_block(pos,block,replacement)!=null,//this ensures that you only add blocks to undo list that were actually able to be set
-               affected+=[pos,preblock,block(pos)]//This way the undo command has all the info necessary to undo the command
-          );         
-         //Continue with function...
-            ```
-      3. Lastly, you have to save your command to the player history, so they can undo it. This is an O(n) operation, so
-         don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, save
-         the variable `affected` to a map, along with the name of the function, with the key `'type'`
-         ```
-         if(affected,//checking that there have actually been blocks set, or it breaks weirdly
-            command={
-               'type'->'function_name',//for undo history formatting
-               'affected_positions'->affected
-            };
-            add_to_history(command, player)
-         )
-         ```
-3. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
+      1. When running your function, just use `set_block(pos,block,replacement` to set the block in the world.
+   
+      2. Secondly, you have to save your command to the player history, so they can undo it. This is an O(n) operation, so
+         don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, just
+         run the function `add_to_history(your_function_name, player)` and it will all be handled behind the scenes.
+         
+3. Flags (@replaceitem, if u want put them here, if not put them underneath #### Other functions). This is docs for if they
+   wanna add their own flags, idk hwo ur gonna implement
+         
+4. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
    about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
    and add extra arguments underneath as well. Existing arg types are there too, if you feel like using them.
    
