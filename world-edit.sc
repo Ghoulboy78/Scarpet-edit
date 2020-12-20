@@ -32,7 +32,7 @@ __config()->{
 };
 //player globals
 
-global_wand = null;
+global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
 global_positions = [];
