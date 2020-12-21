@@ -2,45 +2,84 @@
 
 global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
+//# New commands format:
+//#   command_for_carpet -> [interpretation_for_carpet, false] (will hide it from help menu)
+//#   command_for_carpet -> [interpretation_for_carpet, [hide_arguments_since, description, description_tooltip, description_action]]
+//# hide_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
+//# 
+//# Suggestion is derived from command_for_carpet, everything before the first [ or <.
+//# Command prefix (/world-edit ) is automatically added to description_action
+//# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
+//# Everything that isn't description_action must start with a format() prefix, or a space.
+//# Try to fit each entry in a single line (help menu) for proper pagination (until something is done).
+
+//# TODO Translation strings
+
+base_commands_map = {
+    '' -> [_()->_help(1), false],
+    'help' -> [_()->_help(1), false],
+    'help <page>' -> ['_help', [0, 'l Shows this help menu, or a specified page', null, null]],
+    'lang <lang>' -> [_(lang)->(global_lang=lang), [-1, 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null]],
+    'fill <block>' -> [['fill',null], false],
+    'fill <block> <replaces>' -> ['fill', [1, 'l Fills the selection, filterable', 'g You can use a tag in the replaces argument', null]],
+    'undo' -> [['undo', 1], false],
+    'undo <moves>' -> ['undo', [0, 'l Undoes last n moves, one by default', null, null]],
+    'undo all' -> [['undo', 0], [-1, 'l Undoes the entire action history', null, null]],
+    'undo history' -> ['print_history', [-1, 'l Shows the history of undone actions', null, null]],
+    'redo' -> [['redo', 1], false],
+    'redo <moves>' -> ['redo', [0, 'l Redoes last n undoes, one by default', 'g Also shows up in undo history', null]],
+    'redo all' -> [['redo', 0], [-1, 'l Redoes the entire undo history', null, null]],
+    'wand' -> ['_set_or_give_wand', [-1, 'l Sets held item as wand or gives it if hand is empty', null, null]],
+    'wand <wand>' -> [_(wand)->(global_wand=wand:0), [-1, 'l Changes the current wand item', null, null]],
+    'rotate <pos> <degrees> <axis>' -> ['rotate', [-1, 'l Rotates [deg] about [pos]', 'g Axis must be x, y or z', null]],//will replace old stuff if need be
+    'stack' -> [['stack',1,null], false],
+    'stack <count>' -> [['stack',null], false],
+    'stack <count> <direction>' -> ['stack', [0, 'l Stacks selection n times in dir', 'g If not provided, direction is player\s view direction by default', null]],
+    'expand <pos> <magnitude>' -> ['expand', [-1, 'l Expands sel [magn] from pos', 'g "Expands the selection [magnitude] from [pos]', null]], //This is not understandable
+    'clone <pos>' -> [['clone',false], [-1, 'l Clones selection to <pos>', null, null]],
+    'move <pos>' -> [['clone',true], [-1, 'l Moves selection to <pos>', null, null]],
+    'selection clear' -> ['clear_selection', false], //TODO help for this and below
+    'selection expand' -> [_()->selection_expand(1), false],
+    'selection expand <amount>' -> ['selection_expand', false],
+    'selection move' -> [_() -> selection_move(1, null), false],
+    'selection move <amount>' -> [_(n)->selection_move(n, null), false],
+    'selection move <amount> <direction>' -> ['selection_move',false],
+};
+
+// Proccess commands map for Carpet
+global_commands_map = {};
+for(base_commands_map,
+    global_commands_map:_ = base_commands_map:_:0;
+);
+global_help_commands = [];
+// Proccess commands map for help
+for(base_commands_map,
+    if(base_commands_map:_:1, //Check it's not skipped (aka false)
+        // Proccess arguments
+        visible_command = _;
+        if(search_pos = base_commands_map:_:1:0 != -1,
+            //TODO Maybe make this a single split-map-reduce
+            current_pos = -1;
+            visible_command = reduce(map(split(visible_command),if(_ == '<', current_pos += 1; if(current_pos >= search_pos, '[', _),_ ) ),_a+_,'');
+            current_pos = -1;
+            visible_command = reduce(map(split(visible_command),if(_ == '>', current_pos += 1; if(current_pos >= search_pos, ']', _),_ ) ),_a+_,'');
+        );
+        suggestion = reduce(split(visible_command),if((_ == '<' || _ == '['),break(),_a+_),'');
+        global_help_commands += ['g - '+visible_command, suggestion, base_commands_map:_:1:1, base_commands_map:_:1:2, base_commands_map:_:1:3];
+    )
+);
+
+
 __config()->{
-    'commands'->{
-        ''->_()->_help(1),
-        'help'->_()->_help(1),
-        'help <page>'->'_help',
-        'fill <block>'->['fill',null],
-        'fill <block> <replacement>'->'fill',
-        'undo'->['undo', 1],
-        'undo all'->['undo', 0],
-        'undo <moves>'->'undo',
-        'redo'->['redo', 1],
-        'redo all'->['redo', 0],
-        'redo <moves>'->'redo',
-        'undo history'->'print_history',
-        'wand' -> '_set_or_give_wand',
-        'wand <wand>'->_(wand)->(global_wand=wand:0),
-        'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-        'stack'->['stack',1,null],
-        'stack <stackcount>'->['stack',null],
-        'stack <stackcount> <direction>'->'stack',
-        'expand <pos> <magnitude>'->'expand',
-        'clone <pos>'->['clone',false],
-        'move <pos>'->['clone',true],
-        'selection clear' -> 'clear_selection',
-        'selection expand' -> _() -> selection_expand(1),
-        'selection expand <amount>' -> 'selection_expand',
-        'selection move' -> _() -> selection_move(1, null),
-        'selection move <amount>' -> _(n) -> selection_move(n, null),
-        'selection move <amount> <direction>' -> 'selection_move',
-        'lang <lang>'->_(lang)->(global_lang=lang),
-    },
+    'commands'-> global_commands_map,
     'arguments'->{
-        'replacement'->{'type'->'blockpredicate'},
+        'replaces'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
         'degrees'->{'type'->'int','suggest'->[]},
         'axis'->{'type'->'term','options'->['x','y','z']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
-        'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
+        'count'->{'type'->'int','min'->1,'suggest'->[]},
         'flags'->{'type'->'text'},
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
@@ -70,65 +109,46 @@ _help(page) ->
     // Header
     print(format('c ----------------- [ ', 'd World-Edit Help', 'c  ] -----------------'));
     
-    // Help Format: [visibleCommand, commandToSuggest, description, descriptionTooltip, descriptionAction]
-    // [visibleCommand] -> [description]
-    // wand <item> -> Changes the current wand item
-    // 
-    // Command prefix (/world-edit ) is automatically added to both commandToSuggest and descriptionAction
-    // descriptionAction accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
-    // Accepts nulls everywhere, except in commandToSuggest if there is a visibleCommand (shouldn't ever happen)
-    // Non-command-action things must start with a format() prefix, or a space.
-    // Try to keep each entry in a single line for proper pagination.
+    // Help entries are generated on top, in the commands map. Check docs there
+    // Those are just hardcoded entries at the top
+    // Here: [pre-arrow, pre-arrow command to suggest, post-arrow, post-arrow tooltip, post-arrow action]
     help_entries = [
         [null, null, 'c Welcome to the World-Edit Scarpet app\'s help!', 'y Hooray!', null],
-        [if(length(global_selection)>1,'c Your selection'), '', if(length(global_selection)>1,
+        [if(length(global_selection) > 1,'c Your selection'), '', if(length(global_selection) > 1,
                             'l '+global_selection:0+' to '+global_selection:1
                             ,'c Right click your wand at start and final position to select'), null, '?wand '],
         ['c Selected wand', 'wand ', 'l '+title(replace(global_wand, '_', ' ')), 'g Use the wand command to change', '?wand '],
         ['c App Language ', 'lang ', 'l '+global_lang, 'g Use the lang command to change', '?lang '], // This prints null, please check
         ['y Command list (without prefix):', 'help', null, null]
-        ['g - help [page]', 'help', 'l Shows this help menu, or a specified page', null, null],
-        ['g - lang <lang>', 'lang ', 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null],
-        ['g - fill <block> [replacement]', 'fill ', 'l Fills the selection, filterable', 'g You can use a tag in the replacement argument', null], //replacement may need a better name?
-        ['g - undo [moves]', 'undo', 'l Undoes last n moves, one by default', null, null],
-        ['g - undo all', 'undo all', 'l Undoes the entire action history', null, null],
-        ['g - undo history', 'undo history', 'l Shows the history of undone actions', null, null],
-        ['g - redo [moves]', 'redo', 'l Redoes last n undoes, one by default', 'g Also shows up in undo history', null],
-        ['g - redo all', 'redo all', 'l Redoes the entire undo history', null, null],
-        ['g - wand', 'wand', 'l Sets held item as wand or gives it if hand is empty', null, null],
-        ['g - wand <wand>', 'wand ', 'l Changes the current wand item', null, null],
-        ['g - rotate <pos> <degrees> <axis>', 'rotate ', 'l Rotates [deg] about [pos]', 'g Axis must be x, y or z', null],
-        ['g - stack [count] [direction]', 'stack ', 'l Stacks selection n times in dir', 'g If not provided, direction is player\s view direction by default', null],
-        ['g - expand [pos] [magnitude]', 'expand ', 'l Expands sel magnitude from pos', 'g "Expands the selection [magnitude] from [pos]', null],
-        ['g - clone <pos>', 'clone ', 'l Clones selection to <pos>', null, null],
-        ['g - move <pos>', 'move ', 'l Moves selection to <pos>', null, null],
-        
     ];
     
+    for(global_help_commands,
+        help_entries += _;
+    );
     // Print help entries
     if(page == 1,
-        remainingToDisplay = 8; // Not sure what does this happen
+        remaining_to_display = 8; // Not sure what does this happen
     ,
-        remainingToDisplay = 9;
+        remaining_to_display = 9;
     );
-    currentEntry = ((page-1)*8);
-    entryNumber = length(help_entries);
-    while(remainingToDisplay != 0 && currentEntry < entryNumber, entryNumber,
-        entry = help_entries:currentEntry;
+    current_entry = ((page-1)*8);
+    entry_number = length(help_entries);
+    while(remaining_to_display != 0 && current_entry < entry_number, entry_number,
+        entry = help_entries:current_entry;
         //Allow different desc actions
         if(slice(entry:4,0,1) == '!',
-            descriptionAction = '!'+command+slice(entry:4,1);
+            description_action = '!'+command+slice(entry:4,1);
             print('Hello');
         , slice(entry:4,0,1) == '?',
-            descriptionAction = '?'+command+slice(entry:4,1);
+            description_action = '?'+command+slice(entry:4,1);
         );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
-        print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+entry:3, descriptionAction));
+        print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+entry:3, description_action));
 
-        currentEntry += 1;
-        remainingToDisplay += -1;
-        descriptionAction = arrow = null;
+        current_entry += 1;
+        remaining_to_display += -1;
+        description_action = arrow = null;
     );
     
     // Footer
@@ -152,15 +172,15 @@ _help(page) ->
     );
     footer += ' ';
     footer += format('y Page '+page+' ');
-    if ((8*page) < entryNumber,
-        lastPage = ceil((entryNumber)/8);
+    if ((8*page) < entry_number,
+        last_page = ceil((entry_number)/8);
         footer += format('d [>]',
                         '^g Go to next page ('+(page+1)+')',
                         '!'+command+'help '+(page+1));
         footer += ' ';
         footer += format('d [>>]',
-                        '^g Go to last page ('+lastPage+')',
-                        '!'+command+'help '+lastPage);
+                        '^g Go to last page ('+last_page+')',
+                        '!'+command+'help '+last_page);
     ,
         footer += format('g [>]');
         footer += ' ';
@@ -356,10 +376,10 @@ _print(player, key, ... replace) -> print(player, format(_translate(key, replace
 
 //Command processing functions
 
-set_block(pos,block,replacement)->(//use this function to set blocks
+set_block(pos,block,replaces)->(//use this function to set blocks
     success=null;
     existing = block(pos);
-    if(block != existing && (!replacement || _block_matches(existing, replacement)),
+    if(block != existing && (!replaces || _block_matches(existing, replaces)),
         postblock=set(existing,block);
         success=existing;
         global_affected_blocks+=[pos,postblock,existing];//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
@@ -445,10 +465,10 @@ redo(moves)->(
     _print(player, 'success_undo', moves, affected);
 );
 
-fill(block,replacement)->(
+fill(block,replaces)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
-    volume(pos1,pos2,set_block(pos(_),block,replacement));
+    volume(pos1,pos2,set_block(pos(_),block,replaces));
 
     add_to_history('fill', player)
 );
