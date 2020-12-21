@@ -38,9 +38,29 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
          don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, just
          run the function `add_to_history(your_function_name, player)` and it will all be handled behind the scenes.
          
-3. Flags (@replaceitem, if u want put them here, if not put them underneath #### Other functions). This is docs for if they
-   wanna add their own flags, idk hwo ur gonna implement
-         
+3. Your additions should take flags into account. If you want your command to support flags, there needs to be two versions of each command you add. One with flags, one with out them. For example, the fill command would look like this:
+```
+'fill <block>'
+'fill <block> <replacement>'
+```
+then you need to copy those, and add the flags at the end:
+```
+'fill <block>'
+'fill <block> <replacement>'
+'fill <block> f <flag>'
+'fill <block> <replacement> f <flag>'
+```
+Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command syntax. For the versions without the flags, just use `null` as the flags.
+
+Whenever you use the `set_block()` function, put the flags from your command processing function at the last argument.
+The following flags currently exist:
+
+u     no blockupdates (handled by set_block)
+w     waterlog blocks that get placed inside water (handled by set_block)
+a     only replace air blocks (handled by set_block)
+e     copy/move entities as well
+b     copy/move biomes as well
+
 4. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
    about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
    and add extra arguments underneath as well. Existing arg types are there too, if you feel like using them.
