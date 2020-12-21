@@ -4,6 +4,9 @@ global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
 __config()->{
     'commands'->{
+        ''->_()->_help(1),
+        'help'->_()->_help(1),
+        'help <page>'->'_help',
         'fill <block>'->['fill',null],
         'fill <block> <replacement>'->'fill',
         'undo'->['undo', 1],
@@ -28,7 +31,7 @@ __config()->{
         'selection move' -> _() -> selection_move(1, null),
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
-        'lang <lang>'->_(lang)->(global_lang=lang)
+        'lang <lang>'->_(lang)->(global_lang=lang),
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -41,7 +44,8 @@ __config()->{
         'flags'->{'type'->'text'},
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'lang'->{'type'->'term','options'->global_lang_ids}
+        'lang'->{'type'->'term','options'->global_lang_ids},
+        'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
     }
 };
 //player globals
@@ -59,6 +63,112 @@ global_affected_blocks=[];
 
 global_selection = [];
 global_selection_markers = [];
+
+_help(page) ->
+(
+    command = '/'+system_info('app_name')+' ';
+    // Header
+    print(format('c ----------------- [ ', 'd World-Edit Help', 'c  ] -----------------'));
+    
+    // Help Format: [visibleCommand, commandToSuggest, description, descriptionTooltip, descriptionAction]
+    // [visibleCommand] -> [description]
+    // wand <item> -> Changes the current wand item
+    // 
+    // Command prefix (/world-edit ) is automatically added to both commandToSuggest and descriptionAction
+    // descriptionAction accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
+    // Accepts nulls everywhere, except in commandToSuggest if there is a visibleCommand (shouldn't ever happen)
+    // Non-command-action things must start with a format() prefix, or a space.
+    // Try to keep each entry in a single line for proper pagination.
+    help_entries = [
+        [null, null, 'c Welcome to the World-Edit Scarpet app\'s help!', 'y Hooray!', null],
+        [if(length(global_selection)>1,'c Your selection'), '', if(length(global_selection)>1,
+                            'l '+global_selection:0+' to '+global_selection:1
+                            ,'c Right click your wand at start and final position to select'), null, '?wand '],
+        ['c Selected wand', 'wand ', 'l '+title(replace(global_wand, '_', ' ')), 'g Use the wand command to change', '?wand '],
+        ['c App Language ', 'lang ', 'l '+global_lang, 'g Use the wand command to change', '?wand '], // This prints null, please check
+        ['y Command list (without prefix):', 'help', null, null]
+        ['g - help [page]', 'help', 'l Shows this help menu, or a specified page', null, null],
+        ['g - lang <lang>', 'lang ', 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null],
+        ['g - fill <block> [replacement]', 'fill ', 'l Fills the selection, filterable', 'g You can use a tag in the replacement argument', null], //replacement may need a better name?
+        ['g - undo [moves]', 'undo', 'l Undoes last n moves, one by default', null, null],
+        ['g - undo all', 'undo all', 'l Undoes the entire action history', null, null],
+        ['g - undo history', 'undo history', 'l Shows the history of undone actions', null, null],
+        ['g - redo [moves]', 'redo', 'l Redoes last n undoes, one by default', 'g Also shows up in undo history', null],
+        ['g - redo all', 'redo all', 'l Redoes the entire undo history', null, null],
+        ['g - wand', 'wand', 'l Sets held item as wand or gives it if hand is empty', null, null],
+        ['g - wand <wand>', 'wand ', 'l Changes the current wand item', null, null],
+        ['g - rotate <pos> <degrees> <axis>', 'rotate ', 'l Rotates [deg] about [pos]', 'g Axis must be x, y or z', null],
+        ['g - stack [count] [direction]', 'stack ', 'l Stacks selection n times in dir', 'g If not provided, direction is player\s view direction by default', null],
+        ['g - expand [pos] [magnitude]', 'expand ', 'l Expands sel magnitude from pos', 'g "Expands the selection [magnitude] from [pos]', null],
+        ['g - clone <pos>', 'clone ', 'l Clones selection to <pos>', null, null],
+        ['g - move <pos>', 'move ', 'l Moves selection to <pos>', null, null],
+        
+    ];
+    
+    // Print help entries
+    if(page == 1,
+        remainingToDisplay = 8; // Not sure what does this happen
+    ,
+        remainingToDisplay = 9;
+    );
+    currentEntry = ((page-1)*8);
+    entryNumber = length(help_entries);
+    while(remainingToDisplay != 0 && currentEntry < entryNumber, entryNumber,
+        entry = help_entries:currentEntry;
+        //Allow different desc actions
+        if(slice(entry:4,0,1) == '!',
+            descriptionAction = '!'+command+slice(entry:4,1);
+            print('Hello');
+        , slice(entry:4,0,1) == '?',
+            descriptionAction = '?'+command+slice(entry:4,1);
+        ); //TODO Format the arrow
+        if(entry:2 != null, arrow = 'd  -> ');
+        //print(entry:2);
+        print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+entry:3, descriptionAction));
+
+        currentEntry += 1;
+        remainingToDisplay += -1;
+        descriptionAction = arrow = null;
+    );
+    
+    // Footer
+    footer = format('');
+    if (page < 10, // In case we reach this, make it still be centered
+        footer += ' ';
+    );
+    footer += format('c --------------- ');
+    if (page != 1,
+        footer += format('d [<<]',
+                    '^g Go to first page',
+                    '!'+command+'help');
+        footer += ' ';
+        footer += format('d [<]',
+                    '^g Go to previous page ('+(page-1)+')',
+                    '!'+command+'help '+(page-1));
+    ,
+        footer += format('g [<<]');
+        footer += ' ';
+        footer += format('g [<]');
+    );
+    footer += ' ';
+    footer += format('y Page '+page+' ');
+    if ((8*page) < entryNumber,
+        lastPage = ceil((entryNumber)/8);
+        footer += format('d [>]',
+                        '^g Go to next page ('+(page+1)+')',
+                        '!'+command+'help '+(page+1));
+        footer += ' ';
+        footer += format('d [>>]',
+                        '^g Go to last page ('+lastPage+')',
+                        '!'+command+'help '+lastPage);
+    ,
+        footer += format('g [>]');
+        footer += ' ';
+        footer += format('g [>>]');
+    );
+    footer += format('c  --------------');
+    print(footer);
+);
 
 clear_markers() -> for(global_selection_markers, modify(_, 'remove'));
 
@@ -229,7 +339,7 @@ for(global_lang_ids,
 
             'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
             'no_selection_error =             Missing selection for operation',
-            'selection_required_error =       Operation requires selection to be specified'
+            'selection_required_error =       Operation requires selection to be specified',
         ])
     );
     global_langs:_ = _parse_config(global_langs:_)
