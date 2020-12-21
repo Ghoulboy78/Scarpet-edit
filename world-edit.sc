@@ -105,7 +105,7 @@ __on_player_swings_hand(player, hand) ->
     )
 );
 
-_set_start_point(player) -> 
+_set_start_point(player) ->
 (
     clear_markers();
     start_pos = _get_player_look_at_block(player, 4.5);
@@ -177,7 +177,7 @@ _parse_config(config) -> (
     ret = {};
     for(config,
         if(_ ~ '^\\w+ ?= *.+$' != null,
-            key = _ ~ '^\\w+(?= ?= *.+)';   
+            key = _ ~ '^\\w+(?= ?= *.+)';
             value = _ ~ ('(?<='+key+' ?= ?) *([^ ].*)');
             ret:key = value
         )
@@ -191,17 +191,17 @@ global_lang_ids = ['en_us'];
 global_langs = {};
 for(global_lang_ids,
     global_langs:_ = read_file(_, 'text');
-    if(global_langs:_ == null, 
+    if(global_langs:_ == null,
         write_file(_, 'text', global_langs:_ = [
             'language_code =    en_us',
             'language =         english',
 
             'pos1 =             w Set first position to %s',                             // [x, y, z]
             'pos2 =             w Set second position to %s',                            // [x, y, z]
-            'nopos =            r No points selected for player %s',                     // player 
-            'filled =           gi Filled %d blocks',                                    // blocks number 
-            'no_undo_history =  w No undo history to show for player %s',                // player 
-            'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player 
+            'nopos =            r No points selected for player %s',                     // player
+            'filled =           gi Filled %d blocks',                                    // blocks number
+            'no_undo_history =  w No undo history to show for player %s',                // player
+            'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
             'entry_undo =       w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
             'no_undo =          r No actions to undo for player %s',                     // player
             'more_moves_undo =  w Too many moves to undo, undoing all moves for %s',     // player
@@ -276,7 +276,7 @@ print_history()->(
 
 undo(moves)->(
     player = player();
-    history=global_player_data:'history';
+    history=global_history;
     if(length(history)==0||history==null,exit(_print(player, 'no_undo', player)));//incase an op was running command, we want to print error to them
     if(length(history)<moves,_print(player, 'more_moves_undo', player);moves=0);
     if(moves==0,moves=length(history));
