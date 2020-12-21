@@ -1,5 +1,7 @@
 //World edit
 
+global_lang_ids = ['en_us','it_it'];//defining up here for command to work
+
 __config()->{
     'commands'->{
         'fill <block>'->['fill',null,null],
@@ -15,7 +17,8 @@ __config()->{
         'redo'->['redo', 1],
         'redo all'->['redo', 0],
         'redo <moves>'->'redo',
-
+        'undo history'->'print_history',
+        'wand' -> '_set_or_give_wand',
         'wand <wand>'->_(wand)->(global_wand=wand:0),
 
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
@@ -41,6 +44,7 @@ __config()->{
         'selection move' -> _() -> selection_move(1, null),
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
+        'lang <lang>'->_(lang)->(global_lang=lang)
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -65,6 +69,7 @@ __config()->{
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
+        'lang'->{'type'->'term','options'->global_lang_ids}
     }
 };
 //player globals
@@ -89,6 +94,7 @@ _create_marker(pos, block) ->
 (
     marker = create_marker(null, pos+0.5, block, false);
     modify(marker, 'effect', 'glowing', 72000, 0, false, false);
+    modify(marker, 'fire', 32767);
     marker
 );
 
@@ -198,6 +204,23 @@ _get_current_selection_details(player)->
 
 //Misc functions
 
+_set_or_give_wand() -> (
+    p = player;
+    //give player wand if hand is empty
+    if(held_item_tuple = p~'holds' == null, 
+       slot = invenroty_set(p, p~'selected_slot', 1, global_wand);
+       return()
+    );
+    //else, set current held item as wand, if valid
+    held_item = held_item_tuple:0;
+    if( (['tools', 'weapons']~item_category(held_item)) != null,
+        global_wand = held_item;
+        print(p, str('%s is now the app\'s wand, use it with care.', held_item)),
+       //else, can't set as wand
+       print(p, 'Wand has to be a tool or weapon')
+    )
+);
+
 //Config Parser
 
 _parse_config(config) -> (
@@ -215,7 +238,7 @@ _parse_config(config) -> (
 
 //Translations
 
-global_lang_ids = ['en_us'];
+global_lang=null;//default en_us
 global_langs = {};
 for(global_lang_ids,
     global_langs:_ = read_file(_, 'text');
@@ -224,28 +247,25 @@ for(global_lang_ids,
             'language_code =    en_us',
             'language =         english',
 
-            'pos1 =             w Set first position to %s',                             // [x, y, z]
-            'pos2 =             w Set second position to %s',                            // [x, y, z]
-            'nopos =            r No points selected for player %s',                     // player
             'filled =           gi Filled %d blocks',                                    // blocks number
             'no_undo_history =  w No undo history to show for player %s',                // player
             'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
             'entry_undo =       w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
             'no_undo =          r No actions to undo for player %s',                     // player
-            'more_moves_undo =  w Too many moves to undo, undoing all moves for %s',     // player
+            'more_moves_undo =  w Your number is too high, undoing all moves for %s',     // player
             'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
 
             'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
             'no_selection_error =             Missing selection for operation',
-            'selection_required_error =       Operation require selection to be specified',
+            'selection_required_error =       Operation requires selection to be specified'
         ])
     );
     global_langs:_ = _parse_config(global_langs:_)
 );
 _translate(key, replace_list) -> (
     // print(player(),key+' '+replace_list);
-    lang_id = global_player_data:'lang';
-    if(lang_id == null || !has(global_lang_ids, lang_id),
+    lang_id = global_lang;
+    if(lang_id == null || !has(global_langs, lang_id),
         lang_id = global_lang_ids:0);
     str(global_langs:lang_id:key, replace_list)
 );
@@ -294,7 +314,7 @@ add_to_history(function,player)->(
 
 print_history()->(
     player=player();
-    history = global_player_data:'history';
+    history = global_history;
     if(length(history)==0||history==null,_print(player, 'no_undo_history', player));
     if(length(history)>10,_print(player, 'many_undo', player));
     total=min(length(history),10);//total items to print
@@ -444,7 +464,7 @@ stack(count,direction,flags) -> (
 
 expand(centre, magnitude)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
     expand_map={};
     min_pos=map(pos1,min(_,pos2:_i));
     max_pos=map(pos1,max(_,pos2:_i));

@@ -1,0 +1,12 @@
+language_code =    en_us
+language =         english
+filled =           gi Filled %d blocks
+no_undo_history =  w No undo history to show for player %s
+many_undo =        w Undo history for player %s is very long, showing only the last ten items
+entry_undo =       w %d: type: %s\n    affected positions: %s
+no_undo =          r No actions to undo for player %s
+more_moves_undo =  w Your number is too high, undoing all moves for %s
+success_undo =     gi Successfully undid %d operations, filling %d blocks
+move_selection_no_player_error = To move selection in the direction of the player, you need to have a player
+no_selection_error =             Missing selection for operation
+selection_required_error =       Operation requires selection to be specified

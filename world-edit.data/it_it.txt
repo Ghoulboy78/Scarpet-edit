@@ -1,0 +1,12 @@
+language_code =    it_it
+language =         italiano
+filled =           gi %d blocchi riempiti
+no_undo_history =  w Nessun catalogo di azioni da disfare per giocatore %s
+many_undo =        w Troppe azioni da disfare per %s, mostrando solo le ultimi 10
+entry_undo =       w %d: tipo: %s\n    posizioni affettati: %s
+no_undo =          r Nessune azioni da disfare per giocatore %s
+more_moves_undo =  w Il tuo numero é troppo alto, disfaciendo tutte le azioni per giocatore %s
+success_undo =     gi Disfatti con successo %d operazioni, riempendo %d blocchi
+move_selection_no_player_error = Non puoi muovere la selezione nella direzione di un giocatore senza il giocatore
+no_selection_error =             Selezione mancante per l'operazione
+selection_required_error =       L'operazione ha bisogno d'una selezione specificata
