@@ -61,6 +61,7 @@ _create_marker(pos, block) ->
 (
     marker = create_marker(null, pos+0.5, block, false);
     modify(marker, 'effect', 'glowing', 72000, 0, false, false);
+    modify(marker, 'fire', 32767);
     marker
 );
 
