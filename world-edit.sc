@@ -85,7 +85,7 @@ _help(page) ->
                             'l '+global_selection:0+' to '+global_selection:1
                             ,'c Right click your wand at start and final position to select'), null, '?wand '],
         ['c Selected wand', 'wand ', 'l '+title(replace(global_wand, '_', ' ')), 'g Use the wand command to change', '?wand '],
-        ['c App Language ', 'lang ', 'l '+global_lang, 'g Use the wand command to change', '?wand '], // This prints null, please check
+        ['c App Language ', 'lang ', 'l '+global_lang, 'g Use the lang command to change', '?lang '], // This prints null, please check
         ['y Command list (without prefix):', 'help', null, null]
         ['g - help [page]', 'help', 'l Shows this help menu, or a specified page', null, null],
         ['g - lang <lang>', 'lang ', 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null],
@@ -121,7 +121,7 @@ _help(page) ->
             print('Hello');
         , slice(entry:4,0,1) == '?',
             descriptionAction = '?'+command+slice(entry:4,1);
-        ); //TODO Format the arrow
+        );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
         print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+entry:3, descriptionAction));
