@@ -21,7 +21,7 @@ base_commands_map = {
     'help <page>' -> ['_help', [0, 'l Shows this help menu, or a specified page', null, null]],
     'lang <lang>' -> [_(lang)->(global_lang=lang), [-1, 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null]],
     'fill <block>' -> [['fill',null], false],
-    'fill <block> <replaces>' -> ['fill', [1, 'l Fills the selection, filterable', 'g You can use a tag in the replaces argument', null]],
+    'fill <block> <replacement>' -> ['fill', [1, 'l Fills the selection, filterable', 'g You can use a tag in the replacement argument', null]],
     'undo' -> [['undo', 1], false],
     'undo <moves>' -> ['undo', [0, 'l Undoes last n moves, one by default', null, null]],
     'undo all' -> [['undo', 0], [-1, 'l Undoes the entire action history', null, null]],
@@ -55,14 +55,13 @@ global_help_commands = [];
 // Proccess commands map for help
 for(base_commands_map,
     if(base_commands_map:_:1, //Check it's not skipped (aka false)
-        // Proccess arguments
         visible_command = _;
-        if(search_pos = base_commands_map:_:1:0 != -1,
-            //TODO Maybe make this a single split-map-reduce
-            current_pos = -1;
-            visible_command = reduce(map(split(visible_command),if(_ == '<', current_pos += 1; if(current_pos >= search_pos, '[', _),_ ) ),_a+_,'');
-            current_pos = -1;
-            visible_command = reduce(map(split(visible_command),if(_ == '>', current_pos += 1; if(current_pos >= search_pos, ']', _),_ ) ),_a+_,'');
+        if((search_pos = base_commands_map:_:1:0) != -1, // Proccess arguments
+            current_pos = [-1, -1];
+            visible_command = reduce(map(split(visible_command),
+                if(_ == '<', current_pos:0 += 1; if(current_pos:0 >= search_pos, '[', _)
+                ,_ == '>', current_pos:1 += 1; if(current_pos:1 >= search_pos, ']', _) ,_ ) ),
+                _a+_,'');
         );
         suggestion = reduce(split(visible_command),if((_ == '<' || _ == '['),break(),_a+_),'');
         global_help_commands += ['g - '+visible_command, suggestion, base_commands_map:_:1:1, base_commands_map:_:1:2, base_commands_map:_:1:3];
@@ -376,10 +375,10 @@ _print(player, key, ... replace) -> print(player, format(_translate(key, replace
 
 //Command processing functions
 
-set_block(pos,block,replaces)->(//use this function to set blocks
+set_block(pos,block,replacement)->(//use this function to set blocks
     success=null;
     existing = block(pos);
-    if(block != existing && (!replaces || _block_matches(existing, replaces)),
+    if(block != existing && (!replacement || _block_matches(existing, replacement)),
         postblock=set(existing,block);
         success=existing;
         global_affected_blocks+=[pos,postblock,existing];//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
@@ -465,10 +464,10 @@ redo(moves)->(
     _print(player, 'success_undo', moves, affected);
 );
 
-fill(block,replaces)->(
+fill(block,replacement)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
-    volume(pos1,pos2,set_block(pos(_),block,replaces));
+    volume(pos1,pos2,set_block(pos(_),block,replacement));
 
     add_to_history('fill', player)
 );
