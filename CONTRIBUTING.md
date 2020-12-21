@@ -65,6 +65,14 @@ b     copy/move biomes as well
    about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
    and add extra arguments underneath as well. Existing arg types are there too, if you feel like using them.
    
+#### Messages
+
+If you want to print a message as an output to the player, then use the `_print(message_id,player))` function. Input the string in the format:
+`message_id=  Your message` into the list which is under the `//translation` comment, under all the rest. If the message
+requires variables to be put in (like number, etc), just use `%s` in the message to stand for that value, it will be taken 
+care of by the rest of the app. NB: This message will appear in US english. If you want to translate for other languages,
+you need to add the US english *and* your own language's option.
+
 #### Other functions
 
 If you're doing something that changes the player's stored data, please ensure that:
