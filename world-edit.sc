@@ -18,7 +18,13 @@ __config()->{
         'stack <stackcount> <direction>'->'stack',
         'expand <pos> <magnitude>'->'expand',
         'clone <pos>'->['clone',false],
-        'move <pos>'->['clone',true]
+        'move <pos>'->['clone',true],
+        'selection clear' -> 'clear_selection',
+        'selection expand' -> _() -> selection_expand(1),
+        'selection expand <amount>' -> 'selection_expand',
+        'selection move' -> _() -> selection_move(1, null),
+        'selection move <amount>' -> _(n) -> selection_move(n, null),
+        'selection move <amount> <direction>' -> 'selection_move',
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -28,8 +34,9 @@ __config()->{
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
         'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
+        'flags'->{'type'->'text'},
+        'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'flags'->{'type'->'text'}
     }
 };
 //player globals
@@ -37,7 +44,6 @@ __config()->{
 global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
-global_positions = [];
 
 
 //Extra boilerplate
@@ -46,44 +52,184 @@ global_affected_blocks=[];
 
 //Block-selection
 
-_select_pos(player,pos)->(//in case first position is not selected
-    if(length(global_positions)==0,
-        global_positions:0=pos;
-        print('Set first position to '+pos),
-        global_positions:1=pos;
-        print('Set second position to '+pos)
-    )
+global_selection = [];
+global_selection_markers = [];
+
+clear_markers() -> for(global_selection_markers, modify(_, 'remove'));
+
+_create_marker(pos, block) ->
+(
+    marker = create_marker(null, pos+0.5, block, false);
+    modify(marker, 'effect', 'glowing', 72000, 0, false, false);
+    marker
 );
 
-__on_player_clicks_block(player, block, face) ->(
+clear_selection() ->
+(
+    global_selection = [];
+);
+
+selection_move(amount, direction) ->
+(
+    [from, to, point1, point2] = _get_current_selection_details(null);
+    p = player();
+    if (p == null && direction == null, exit(_translate('move_selection_no_player_error', [])));
+    translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
+    clear_markers();
+    point1 = point1 + translation_vector;
+    point2 = point2 + translation_vector;
+    global_selection = [point1, point2];
+    global_selection_markers = [_create_marker(point1, 'lime_concrete'), _create_marker(point2, 'blue_concrete')];
+);
+
+selection_expand(amount) ->
+(
+    [from, to, point1, point2] = _get_current_selection_details(null);
+    for (range(3),
+        size = to:_-from:_+1;
+        c_amount = if (size >= -amount, amount, floor(size/2));
+        if (point1:_ > point2:_, c_amount = - c_amount);
+        point1:_ += -c_amount;
+        point2:_ +=  c_amount;
+    );
+    global_selection = [point1, point2];
+    clear_markers();
+    global_selection_markers = [_create_marker(point1, 'lime_concrete'), _create_marker(point2, 'blue_concrete')];
+);
+
+__on_player_swings_hand(player, hand) ->
+(
     if(player~'holds':0==global_wand,
-        global_positions:0=pos(block);
-        print('Set first position to '+pos(block))
+        if (global_selection && length(global_selection)>1, clear_selection() );
+        if (!global_selection, _set_start_point(player), _set_end_point(player) );
     )
 );
 
-__on_player_breaks_block(player, block) ->(//incase we made an oopsie with a non-sword want item
-    if(player~'holds':0==global_wand,
-        global_positions:0=pos(block);
-        schedule(0,_(block)->without_updates(set(pos(block),block)),block);
-        print('Set first position to '+pos(block))
+_set_start_point(player) ->
+(
+    clear_markers();
+    start_pos = _get_player_look_at_block(player, 4.5);
+    global_selection = [start_pos];
+    marker = _create_marker(start_pos, 'lime_concrete');
+    global_selection_markers = [marker];
+    if (!global_rendering, _render_selection_tick(player~'name'));
+);
+
+_set_end_point(player) ->
+(
+    end_pos = _get_player_look_at_block(player, 4.5);
+    global_selection:1 = end_pos;
+    marker = _create_marker(end_pos, 'blue_concrete');
+    global_selection_markers += marker;
+    if (!global_rendering, _render_selection_tick(player~'name'));
+);
+
+global_rendering = false;
+_render_selection_tick(player_name) ->
+(
+    p = player(player_name);
+    if (!global_selection || !p,
+        global_rendering = false;
+        clear_markers();
+        return()
+    );
+    global_rendering = true;
+    active = (length(global_selection) == 1);
+    [from, to, point1, point2] = _get_current_selection_details(p);
+    if (active, draw_shape('box', 1, 'from', point2, 'to', point2+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
+    draw_shape('box', if(active, 1, 40), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
+    schedule(if(active, 1, 20), '_render_selection_tick', player_name);
+);
+
+_get_player_look_at_block(player, range) ->
+(
+    block = query(player, 'trace', range, 'blocks');
+    if (block,
+        pos(block)
+    ,
+        map(pos(player)+player~'look'*range+[0, player~'eye_height', 0], floor(_));
     )
 );
 
-__on_player_uses_item(player, item_tuple, hand) ->(
-    if(item_tuple:0==global_wand&&(block=query(player,'trace',128,'blocks')),
-        _select_pos(player, pos(block))
-    )
+_get_current_selection(player) -> slice(_get_current_selection_details(player), 0, 2);
+
+_get_current_selection_details(player)->
+(
+    pos=global_selection;
+    if(length(pos)==0,
+        exit(_translate('no_selection_error', []))
+    );
+    end_pos= if (
+        length(pos)==2,     pos:1,
+        player == null,     exit(_translate('selection_required_error', [])),
+        _get_player_look_at_block(player, 4.5)
+    );
+    zipped = map(pos:0, [_, end_pos:_i]);
+    [map(zipped, min(_)), map(zipped, max(_)), pos:0, end_pos]
 );
 
 //Misc functions
+
+//Config Parser
+
+_parse_config(config) -> (
+    if(type(config) != 'list', config = [config]);
+    ret = {};
+    for(config,
+        if(_ ~ '^\\w+ ?= *.+$' != null,
+            key = _ ~ '^\\w+(?= ?= *.+)';
+            value = _ ~ ('(?<='+key+' ?= ?) *([^ ].*)');
+            ret:key = value
+        )
+    );
+    ret
+);
+
+//Translations
+
+global_lang_ids = ['en_us'];
+global_langs = {};
+for(global_lang_ids,
+    global_langs:_ = read_file(_, 'text');
+    if(global_langs:_ == null,
+        write_file(_, 'text', global_langs:_ = [
+            'language_code =    en_us',
+            'language =         english',
+
+            'pos1 =             w Set first position to %s',                             // [x, y, z]
+            'pos2 =             w Set second position to %s',                            // [x, y, z]
+            'nopos =            r No points selected for player %s',                     // player
+            'filled =           gi Filled %d blocks',                                    // blocks number
+            'no_undo_history =  w No undo history to show for player %s',                // player
+            'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
+            'entry_undo =       w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
+            'no_undo =          r No actions to undo for player %s',                     // player
+            'more_moves_undo =  w Too many moves to undo, undoing all moves for %s',     // player
+            'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+
+            'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
+            'no_selection_error =             Missing selection for operation',
+            'selection_required_error =       Operation require selection to be specified',
+        ])
+    );
+    global_langs:_ = _parse_config(global_langs:_)
+);
+_translate(key, replace_list) -> (
+    // print(player(),key+' '+replace_list);
+    lang_id = global_player_data:'lang';
+    if(lang_id == null || !has(global_lang_ids, lang_id),
+        lang_id = global_lang_ids:0);
+    str(global_langs:lang_id:key, replace_list)
+);
+_print(player, key, ... replace) -> print(player, format(_translate(key, replace)));
+
 
 //Command processing functions
 
 set_block(pos,block,replacement)->(//use this function to set blocks
     success=null;
     existing = block(pos);
-    if(block != existing && (!replacement || _block_matches(existing, replacement) ),
+    if(block != existing && (!replacement || _block_matches(existing, replacement)),
         postblock=set(existing,block);
         success=existing;
         global_affected_blocks+=[pos,postblock,existing];//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
@@ -101,16 +247,6 @@ _block_matches(existing, block_predicate) ->
     (!tag || tag_matches(block_data(existing), tag))
 );
 
-_get_player_positions(player)->(
-    pos=global_positions;
-    if(length(pos)==0,
-        exit(print(player,format('r No points selected for player '+player)))
-    );
-    start_pos=pos:0;
-    end_pos=if(pos:1,pos:1,pos(player));
-    [start_pos,end_pos]
-);
-
 add_to_history(function,player)->(
 
     if(length(global_affected_blocks)==0,return());//not gonna add empty list to undo ofc...
@@ -119,26 +255,21 @@ add_to_history(function,player)->(
         'affected_positions'->global_affected_blocks
     };
 
-    print(player,format('gi Filled '+length(global_affected_blocks)+' blocks'));
+    _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
 );
 
 print_history()->(
     player=player();
-    history = global_history;
-    if(length(history)==0||history==null,print(player,'No undo history to show for player '+player));
-    if(length(history)>10,print('Undo history for player '+player+' is very long, showing only the last ten items'));
+    history = global_player_data:'history';
+    if(length(history)==0||history==null,_print(player, 'no_undo_history', player));
+    if(length(history)>10,_print(player, 'many_undo', player));
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        print(player,str(
-            '%s: type: %s\n'+
-            '    affected positions: %s',
-            history~command+1,command:'type',length(command:'affected_positions')
-        ))
+        _print(player, 'entry_undo', history~command+1,command:'type', length(command:'affected_positions'))
     )
-
 );
 
 //Command functions
@@ -146,8 +277,8 @@ print_history()->(
 undo(moves)->(
     player = player();
     history=global_history;
-    if(length(history)==0||history==null,exit(print(player,format('r No actions to undo for player '+player))));
-    if(length(history)<moves,print(player,'Too many moves to undo, undoing all moves for '+player);moves=0);
+    if(length(history)==0||history==null,exit(_print(player, 'no_undo', player)));//incase an op was running command, we want to print error to them
+    if(length(history)<moves,_print(player, 'more_moves_undo', player);moves=0);
     if(moves==0,moves=length(history));
     for(range(moves),
         command = history:(length(history)-1);//to get last item of list properly
@@ -181,11 +312,12 @@ redo(moves)->(
     global_history+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
     print(player,format('gi Successfully redid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
     global_affected_blocks=[];
+    _print(player, 'success_undo', moves, affected);
 );
 
 fill(block,replacement)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
     volume(pos1,pos2,set_block(pos(_),block,replacement));
 
     add_to_history('fill', player)
@@ -193,7 +325,7 @@ fill(block,replacement)->(
 
 rotate(centre, degrees, axis)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
 
     rotation_map={};
     rotation_matrix=[];
@@ -238,7 +370,7 @@ rotate(centre, degrees, axis)->(
 
 clone(new_pos, move)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
 
     min_pos=map(pos1,min(_,pos2:_i));
     clone_map={};
@@ -259,7 +391,7 @@ clone(new_pos, move)->(
 stack(count,direction) -> (
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
@@ -274,12 +406,14 @@ stack(count,direction) -> (
     add_to_history('stack', player)
 );
 
+
 expand(centre, magnitude)->(
     player=player();
     [pos1,pos2]=_get_player_positions(player);
     expand_map={};
     min_pos=map(pos1,min(_,pos2:_i));
     max_pos=map(pos1,max(_,pos2:_i));
+
 
     step=max(1,magnitude)-1;
     volume(pos1,pos2,
