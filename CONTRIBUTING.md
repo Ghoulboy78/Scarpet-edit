@@ -3,7 +3,7 @@
 ## Contributors:
 
 ### Main contributors
-Ghoulboy, gnembon, Firigion and replaceitem.
+Ghoulboy, gnembon, Firigion, BisUmTo and replaceitem.
 
 If you have questions, these are the people to bother first of all.
 
