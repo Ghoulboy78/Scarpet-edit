@@ -4,11 +4,11 @@ __config()->{
     'commands'->{
         'fill <block>'->['fill',null],
         'fill <block> <replacement>'->'fill',
+        'undo'->['undo', 1],
         'undo all'->['undo', 0],
-        'undo last'->['undo', 1],
         'undo <moves>'->'undo',
+        'redo'->['redo', 1],
         'redo all'->['redo', 0],
-        'redo last'->['redo', 1],
         'redo <moves>'->'redo',
         'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_wand=wand:0),
@@ -16,6 +16,7 @@ __config()->{
         'stack'->['stack',1,null],
         'stack <stackcount>'->['stack',null],
         'stack <stackcount> <direction>'->'stack',
+        'expand <pos> <magnitude>'->'expand',
         'clone <pos>'->['clone',false],
         'move <pos>'->['clone',true]
     },
@@ -27,6 +28,7 @@ __config()->{
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
         'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
+        'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'flags'->{'type'->'text'}
     }
 };
@@ -75,14 +77,6 @@ __on_player_uses_item(player, item_tuple, hand) ->(
 );
 
 //Misc functions
-
-get_look_direction(player) -> (
-    look = player~'look';
-    mi = reduce(look,if(abs(look:_a)<=abs(_),_i,_a),0);
-    dir = [0,0,0];
-    dir:mi = look:mi/abs(look:mi);
-    dir;
-);
 
 //Command processing functions
 
@@ -252,7 +246,7 @@ clone(new_pos, move)->(
 
     volume(pos1,pos2,
         put(clone_map,pos(_)+translation_vector,block(_));//not setting now cos still querying, could mess up and set block we wanted to query
-        set_block(pos(_),if(has(block_state(_),'waterlogged'),'water','air'),null)//check for waterlog
+        if(move,set_block(pos(_),if(has(block_state(_),'waterlogged'),'water','air')),null)//check for waterlog
     );
 
     for(clone_map,
@@ -264,11 +258,10 @@ clone(new_pos, move)->(
 
 stack(count,direction) -> (
     player=player();
-    translation_vector = if(direction == null, get_look_direction(player), pos_offset([0,0,0],direction));
+    translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
     [pos1,pos2]=_get_player_positions(player);
-    clone_map={};
-    translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
+    translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
     loop(count,
         c = _;
@@ -277,5 +270,26 @@ stack(count,direction) -> (
             set_block(pos(_)+offset,_,null);
         );
     );
+
     add_to_history('stack', player)
+);
+
+expand(centre, magnitude)->(
+    player=player();
+    [pos1,pos2]=_get_player_positions(player);
+    expand_map={};
+    min_pos=map(pos1,min(_,pos2:_i));
+    max_pos=map(pos1,max(_,pos2:_i));
+
+    step=max(1,magnitude)-1;
+    volume(pos1,pos2,
+        if(block(_)!='air',//cos that way shrinkage retains more blocks and less garbage
+            put(expand_map,(pos(_)-centre)*(magnitude-1)+pos(_),block(_))
+        )
+    );
+
+    for(expand_map,
+        set_block(_,expand_map:_,null)
+    );
+    add_to_history('expand',player)
 );
