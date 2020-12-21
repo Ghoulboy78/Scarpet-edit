@@ -5,10 +5,10 @@ __config()->{
         'fill <block>'->['fill',null],
         'fill <block> <replacement>'->'fill',
         'undo all'->['undo', 0],
-        'undo last'->['undo', 1],
+        'undo'->['undo', 1],
         'undo <moves>'->'undo',
         'redo all'->['redo', 0],
-        'redo last'->['redo', 1],
+        'redo'->['redo', 1],
         'redo <moves>'->'redo',
         'undo history'->'print_history',
         'wand <wand>'->_(wand)->(global_wand=wand:0),
@@ -17,7 +17,13 @@ __config()->{
         'stack <stackcount>'->['stack',null],
         'stack <stackcount> <direction>'->'stack',
         'clone <pos>'->['clone',false],
-        'move <pos>'->['clone',true]
+        'move <pos>'->['clone',true],
+        'selection clear' -> 'clear_selection',
+        'selection expand' -> _() -> selection_expand(1),
+        'selection expand <amount>' -> 'selection_expand',
+        'selection move' -> _() -> selection_move(1, null),
+        'selection move <amount>' -> _(n) -> selection_move(n, null),
+        'selection move <amount> <direction>' -> 'selection_move',
     },
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
@@ -27,7 +33,8 @@ __config()->{
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
         'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
-        'flags'->{'type'->'text'}
+        'flags'->{'type'->'text'},
+        'amount'->{'type'->'int'},
     }
 };
 //player globals
@@ -35,7 +42,6 @@ __config()->{
 global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
-global_selection = [];
 
 
 //Extra boilerplate
@@ -44,34 +50,120 @@ global_affected_blocks=[];
 
 //Block-selection
 
-_select_pos(player,pos)->(//in case first position is not selected
-    if(length(global_selection)==0,
-        global_selection:0=pos;
-        print('Set first position to '+pos),
-        global_selection:1=pos;
-        print('Set second position to '+pos)
-    )
+global_selection = [];
+global_selection_markers = [];
+
+clear_markers() -> for(global_selection_markers, modify(_, 'remove'));
+
+_create_marker(pos, block) ->
+(
+    marker = create_marker(null, pos+0.5, block, false);
+    modify(marker, 'effect', 'glowing', 72000, 0, false, false);
+    marker
 );
 
-__on_player_clicks_block(player, block, face) ->(
+clear_selection() ->
+(
+    global_selection = [];
+);
+
+selection_move(amount, direction) ->
+(
+    [from, to, point1, point2] = _get_current_selection_details(null);
+    p = player();
+    if (p == null && direction == null, exit('To move selection in the direction of the player, you need to have a player'));
+    translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
+    clear_markers();
+    point1 = point1 + translation_vector;
+    point2 = point2 + translation_vector;
+    global_selection = [point1, point2];
+    global_selection_markers = [_create_marker(point1, 'lime_concrete'), _create_marker(point2, 'blue_concrete')];
+);
+
+selection_expand(amount) ->
+(
+    [from, to, point1, point2] = _get_current_selection_details(null);
+    for (range(3),
+        size = to:_-from:_+1;
+        c_amount = if (size >= -amount, amount, floor(size/2));
+        if (point1:_ > point2:_, c_amount = - c_amount);
+        point1:_ += -c_amount;
+        point2:_ +=  c_amount;
+    );
+    global_selection = [point1, point2];
+    clear_markers();
+    global_selection_markers = [_create_marker(point1, 'lime_concrete'), _create_marker(point2, 'blue_concrete')];
+);
+
+__on_player_swings_hand(player, hand) ->
+(
     if(player~'holds':0==global_wand,
-        global_selection:0=pos(block);
-        print('Set first position to '+pos(block))
+        if (global_selection && length(global_selection)>1, clear_selection() );
+        if (!global_selection, _set_start_point(player), _set_end_point(player) );
     )
 );
 
-__on_player_breaks_block(player, block) ->(//incase we made an oopsie with a non-sword want item
-    if(player~'holds':0==global_wand,
-        global_selection:0=pos(block);
-        schedule(0,_(block)->without_updates(set(pos(block),block)),block);
-        print('Set first position to '+pos(block))
+_set_start_point(player) -> 
+(
+    clear_markers();
+    start_pos = _get_player_look_at_block(player, 4.5);
+    global_selection = [start_pos];
+    marker = _create_marker(start_pos, 'lime_concrete');
+    global_selection_markers = [marker];
+    if (!global_rendering, _render_selection_tick(player~'name'));
+);
+
+_set_end_point(player) ->
+(
+    end_pos = _get_player_look_at_block(player, 4.5);
+    global_selection:1 = end_pos;
+    marker = _create_marker(end_pos, 'blue_concrete');
+    global_selection_markers += marker;
+    if (!global_rendering, _render_selection_tick(player~'name'));
+);
+
+global_rendering = false;
+_render_selection_tick(player_name) ->
+(
+    p = player(player_name);
+    if (!global_selection || !p,
+        global_rendering = false;
+        clear_markers();
+        return()
+    );
+    global_rendering = true;
+    active = (length(global_selection) == 1);
+    [from, to, point1, point2] = _get_current_selection_details(p);
+    if (active, draw_shape('box', 1, 'from', point2, 'to', point2+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
+    draw_shape('box', if(active, 1, 40), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
+    schedule(if(active, 1, 20), '_render_selection_tick', player_name);
+);
+
+_get_player_look_at_block(player, range) ->
+(
+    block = query(player, 'trace', range, 'blocks');
+    if (block,
+        pos(block)
+    ,
+        map(pos(player)+player~'look'*range+[0, player~'eye_height', 0], floor(_));
     )
 );
 
-__on_player_uses_item(player, item_tuple, hand) ->(
-    if(item_tuple:0==global_wand&&(block=query(player,'trace',128,'blocks')),
-        _select_pos(player, pos(block))
-    )
+_get_current_selection(player) -> slice(_get_current_selection_details(player), 0, 2);
+
+_get_current_selection_details(player)->
+(
+    pos=global_selection;
+    if(length(pos)==0,
+        exit('Missing selection for operation')
+    );
+    end_pos= if (
+        length(pos)==2,     pos:1,
+        player == null,     exit('Operation require selection to be specified'),
+        _get_player_look_at_block(player, 4.5)
+    );
+    zipped = map(pos:0, [_, end_pos:_i]);
+    [map(zipped, min(_)), map(zipped, max(_)), pos:0, end_pos]
 );
 
 //Misc functions
@@ -107,15 +199,6 @@ _block_matches(existing, block_predicate) ->
     (!tag || tag_matches(block_data(existing), tag))
 );
 
-_get_player_positions(player)->(
-    pos=global_selection;
-    if(length(pos)==0,
-        exit(print(player,format('r No points selected for player '+player)))
-    );
-    start_pos=pos:0;
-    end_pos=if(pos:1,pos:1,pos(player));
-    [start_pos,end_pos]
-);
 
 add_to_history(function,player)->(
 
@@ -191,7 +274,7 @@ redo(moves)->(
 
 fill(block,replacement)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
     volume(pos1,pos2,set_block(pos(_),block,replacement));
 
     add_to_history('fill', player)
@@ -199,7 +282,7 @@ fill(block,replacement)->(
 
 rotate(centre, degrees, axis)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
 
     rotation_map={};
     rotation_matrix=[];
@@ -244,7 +327,7 @@ rotate(centre, degrees, axis)->(
 
 clone(new_pos, move)->(
     player=player();
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
 
     min_pos=map(pos1,min(_,pos2:_i));
     clone_map={};
@@ -265,7 +348,7 @@ clone(new_pos, move)->(
 stack(count,direction) -> (
     player=player();
     translation_vector = if(direction == null, get_look_direction(player), pos_offset([0,0,0],direction));
-    [pos1,pos2]=_get_player_positions(player);
+    [pos1,pos2]=_get_current_selection(player);
     clone_map={};
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
