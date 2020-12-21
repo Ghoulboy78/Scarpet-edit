@@ -73,7 +73,7 @@ selection_move(amount, direction) ->
 (
     [from, to, point1, point2] = _get_current_selection_details(null);
     p = player();
-    if (p == null && direction == null, exit('To move selection in the direction of the player, you need to have a player'));
+    if (p == null && direction == null, exit(_translate('move_selection_no_player_error', [])));
     translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
     clear_markers();
     point1 = point1 + translation_vector;
@@ -157,11 +157,11 @@ _get_current_selection_details(player)->
 (
     pos=global_selection;
     if(length(pos)==0,
-        exit('Missing selection for operation')
+        exit(_translate('no_selection_error', []))
     );
     end_pos= if (
         length(pos)==2,     pos:1,
-        player == null,     exit('Operation require selection to be specified'),
+        player == null,     exit(_translate('selection_required_error', [])),
         _get_player_look_at_block(player, 4.5)
     );
     zipped = map(pos:0, [_, end_pos:_i]);
@@ -206,12 +206,16 @@ for(global_lang_ids,
             'no_undo =          r No actions to undo for player %s',                     // player
             'more_moves_undo =  w Too many moves to undo, undoing all moves for %s',     // player
             'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+
+            'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
+            'no_selection_error =             Missing selection for operation',
+            'selection_required_error =       Operation require selection to be specified',
         ])
     );
     global_langs:_ = _parse_config(global_langs:_)
 );
 _translate(key, replace_list) -> (
-    print(player(),key+' '+replace_list);
+    // print(player(),key+' '+replace_list);
     lang_id = global_player_data:'lang';
     if(lang_id == null || !has(global_lang_ids, lang_id),
         lang_id = global_lang_ids:0);
@@ -225,7 +229,7 @@ _print(player, key, ... replace) -> print(player, format(_translate(key, replace
 set_block(pos,block,replacement)->(//use this function to set blocks
     success=null;
     existing = block(pos);
-    if(block != existing && (!replacement || _block_matches(existing, replacement) ),
+    if(block != existing && (!replacement || _block_matches(existing, replacement)),
         postblock=set(existing,block);
         success=existing;
         global_affected_blocks+=[pos,postblock,existing];//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
@@ -387,7 +391,7 @@ clone(new_pos, move)->(
 stack(count,direction) -> (
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
-    [pos1,pos2]=_get_current_selection(player);ì
+    [pos1,pos2]=_get_current_selection(player);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
