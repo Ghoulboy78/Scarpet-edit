@@ -11,6 +11,7 @@ __config()->{
         'redo all'->['redo', 0],
         'redo <moves>'->'redo',
         'undo history'->'print_history',
+        'wand' -> '_set_or_give_wand',
         'wand <wand>'->_(wand)->(global_wand=wand:0),
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
         'stack'->['stack',1,null],
@@ -170,6 +171,23 @@ _get_current_selection_details(player)->
 );
 
 //Misc functions
+
+_set_or_give_wand() -> (
+    p = player;
+    //give player wand if hand is empty
+    if(held_item_tuple = p~'holds' == null, 
+       slot = invenroty_set(p, p~'selected_slot', 1, global_wand);
+       return()
+    );
+    //else, set current held item as wand, if valid
+    held_item = held_item_tuple:0;
+    if( (['tools', 'weapons']~item_category(held_item)) != null,
+        global_wand = held_item;
+        print(p, str('%s is now the app\'s wand, use it with care.', held_item)),
+       //else, can't set as wand
+       print(p, 'Wand has to be a tool or weapon')
+    )
+);
 
 //Config Parser
 
