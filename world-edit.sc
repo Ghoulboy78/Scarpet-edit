@@ -72,7 +72,7 @@ for(base_commands_map,
 __config()->{
     'commands'-> global_commands_map,
     'arguments'->{
-        'replaces'->{'type'->'blockpredicate'},
+        'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
         'degrees'->{'type'->'int','suggest'->[]},
         'axis'->{'type'->'term','options'->['x','y','z']},
