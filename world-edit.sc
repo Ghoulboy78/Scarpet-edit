@@ -10,31 +10,31 @@ global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 //# Suggestion is derived from command_for_carpet, everything before the first `<`.
 //# Command prefix (/world-edit ) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
-//# Both description and description_tooltip must be a language string.
+//# Both description and description_tooltip must be a language string, or a lambda if string needs args.
 //# Try to fit each entry in a single line (help menu) for proper pagination (until something is done).
 base_commands_map = [
     ['', _()->_help(1), false],
     ['help', _()->_help(1), false],
-    ['help <page>', '_help', [0, 'help_help', null, null]],
-    ['lang <lang>', _(lang)->(global_lang=lang), [-1, 'help_lang', 'help_lang_tooltip', null]], //FIXME add global_lang_ids to tooltip here somehow
+    ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
+    ['lang <lang>', _(lang)->(global_lang=lang), [-1, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
     ['fill <block>', ['fill',null], false],
-    ['fill <block> <replacement>', 'fill', [1, 'help_fill', 'help_fill_tooltip', null]],
+    ['fill <block> <replacement>', 'fill', [1, 'help_cmd_fill', 'help_cmd_fill_tooltip', null]],
     ['undo', ['undo', 1], false],
-    ['undo <moves>', 'undo', [0, 'help_undo', null, null]],
-    ['undo all', ['undo', 0], [-1, 'help_undo_all', null, null]],
-    ['undo history', 'print_history', [-1, 'help_undo_history', null, null]],
+    ['undo <moves>', 'undo', [0, 'help_cmd_undo', null, null]],
+    ['undo all', ['undo', 0], [-1, 'help_cmd_undo_all', null, null]],
+    ['undo history', 'print_history', [-1, 'help_cmd_undo_history', null, null]],
     ['redo', ['redo', 1], false],
-    ['redo <moves>', 'redo', [0, 'help_redo', 'help_redo_tooltip', null]],
-    ['redo all', ['redo', 0], [-1, 'help_redo_all', null, null]],
-    ['wand', '_set_or_give_wand', [-1, 'help_wand', null, null]],
-    ['wand <wand>', _(wand)->(global_wand=wand:0), [-1, 'help_wand_2', null, null]],
-    ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_rotate', 'help_rotate_tooltip', null]],//will replace old stuff if need be
+    ['redo <moves>', 'redo', [0, 'help_cmd_redo', 'help_cmd_redo_tooltip', null]],
+    ['redo all', ['redo', 0], [-1, 'help_cmd_redo_all', null, null]],
+    ['wand', '_set_or_give_wand', [-1, 'help_cmd_wand', null, null]],
+    ['wand <wand>', _(wand)->(global_wand=wand:0), [-1, 'help_cmd_wand_2', null, null]],
+    ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null], false],
     ['stack <count>', ['stack',null], false],
-    ['stack <count> <direction>', 'stack', [0, 'help_stack', 'help_stack_tooltip', null]],
-    ['expand <pos> <magnitude>', 'expand', [-1, 'help_expand', 'help_expand_tooltip', null]],
-    ['clone <pos>', ['clone',false], [-1, 'help_clone', null, null]],
-    ['move <pos>', ['clone',true], [-1, 'help_move', null, null]],
+    ['stack <count> <direction>', 'stack', [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
+    ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
+    ['clone <pos>', ['clone',false], [-1, 'help_cmd_clone', null, null]],
+    ['move <pos>', ['clone',true], [-1, 'help_cmd_move', null, null]],
     ['selection clear', 'clear_selection', false], //TODO help for this and below
     ['selection expand', _()->selection_expand(1), false],
     ['selection expand <amount>', 'selection_expand', false],
@@ -103,23 +103,23 @@ _help(page) ->
 (
     command = '/'+system_info('app_name')+' ';
     // Header
-    print(format('c ----------------- [ ', 'd World-Edit Help', 'c  ] -----------------'));
+    print(format(_translate('help_header_prefix'), _translate('help_header_title'), _translate('help_header_suffix')));
     
     // Help entries are generated on top, in the commands map. Check docs there
     // Hardcoded help entries (info)
-    // Syntax: [pre-arrow, pre-arrow command to suggest, post-arrow text, post-arrow tooltip, post-arrow action]
+    // Syntax: [pre-arrow, pre-arrow command to suggest, post-arrow text, post-arrow tooltip (lang string/lambda), post-arrow action]
     help_entries = [
-        [null, null, _translate('help_intro'), null, null],
+        [null, null, _translate('help_welcome'), 'help_welcome_tooltip', null],
         [if(length(global_selection) > 1,_translate('help_your_selection')), '', if(length(global_selection) > 1,
                             _translate('help_selection_bounds', global_selection:0, global_selection:1)
                             ,_translate('help_make_selection')), null, '?wand '],
-        [_translate('help_selected_wand'), 'wand ', 'l '+title(replace(global_wand, '_', ' ')), _translate('help_sel_wand_tooltip'), '?wand '],
-        [_translate('help_app_lang'), 'lang ', 'l '+global_lang, _translate('help_app_lang_tooltip'), '?lang '],
+        [_translate('help_selected_wand'), 'wand ', _translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
+        [_translate('help_app_lang'), 'lang ', _translate('help_app_lang',global_lang), 'help_app_lang_tooltip', '?lang '],
         [_translate('help_list_title'), 'help', null, null]
     ];
     
     for(global_help_commands,
-        help_entries += [_:0, _:1, 'l '+_translate(_:2), _translate(_:3), _:4];
+        help_entries += [_:0, _:1, 'l '+if(type(_:2) == 'function', call(_:2), _translate(_:2)), _:3, _:4];
     );
     remaining_to_display = 8;
     current_entry = ((page-1)*8);
@@ -135,7 +135,7 @@ _help(page) ->
         );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
-        print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+entry:3, description_action));
+        print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)), description_action));
 
         current_entry += 1;
         remaining_to_display += -1;
@@ -147,14 +147,14 @@ _help(page) ->
     if (page < 10, // In case we reach this, make it still be centered
         footer += ' ';
     );
-    footer += format('c --------------- ');
+    footer += format(_translate('help_pagination_prefix'));
     if (page != 1,
         footer += format('d [<<]',
                     '^'+_translate('help_pagination_first'),
                     '!'+command+'help');
         footer += ' ';
         footer += format('d [<]',
-                    '^'+_translate('help_pagination_prev')+' ('+(page-1)+')',
+                    '^'+_translate('help_pagination_prev',page-1),
                     '!'+command+'help '+(page-1));
     ,
         footer += format('g [<<]');
@@ -162,22 +162,22 @@ _help(page) ->
         footer += format('g [<]');
     );
     footer += ' ';
-    footer += format('y Page '+page+' ');
+    footer += format(_translate('help_pagination_page',page));
     if ((8*page) < entry_number,
         last_page = ceil((entry_number)/8);
         footer += format('d [>]',
-                        '^'+_translate('help_pagination_next')+' ('+(page+1)+')',
+                        '^'+_translate('help_pagination_next',page+1),
                         '!'+command+'help '+(page+1));
         footer += ' ';
         footer += format('d [>>]',
-                        '^'+_translate('help_pagination_last')+' ('+last_page+')',
+                        '^'+_translate('help_pagination_last',last_page),
                         '!'+command+'help '+last_page);
     ,
         footer += format('g [>]');
         footer += ' ';
         footer += format('g [>>]');
     );
-    footer += format('c  --------------');
+    footer += format(_translate('help_pagination_suffix'));
     print(footer);
 );
 
@@ -340,49 +340,58 @@ for(global_lang_ids,
             'language_code =    en_us',
             'language =         english',
 
-            'help_intro =            c Welcome to the World-Edit Scarpet app\'s help!',
-            'help_your_selection =   c Your selection',
-            'help_selection_bounds = l %s to %s',
-            'help_make_selection =   c Left click your wand at start and final position to select',
-            'help_selected_wand =    c Selected wand', //Could probably be used in more places
-            'help_sel_wand_tooltip = g Use the wand command to change',
-            'help_app_lang =         c App Language ', //Could probably be used in more places
-            'help_app_lang_tooltip = g Use the lang command to change it',
-            'help_list_title =       y Command list (without prefix):',
-            'help_pagination_first = g Go to first page',
-            'help_pagination_prev =  g Go to previous page',
-            'help_pagination_next =  g Go to next page',
-            'help_pagination_last =  g Go to last page',
-            'help_help =             Shows this help menu, or a specified page',
-            'help_lang =             Changes current app\'s language to <lang>',
-            'help_lang_tooltip =     g Available languages are [percent]s', //FIXME
-            'help_fill =             Fills the selection, filterable',
-            'help_fill_tooltip =     g You can use a tag in the replacement argument',
-            'help_undo =             Undoes last n moves, one by default',
-            'help_undo_all =         Undoes the entire action history',
-            'help_undo_history =     Shows the history of undone actions',
-            'help_redo =             Redoes last n undoes, one by default',
-            'help_redo_tooltip =      g Also shows up in undo history',
-            'help_redo_all =         Redoes the entire undo history',
-            'help_wand =             Sets held item as wand or gives it if hand is empty',
-            'help_wand_2 =           Changes the current wand item',
-            'help_rotate =           Rotates [deg] about [pos]',
-            'help_rotate_tooltip =   g Axis must be x, y or z',
-            'help_stack =            Stacks selection n times in dir',
-            'help_stack_tooltip =    g If not provided, direction is player\s view direction by default',
-            'help_expand =           Expands sel [magn] from pos', //This is not understandable
-            'help_expand_tooltip =   g Expands the selection [magnitude] from [pos]',
-            'help_clone =            Clones selection to <pos>',
-            'help_move =             Moves selection to <pos>',
             
+            'help_header_prefix =      c ----------------- [ ',
+            'help_header_title =       d World-Edit Help',
+            'help_header_suffix =      c  ] -----------------',
+            'help_welcome =            c Welcome to the World-Edit Scarpet app\'s help!',
+            'help_welcome_tooltip =    y Hooray!',
+            'help_your_selection =     c Your selection',
+            'help_selection_bounds =   l %s to %s',
+            'help_make_selection =     c Left click your wand at start and final position to select',
+            'help_selected_wand =      c Selected wand', //Could probably be used in more places
+            'help_selected_wand_item = l %s',
+            'help_sel_wand_tooltip =   g Use the wand command to change',
+            'help_app_lang =           c App Language ', //Could probably be used in more places
+            'help_app_lang_selected =  l %s'
+            'help_app_lang_tooltip =   g Use the lang command to change it',
+            'help_list_title =         y Command list (without prefix):',
+            'help_pagination_prefix =  c --------------- ',
+            'help_pagination_page =    y Page %d ',
+            'help_pagination_suffix =  c  ---------------',
+            'help_pagination_first =   g Go to first page',
+            'help_pagination_prev =    g Go to previous page (%d)',
+            'help_pagination_next =    g Go to next page (%d)',
+            'help_pagination_last =    g Go to last page (%d)',
+            'help_cmd_help =           Shows this help menu, or a specified page',
+            'help_cmd_lang =           Changes current app\'s language to <lang>',
+            'help_cmd_lang_tooltip =   g Available languages are %s',
+            'help_cmd_fill =           Fills the selection, filterable',
+            'help_cmd_fill_tooltip =   g You can use a tag in the replacement argument',
+            'help_cmd_undo =           Undoes last n moves, one by default',
+            'help_cmd_undo_all =       Undoes the entire action history',
+            'help_cmd_undo_history =   Shows the history of undone actions',
+            'help_cmd_redo =           Redoes last n undoes, one by default',
+            'help_cmd_redo_tooltip =   g Also shows up in undo history',
+            'help_cmd_redo_all =       Redoes the entire undo history',
+            'help_cmd_wand =           Sets held item as wand or gives it if hand is empty',
+            'help_cmd_wand_2 =         Changes the current wand item',
+            'help_cmd_rotate =         Rotates [deg] about [pos]',
+            'help_cmd_rotate_tooltip = g Axis must be x, y or z',
+            'help_cmd_stack =          Stacks selection n times in dir',
+            'help_cmd_stack_tooltip =  g If not provided, direction is player\s view direction by default',
+            'help_cmd_expand =         Expands sel [magn] from pos', //This is not understandable
+            'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
+            'help_cmd_clone =          Clones selection to <pos>',
+            'help_cmd_move =           Moves selection to <pos>',
 
-            'filled =                gi Filled %d blocks',                                    // blocks number
-            'no_undo_history =       w No undo history to show for player %s',                // player
-            'many_undo =             w Undo history for player %s is very long, showing only the last ten items', // player
-            'entry_undo =            w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
-            'no_undo =               r No actions to undo for player %s',                     // player
-            'more_moves_undo =       w Your number is too high, undoing all moves for %s',     // player
-            'success_undo =          gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+            'filled =                  gi Filled %d blocks',                                    // blocks number
+            'no_undo_history =         w No undo history to show for player %s',                // player
+            'many_undo =               w Undo history for player %s is very long, showing only the last ten items', // player
+            'entry_undo =              w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
+            'no_undo =                 r No actions to undo for player %s',                     // player
+            'more_moves_undo =         w Your number is too high, undoing all moves for %s',     // player
+            'success_undo =            gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
 
             'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
             'no_selection_error =             Missing selection for operation',
