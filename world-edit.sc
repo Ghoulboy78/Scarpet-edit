@@ -50,7 +50,7 @@ __config()->{
 global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
-global_quick_select = true;
+global_quick_select = false;
 
 
 //Extra boilerplate
