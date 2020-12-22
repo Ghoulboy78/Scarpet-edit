@@ -41,6 +41,7 @@ base_commands_map = [
     ['selection move', _() -> selection_move(1, null), false],
     ['selection move <amount>', _(n)->selection_move(n, null), false],
     ['selection move <amount> <direction>', 'selection_move',false],
+    ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
 
 // Proccess commands map for Carpet
@@ -88,6 +89,7 @@ __config()->{
 global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
+global_quick_select = true;
 
 
 //Extra boilerplate
@@ -96,8 +98,8 @@ global_affected_blocks=[];
 
 //Block-selection
 
-global_selection = [];
-global_selection_markers = [];
+global_selection = {}; // holds ids of two official corners of the selection
+global_markers = {};
 
 _help(page) ->
 (
@@ -181,37 +183,55 @@ _help(page) ->
     print(footer);
 );
 
-clear_markers() -> for(global_selection_markers, modify(_, 'remove'));
+clear_markers(... ids) ->
+(
+    if (!ids, ids = keys(global_markers));
+    for (ids,
+        (e = entity_id(_)) && modify(e, 'remove');
+        delete(global_markers:_);
+    )
+);
 
 _create_marker(pos, block) ->
 (
     marker = create_marker(null, pos+0.5, block, false);
     modify(marker, 'effect', 'glowing', 72000, 0, false, false);
     modify(marker, 'fire', 32767);
-    marker
+    id = marker ~ 'id';
+    global_markers:id = {'pos' -> pos, 'id' -> id};
+    id;
 );
+
+_get_marker_position(marker_id) -> global_markers:marker_id:'pos';
 
 clear_selection() ->
 (
-    global_selection = [];
+    for(values(global_selection), clear_markers(_));
+    global_selection = {};
 );
 
 selection_move(amount, direction) ->
 (
-    [from, to, point1, point2] = _get_current_selection_details(null);
+    [from, to] = _get_current_selection();
+    point1 = _get_marker_position(global_selection:'from');
+    point2 = _get_marker_position(global_selection:'to');
     p = player();
     if (p == null && direction == null, exit(_translate('move_selection_no_player_error')));
     translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
-    clear_markers();
+    clear_markers(global_selection:'from', global_selection:'to');
     point1 = point1 + translation_vector;
     point2 = point2 + translation_vector;
-    global_selection = [point1, point2];
-    global_selection_markers = [_create_marker(point1, 'lime_concrete'), _create_marker(point2, 'blue_concrete')];
+    global_selection = {
+        'from' -> _create_marker(point1, 'lime_concrete'),
+        'to' -> _create_marker(point2, 'blue_concrete')
+    };
 );
 
 selection_expand(amount) ->
 (
-    [from, to, point1, point2] = _get_current_selection_details(null);
+    [from, to] = _get_current_selection();
+    point1 = _get_marker_position(global_selection:'from');
+    point2 = _get_marker_position(global_selection:'to');
     for (range(3),
         size = to:_-from:_+1;
         c_amount = if (size >= -amount, amount, floor(size/2));
@@ -219,16 +239,26 @@ selection_expand(amount) ->
         point1:_ += -c_amount;
         point2:_ +=  c_amount;
     );
-    global_selection = [point1, point2];
-    clear_markers();
-    global_selection_markers = [_create_marker(point1, 'lime_concrete'), _create_marker(point2, 'blue_concrete')];
+    clear_markers(global_selection:'from', global_selection:'to');
+    global_selection = {
+        'from' -> _create_marker(point1, 'lime_concrete'),
+        'to' -> _create_marker(point2, 'blue_concrete')
+    };
 );
 
 __on_player_swings_hand(player, hand) ->
 (
     if(player~'holds':0==global_wand,
-        if (global_selection && length(global_selection)>1, clear_selection() );
-        if (!global_selection, _set_start_point(player), _set_end_point(player) );
+        if (length(global_selection)<2,
+            // finish selection
+            if (!global_selection, _set_start_point(player), _set_end_point(player) );
+        ,
+            // selection is already made
+            if (global_quick_select,
+                clear_selection();
+                _set_start_point(player)
+            )
+        )
     )
 );
 
@@ -236,35 +266,50 @@ _set_start_point(player) ->
 (
     clear_markers();
     start_pos = _get_player_look_at_block(player, 4.5);
-    global_selection = [start_pos];
     marker = _create_marker(start_pos, 'lime_concrete');
-    global_selection_markers = [marker];
+    global_selection = {'from' -> marker};
     if (!global_rendering, _render_selection_tick(player~'name'));
 );
 
 _set_end_point(player) ->
 (
     end_pos = _get_player_look_at_block(player, 4.5);
-    global_selection:1 = end_pos;
     marker = _create_marker(end_pos, 'blue_concrete');
-    global_selection_markers += marker;
-    if (!global_rendering, _render_selection_tick(player~'name'));
+    global_selection:'to' = marker;
 );
 
 global_rendering = false;
 _render_selection_tick(player_name) ->
 (
-    p = player(player_name);
-    if (!global_selection || !p,
+    if (!global_selection,
         global_rendering = false;
-        clear_markers();
+        clear_markers(); // remove all selections, points etc. // debatable
         return()
     );
     global_rendering = true;
+    p = player(player_name);
     active = (length(global_selection) == 1);
-    [from, to, point1, point2] = _get_current_selection_details(p);
-    if (active, draw_shape('box', 1, 'from', point2, 'to', point2+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
-    draw_shape('box', if(active, 1, 40), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
+
+    start_marker = global_selection:'from';
+    start = if(
+        start_marker,  _get_marker_position(start_marker),
+        p,             _get_player_look_at_block(p, 4.5)
+    );
+
+    end_marker = global_selection:'to';
+    end = if(
+        end_marker,              _get_marker_position(end_marker),
+        p, _get_player_look_at_block(p, 4.5)
+    );
+
+    if (start && end,
+        zipped = map(start, [_, end:_i]);
+        from = map(zipped, min(_));
+        to = map(zipped, max(_));
+        draw_shape('box', if(active, 1, 40), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
+        if (!end_marker,   draw_shape('box', 1, 'from', end, 'to', end+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
+        if (!start_marker, draw_shape('box', 1, 'from', start, 'to', start+1, 'line', 1, 'color', 0xbfff00FF, 'fill', 0xbfff0055 ));
+    );
     schedule(if(active, 1, 20), '_render_selection_tick', player_name);
 );
 
@@ -278,21 +323,15 @@ _get_player_look_at_block(player, range) ->
     )
 );
 
-_get_current_selection(player) -> slice(_get_current_selection_details(player), 0, 2);
-
-_get_current_selection_details(player)->
+_get_current_selection()->
 (
-    pos=global_selection;
-    if(length(pos)==0,
-        exit(_translate('no_selection_error'))
+    if( length(global_selection) < 2,
+        exit(_translate('no_selection_error', []))
     );
-    end_pos= if (
-        length(pos)==2,     pos:1,
-        player == null,     exit(_translate('selection_required_error')),
-        _get_player_look_at_block(player, 4.5)
-    );
-    zipped = map(pos:0, [_, end_pos:_i]);
-    [map(zipped, min(_)), map(zipped, max(_)), pos:0, end_pos]
+    start = _get_marker_position(global_selection:'from');
+    end = _get_marker_position(global_selection:'to');
+    zipped = map(start, [_, end:_i]);
+    [map(zipped, min(_)), map(zipped, max(_))]
 );
 
 //Misc functions
@@ -395,7 +434,6 @@ for(global_lang_ids,
 
             'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
             'no_selection_error =             Missing selection for operation',
-            'selection_required_error =       Operation requires selection to be specified',
         ])
     );
     global_langs:_ = _parse_config(global_langs:_)
@@ -508,7 +546,7 @@ redo(moves)->(
 
 fill(block,replacement)->(
     player=player();
-    [pos1,pos2]=_get_current_selection(player);
+    [pos1,pos2]=_get_current_selection();
     volume(pos1,pos2,set_block(pos(_),block,replacement));
 
     add_to_history('fill', player)
@@ -516,7 +554,7 @@ fill(block,replacement)->(
 
 rotate(centre, degrees, axis)->(
     player=player();
-    [pos1,pos2]=_get_current_selection(player);
+    [pos1,pos2]=_get_current_selection();
 
     rotation_map={};
     rotation_matrix=[];
@@ -561,7 +599,7 @@ rotate(centre, degrees, axis)->(
 
 clone(new_pos, move)->(
     player=player();
-    [pos1,pos2]=_get_current_selection(player);
+    [pos1,pos2]=_get_current_selection();
 
     min_pos=map(pos1,min(_,pos2:_i));
     clone_map={};
@@ -582,7 +620,7 @@ clone(new_pos, move)->(
 stack(count,direction) -> (
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
-    [pos1,pos2]=_get_current_selection(player);
+    [pos1,pos2]=_get_current_selection();
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
@@ -600,7 +638,7 @@ stack(count,direction) -> (
 
 expand(centre, magnitude)->(
     player=player();
-    [pos1,pos2]=_get_current_selection(player);
+    [pos1,pos2]=_get_current_selection();
     expand_map={};
     min_pos=map(pos1,min(_,pos2:_i));
     max_pos=map(pos1,max(_,pos2:_i));
