@@ -28,6 +28,7 @@ __config()->{
         'selection move' -> _() -> selection_move(1, null),
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
+        // we need a better way of changing 'settings'
         'settings quick_select <bool>' -> _(b) -> global_quick_select = b,
         'lang <lang>'->_(lang)->(global_lang=lang)
     },
@@ -137,6 +138,19 @@ __on_player_swings_hand(player, hand) ->
                 clear_selection();
                 _set_start_point(player)
             )
+        )
+    )
+);
+
+__on_player_uses_item(player, item_tuple, hand) ->
+(
+    if(player~'holds':0==global_wand,
+        if (length(global_selection)<2,
+            //cancel selection
+            clear_selection();
+            // finish selection
+        ,
+            null
         )
     )
 );
