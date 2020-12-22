@@ -7,19 +7,16 @@ global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
 //# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
 //# 
-//# Suggestion is derived from command_for_carpet, everything before the first [ or <.
+//# Suggestion is derived from command_for_carpet, everything before the first `<`.
 //# Command prefix (/world-edit ) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
-//# Everything that isn't description_action must start with a format() prefix, or a space.
+//# Both description and description_tooltip must be a language string.
 //# Try to fit each entry in a single line (help menu) for proper pagination (until something is done).
-
-//# TODO Translation strings
-
 base_commands_map = [
     ['', _()->_help(1), false],
     ['help', _()->_help(1), false],
     ['help <page>', '_help', [0, 'help_help', null, null]],
-    ['lang <lang>', _(lang)->(global_lang=lang), [-1, 'help_lang', 'help_lang_tooltip', null]], //TODO add global_lang_ids to tooltip here somehow
+    ['lang <lang>', _(lang)->(global_lang=lang), [-1, 'help_lang', 'help_lang_tooltip', null]], //FIXME add global_lang_ids to tooltip here somehow
     ['fill <block>', ['fill',null], false],
     ['fill <block> <replacement>', 'fill', [1, 'help_fill', 'help_fill_tooltip', null]],
     ['undo', ['undo', 1], false],
@@ -35,7 +32,7 @@ base_commands_map = [
     ['stack', ['stack',1,null], false],
     ['stack <count>', ['stack',null], false],
     ['stack <count> <direction>', 'stack', [0, 'help_stack', 'help_stack_tooltip', null]],
-    ['expand <pos> <magnitude>', 'expand', [-1, 'help_expand', 'help_expand_tooltip', null]], //This is not understandable
+    ['expand <pos> <magnitude>', 'expand', [-1, 'help_expand', 'help_expand_tooltip', null]],
     ['clone <pos>', ['clone',false], [-1, 'help_clone', null, null]],
     ['move <pos>', ['clone',true], [-1, 'help_move', null, null]],
     ['selection clear', 'clear_selection', false], //TODO help for this and below
@@ -374,7 +371,7 @@ for(global_lang_ids,
             'help_rotate_tooltip =   g Axis must be x, y or z',
             'help_stack =            Stacks selection n times in dir',
             'help_stack_tooltip =    g If not provided, direction is player\s view direction by default',
-            'help_expand =           Expands sel [magn] from pos',
+            'help_expand =           Expands sel [magn] from pos', //This is not understandable
             'help_expand_tooltip =   g Expands the selection [magnitude] from [pos]',
             'help_clone =            Clones selection to <pos>',
             'help_move =             Moves selection to <pos>',
