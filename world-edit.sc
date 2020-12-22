@@ -150,11 +150,11 @@ _help(page) ->
     footer += format('c --------------- ');
     if (page != 1,
         footer += format('d [<<]',
-                    '^g Go to first page',
+                    '^'+_translate('help_pagination_first'),
                     '!'+command+'help');
         footer += ' ';
         footer += format('d [<]',
-                    '^g Go to previous page ('+(page-1)+')',
+                    '^'+_translate('help_pagination_prev')+' ('+(page-1)+')',
                     '!'+command+'help '+(page-1));
     ,
         footer += format('g [<<]');
@@ -166,11 +166,11 @@ _help(page) ->
     if ((8*page) < entry_number,
         last_page = ceil((entry_number)/8);
         footer += format('d [>]',
-                        '^g Go to next page ('+(page+1)+')',
+                        '^'+_translate('help_pagination_next')+' ('+(page+1)+')',
                         '!'+command+'help '+(page+1));
         footer += ' ';
         footer += format('d [>>]',
-                        '^g Go to last page ('+last_page+')',
+                        '^'+_translate('help_pagination_last')+' ('+last_page+')',
                         '!'+command+'help '+last_page);
     ,
         footer += format('g [>]');
@@ -349,6 +349,10 @@ for(global_lang_ids,
             'help_app_lang =         c App Language ', //Could probably be used in more places
             'help_app_lang_tooltip = g Use the lang command to change it',
             'help_list_title =       y Command list (without prefix):',
+            'help_pagination_first = g Go to first page',
+            'help_pagination_prev =  g Go to previous page',
+            'help_pagination_next =  g Go to next page',
+            'help_pagination_last =  g Go to last page',
             'help_help =             Shows this help menu, or a specified page',
             'help_lang =             Changes current app\'s language to <lang>',
             'help_lang_tooltip =     g Available languages are [percent]s', //FIXME
