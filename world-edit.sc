@@ -121,12 +121,7 @@ _help(page) ->
     for(global_help_commands,
         help_entries += [_:0, _:1, 'l '+_translate(_:2), _translate(_:3), _:4];
     );
-    // Print help entries
-    if(page == 1,
-        remaining_to_display = 8; // Not sure what does this happen
-    ,
-        remaining_to_display = 9;
-    );
+    remaining_to_display = 8;
     current_entry = ((page-1)*8);
     entry_number = length(help_entries);
     while(remaining_to_display != 0 && current_entry < entry_number, entry_number,
