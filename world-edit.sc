@@ -235,7 +235,7 @@ _render_selection_tick(player_name) ->
         to = map(zipped, max(_));
         draw_shape('box', if(active, 1, 12), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
         if (!end_marker,   draw_shape('box', 1, 'from', end, 'to', end+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
-        if (!start_marker, draw_shape('box', 1, 'from', start, 'to', start+1, 'line', 1, 'color', 0xbfff00FF, 'fill', 0xbfff0055 ));
+        if (!start_marker, draw_shape('box', 1, 'from', start, 'to', start+1, 'line', 1, 'color', 0x3fff00FF, 'fill', 0x3fff0055 ));
     );
     schedule(if(active, 1, 10), '_render_selection_tick', player_name);
 );
