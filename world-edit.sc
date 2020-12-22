@@ -35,7 +35,7 @@ __config()->{
         'clone <pos> f <flags>'->_(pos,flags)->clone(pos,false,flags),
 
         'move <pos>'->['clone',true,null],
-        'move <pos> f <flags>'->_(pos,flags)->move(pos,true,flags),
+        'move <pos> f <flags>'->_(pos,flags)->clone(pos,true,flags),
 
         'selection clear' -> 'clear_selection',
         'selection expand' -> _() -> selection_expand(1),
@@ -44,6 +44,7 @@ __config()->{
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
         'settings quick_select <bool>' -> _(b) -> global_quick_select = b,
+        'lang'->_()->(_print('current_lang',global_lang)),
         'lang <lang>'->_(lang)->(global_lang=lang)
     },
     'arguments'->{
@@ -327,6 +328,9 @@ for(global_lang_ids,
             'no_undo =          r No actions to undo for player %s',                     // player
             'more_moves_undo =  w Your number is too high, undoing all moves for %s',     // player
             'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+            'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+
+            'current_lang =     gi Current language is:%s',                              //lang id. todo decide whether to hardcode this
 
             'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
             'no_selection_error =             Missing selection for operation',
@@ -356,7 +360,7 @@ set_block(pos,block, replacement, flags, extra)->(//use this function to set blo
     if(block != existing && (!replacement || _block_matches(existing, replacement)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
         prev_biome=biome(pos);
-        if(flag~'b'&&biome=extra:'biome',set_biome(pos,biome));
+        if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
         success=existing;
         global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
     );
@@ -434,14 +438,13 @@ redo(moves)->(
         delete(global_undo_history,(length(global_undo_history)-1))
     );
     global_history+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
-    print(player,format('gi Successfully redid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
+    _print(player, 'success_redo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
-    _print(player, 'success_undo', moves, affected);
 );
 
 fill(block,replacement,flags)->(
     player=player();
-    [pos1,pos2]=_get_current_selection(player);
+    [pos1,pos2]=_get_current_selection();
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
 
     add_to_history('fill', player)
@@ -492,7 +495,7 @@ rotate(centre, degrees, axis)->(
     add_to_history('rotate', player)
 );
 
-clone(new_pos, move,flags)->(
+clone(new_pos, move,flag)->(
     player=player();
     [pos1,pos2]=_get_current_selection();
 
@@ -500,24 +503,27 @@ clone(new_pos, move,flags)->(
     avg_pos=(pos1+pos2)/2;
     clone_map={};
     translation_vector=new_pos-min_pos;
-
-    entities=if(flags~'e',entity_area('*',avg_pos,avg_pos-min_pos),[]);//checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
+    flags=_parse(flag);
+    print(flags);
+    print(flags~'e');
+    entities=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
 
     volume(pos1,pos2,
         put(clone_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
-        if(move,set_block(pos(_),if(flags~'w'&&(_ == 'water' && block_state(_,'level') == '0' || block_state(_,'waterlogged')=='true'),'water','air'),null,null),null,{})//check for waterlog
+        if(move,set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}))//check for waterlog
     );
 
     for(clone_map,
         set_block(_,clone_map:_:0,null,flags,{'biome'->clone_map:_:1});
-        for(entities,//if its empty, this just wont run, no errors
-            nbt=parse_nbt(_~'nbt');
-            old_pos=pos(_);
-            pos=old_pos-min_pos+new_pos;
-            delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
-            spawn(_~'type',pos,encode_nbt(nbt));
-            if(move,modify(_,'remove'))
-        )
+    );
+
+    for(entities,//if its empty, this just wont run, no errors
+        nbt=parse_nbt(_~'nbt');
+        old_pos=pos(_);
+        pos=old_pos-min_pos+new_pos;
+        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
+        spawn(_~'type',pos,encode_nbt(nbt));
+        if(move,modify(_,'remove'))
     );
 
     add_to_history(if(move,'move','clone'), player)
