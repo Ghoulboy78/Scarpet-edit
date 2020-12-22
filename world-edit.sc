@@ -28,6 +28,7 @@ __config()->{
         'selection move' -> _() -> selection_move(1, null),
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
+        'settings quick_select <bool>' -> _(b) -> global_quick_select = b,
         'lang <lang>'->_(lang)->(global_lang=lang)
     },
     'arguments'->{
@@ -49,6 +50,7 @@ __config()->{
 global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
+global_quick_select = true;
 
 
 //Extra boilerplate
@@ -131,8 +133,10 @@ __on_player_swings_hand(player, hand) ->
             if (!global_selection, _set_start_point(player), _set_end_point(player) );
         ,
             // selection is already made
-            // will add other ops here
-            null
+            if (global_quick_select,
+                clear_selection();
+                _set_start_point(player)
+            )
         )
     )
 );
