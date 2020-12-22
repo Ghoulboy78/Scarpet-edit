@@ -53,6 +53,8 @@ global_history = [];
 global_undo_history = [];
 global_quick_select = false;
 
+global_debug_rendering = false;
+
 
 //Extra boilerplate
 
@@ -131,7 +133,7 @@ __on_player_swings_hand(player, hand) ->
     if(player~'holds':0==global_wand,
         if (length(global_selection)<2,
             // finish selection
-            if (!global_selection, _set_start_point(player), _set_end_point(player) );
+            if (!global_selection, _set_start_point(player), _set_missing_end(player) );
         ,
             // selection is already made
             if (global_quick_select,
@@ -150,9 +152,38 @@ __on_player_uses_item(player, item_tuple, hand) ->
             clear_selection();
             // finish selection
         ,
-            null
+            //grab marker
+            marker = _trace_marker(player, 4.5);
+            if (marker,
+                selection_markers = filter(global_selection, global_selection:_ == marker);
+                if (selection_markers,
+                    // should be one really
+                    what = selection_markers:0;
+                    clear_markers(global_selection:what);
+                    delete(global_selection:what);
+                )
+            )
         )
     )
+);
+
+_trace_marker(player, distance) ->
+(
+    precision = 0.5;
+    initial_position = pos(player)+[0,player~'eye_height',0];
+    look_vec = player ~ 'look';
+    marker_id = null;
+    while(!marker_id, distance/precision,
+        rnd_pos = map(initial_position, floor(_));
+        markers = filter(values(global_markers), _:'pos' == rnd_pos);
+        if (markers,
+            marker_id = markers:0:'id',
+        ,
+            initial_position = initial_position + look_vec * precision;
+            if (global_debug_rendering, particle('end_rod', initial_position, 1, 0, 0));
+        );
+    );
+    marker_id
 );
 
 _set_start_point(player) ->
@@ -164,11 +195,14 @@ _set_start_point(player) ->
     if (!global_rendering, _render_selection_tick(player~'name'));
 );
 
-_set_end_point(player) ->
+_set_missing_end(player) ->
 (
     end_pos = _get_player_look_at_block(player, 4.5);
-    marker = _create_marker(end_pos, 'blue_concrete');
-    global_selection:'to' = marker;
+    if (has(global_selection:'from'),
+        global_selection:'to' = _create_marker(end_pos, 'blue_concrete');
+    ,
+        global_selection:'from' = _create_marker(end_pos, 'lime_concrete');
+    )
 );
 
 global_rendering = false;
@@ -199,11 +233,11 @@ _render_selection_tick(player_name) ->
         zipped = map(start, [_, end:_i]);
         from = map(zipped, min(_));
         to = map(zipped, max(_));
-        draw_shape('box', if(active, 1, 40), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
+        draw_shape('box', if(active, 1, 12), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
         if (!end_marker,   draw_shape('box', 1, 'from', end, 'to', end+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
         if (!start_marker, draw_shape('box', 1, 'from', start, 'to', start+1, 'line', 1, 'color', 0xbfff00FF, 'fill', 0xbfff0055 ));
     );
-    schedule(if(active, 1, 20), '_render_selection_tick', player_name);
+    schedule(if(active, 1, 10), '_render_selection_tick', player_name);
 );
 
 _get_player_look_at_block(player, range) ->
