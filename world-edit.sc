@@ -111,17 +111,17 @@ _help(page) ->
     // Hardcoded help entries (info)
     // Syntax: [pre-arrow, pre-arrow command to suggest, post-arrow text, post-arrow tooltip (lang string/lambda), post-arrow action]
     help_entries = [
-        [null, null, _translate('help_welcome'), 'help_welcome_tooltip', null],
+        [null, null, 'help_welcome', 'help_welcome_tooltip', null],
         [if(length(global_selection) > 1,_translate('help_your_selection')), '', if(length(global_selection) > 1,
-                            _translate('help_selection_bounds', global_selection:0, global_selection:1)
-                            ,_translate('help_make_selection')), null, '?wand '],
-        [_translate('help_selected_wand'), 'wand ', _translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
-        [_translate('help_app_lang'), 'lang ', _translate('help_app_lang_selected', global_lang), 'help_app_lang_tooltip', '?lang '],
+                            _()->_translate('help_selection_bounds', global_selection:0, global_selection:1)
+                            ,'help_make_selection'), null, '?wand '],
+        [_translate('help_selected_wand'), 'wand ', _()->_translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
+        [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', global_lang), 'help_app_lang_tooltip', '?lang '],
         [_translate('help_list_title'), 'help', null, null]
     ];
     
     for(global_help_commands,
-        help_entries += [_:0, _:1, 'l '+if(type(_:2) == 'function', call(_:2), _translate(_:2)), _:3, _:4];
+        help_entries += _;
     );
     remaining_to_display = 8;
     current_entry = ((page-1)*8);
@@ -137,7 +137,10 @@ _help(page) ->
         );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
-        print(format(entry:0, '?'+command+entry:1, arrow, entry:2, '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)), description_action));
+        print(format(entry:0, '?'+command+entry:1, arrow, 
+            if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)), 
+            '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)),description_action)
+        );
 
         current_entry += 1;
         remaining_to_display += -1;
@@ -402,27 +405,27 @@ for(global_lang_ids,
             'help_pagination_prev =    g Go to previous page (%d)',
             'help_pagination_next =    g Go to next page (%d)',
             'help_pagination_last =    g Go to last page (%d)',
-            'help_cmd_help =           Shows this help menu, or a specified page',
-            'help_cmd_lang =           Changes current app\'s language to <lang>',
+            'help_cmd_help =           l Shows this help menu, or a specified page',
+            'help_cmd_lang =           l Changes current app\'s language to <lang>',
             'help_cmd_lang_tooltip =   g Available languages are %s',
-            'help_cmd_fill =           Fills the selection, filterable',
+            'help_cmd_fill =           l Fills the selection, filterable',
             'help_cmd_fill_tooltip =   g You can use a tag in the replacement argument',
-            'help_cmd_undo =           Undoes last n moves, one by default',
-            'help_cmd_undo_all =       Undoes the entire action history',
-            'help_cmd_undo_history =   Shows the history of undone actions',
-            'help_cmd_redo =           Redoes last n undoes, one by default',
+            'help_cmd_undo =           l Undoes last n moves, one by default',
+            'help_cmd_undo_all =       l Undoes the entire action history',
+            'help_cmd_undo_history =   l Shows the history of undone actions',
+            'help_cmd_redo =           l Redoes last n undoes, one by default',
             'help_cmd_redo_tooltip =   g Also shows up in undo history',
-            'help_cmd_redo_all =       Redoes the entire undo history',
-            'help_cmd_wand =           Sets held item as wand or gives it if hand is empty',
-            'help_cmd_wand_2 =         Changes the current wand item',
-            'help_cmd_rotate =         Rotates [deg] about [pos]',
+            'help_cmd_redo_all =       l Redoes the entire undo history',
+            'help_cmd_wand =           l Sets held item as wand or gives it if hand is empty',
+            'help_cmd_wand_2 =         l Changes the current wand item',
+            'help_cmd_rotate =         l Rotates [deg] about [pos]',
             'help_cmd_rotate_tooltip = g Axis must be x, y or z',
-            'help_cmd_stack =          Stacks selection n times in dir',
+            'help_cmd_stack =          l Stacks selection n times in dir',
             'help_cmd_stack_tooltip =  g If not provided, direction is player\s view direction by default',
-            'help_cmd_expand =         Expands sel [magn] from pos', //This is not understandable
+            'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
             'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
-            'help_cmd_clone =          Clones selection to <pos>',
-            'help_cmd_move =           Moves selection to <pos>',
+            'help_cmd_clone =          l Clones selection to <pos>',
+            'help_cmd_move =           l Moves selection to <pos>',
 
             'filled =                  gi Filled %d blocks',                                    // blocks number
             'no_undo_history =         w No undo history to show for player %s',                // player
