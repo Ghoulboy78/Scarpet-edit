@@ -3,9 +3,9 @@
 global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
 //# New commands format:
-//#   command_for_carpet -> [interpretation_for_carpet, false] (will hide it from help menu)
-//#   command_for_carpet -> [interpretation_for_carpet, [hide_arguments_since, description, description_tooltip, description_action]]
-//# hide_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
+//#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
+//#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
+//# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
 //# 
 //# Suggestion is derived from command_for_carpet, everything before the first [ or <.
 //# Command prefix (/world-edit ) is automatically added to description_action
@@ -15,56 +15,56 @@ global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
 //# TODO Translation strings
 
-base_commands_map = {
-    '' -> [_()->_help(1), false],
-    'help' -> [_()->_help(1), false],
-    'help <page>' -> ['_help', [0, 'l Shows this help menu, or a specified page', null, null]],
-    'lang <lang>' -> [_(lang)->(global_lang=lang), [-1, 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null]],
-    'fill <block>' -> [['fill',null], false],
-    'fill <block> <replacement>' -> ['fill', [1, 'l Fills the selection, filterable', 'g You can use a tag in the replacement argument', null]],
-    'undo' -> [['undo', 1], false],
-    'undo <moves>' -> ['undo', [0, 'l Undoes last n moves, one by default', null, null]],
-    'undo all' -> [['undo', 0], [-1, 'l Undoes the entire action history', null, null]],
-    'undo history' -> ['print_history', [-1, 'l Shows the history of undone actions', null, null]],
-    'redo' -> [['redo', 1], false],
-    'redo <moves>' -> ['redo', [0, 'l Redoes last n undoes, one by default', 'g Also shows up in undo history', null]],
-    'redo all' -> [['redo', 0], [-1, 'l Redoes the entire undo history', null, null]],
-    'wand' -> ['_set_or_give_wand', [-1, 'l Sets held item as wand or gives it if hand is empty', null, null]],
-    'wand <wand>' -> [_(wand)->(global_wand=wand:0), [-1, 'l Changes the current wand item', null, null]],
-    'rotate <pos> <degrees> <axis>' -> ['rotate', [-1, 'l Rotates [deg] about [pos]', 'g Axis must be x, y or z', null]],//will replace old stuff if need be
-    'stack' -> [['stack',1,null], false],
-    'stack <count>' -> [['stack',null], false],
-    'stack <count> <direction>' -> ['stack', [0, 'l Stacks selection n times in dir', 'g If not provided, direction is player\s view direction by default', null]],
-    'expand <pos> <magnitude>' -> ['expand', [-1, 'l Expands sel [magn] from pos', 'g "Expands the selection [magnitude] from [pos]', null]], //This is not understandable
-    'clone <pos>' -> [['clone',false], [-1, 'l Clones selection to <pos>', null, null]],
-    'move <pos>' -> [['clone',true], [-1, 'l Moves selection to <pos>', null, null]],
-    'selection clear' -> ['clear_selection', false], //TODO help for this and below
-    'selection expand' -> [_()->selection_expand(1), false],
-    'selection expand <amount>' -> ['selection_expand', false],
-    'selection move' -> [_() -> selection_move(1, null), false],
-    'selection move <amount>' -> [_(n)->selection_move(n, null), false],
-    'selection move <amount> <direction>' -> ['selection_move',false],
-};
+base_commands_map = [
+    ['' , _()->_help(1), false],
+    ['help' , _()->_help(1), false],
+    ['help <page>' , '_help', [0, 'l Shows this help menu, or a specified page', null, null]],
+    ['lang <lang>' , _(lang)->(global_lang=lang), [-1, 'l Changes current app\'s language to <lang>', 'g Available languages are '+global_lang_ids, null]],
+    ['fill <block>' , ['fill',null], false],
+    ['fill <block> <replacement>' , 'fill', [1, 'l Fills the selection, filterable', 'g You can use a tag in the replacement argument', null]],
+    ['undo' , ['undo', 1], false],
+    ['undo <moves>' , 'undo', [0, 'l Undoes last n moves, one by default', null, null]],
+    ['undo all' , ['undo', 0], [-1, 'l Undoes the entire action history', null, null]],
+    ['undo history' , 'print_history', [-1, 'l Shows the history of undone actions', null, null]],
+    ['redo' , ['redo', 1], false],
+    ['redo <moves>' , 'redo', [0, 'l Redoes last n undoes, one by default', 'g Also shows up in undo history', null]],
+    ['redo all' , ['redo', 0], [-1, 'l Redoes the entire undo history', null, null]],
+    ['wand' , '_set_or_give_wand', [-1, 'l Sets held item as wand or gives it if hand is empty', null, null]],
+    ['wand <wand>' , _(wand)->(global_wand=wand:0), [-1, 'l Changes the current wand item', null, null]],
+    ['rotate <pos> <degrees> <axis>' , 'rotate', [-1, 'l Rotates [deg] about [pos]', 'g Axis must be x, y or z', null]],//will replace old stuff if need be
+    ['stack' , ['stack',1,null], false],
+    ['stack <count>' , ['stack',null], false],
+    ['stack <count> <direction>' , 'stack', [0, 'l Stacks selection n times in dir', 'g If not provided, direction is player\s view direction by default', null]],
+    ['expand <pos> <magnitude>' , 'expand', [-1, 'l Expands sel [magn] from pos', 'g Expands the selection [magnitude] from [pos]', null]], //This is not understandable
+    ['clone <pos>' , ['clone',false], [-1, 'l Clones selection to <pos>', null, null]],
+    ['move <pos>' , ['clone',true], [-1, 'l Moves selection to <pos>', null, null]],
+    ['selection clear' , 'clear_selection', false], //TODO help for this and below
+    ['selection expand' , _()->selection_expand(1), false],
+    ['selection expand <amount>' , 'selection_expand', false],
+    ['selection move' , _() -> selection_move(1, null), false],
+    ['selection move <amount>' , _(n)->selection_move(n, null), false],
+    ['selection move <amount> <direction>' , 'selection_move',false],
+];
 
 // Proccess commands map for Carpet
 global_commands_map = {};
 for(base_commands_map,
-    global_commands_map:_ = base_commands_map:_:0;
+    global_commands_map:(_:0) = _:1;
 );
 global_help_commands = [];
 // Proccess commands map for help
 for(base_commands_map,
-    if(base_commands_map:_:1, //Check it's not skipped (aka false)
-        visible_command = _;
-        if((search_pos = base_commands_map:_:1:0) != -1, // Proccess arguments
+    if(_:2, //Check it's not skipped (aka false)
+        visible_command = _:0;
+        suggestion = reduce(split(visible_command),if((_ == '<'),break(),_a+_),'');
+        if((search_pos = _:2:0) != -1, // Proccess arguments
             current_pos = [-1, -1];
             visible_command = reduce(map(split(visible_command),
                 if(_ == '<', current_pos:0 += 1; if(current_pos:0 >= search_pos, '[', _)
                 ,_ == '>', current_pos:1 += 1; if(current_pos:1 >= search_pos, ']', _) ,_ ) ),
                 _a+_,'');
         );
-        suggestion = reduce(split(visible_command),if((_ == '<' || _ == '['),break(),_a+_),'');
-        global_help_commands += ['g - '+visible_command, suggestion, base_commands_map:_:1:1, base_commands_map:_:1:2, base_commands_map:_:1:3];
+        global_help_commands += ['g - '+visible_command, suggestion, _:2:1, _:2:2, _:2:3];
     )
 );
 
