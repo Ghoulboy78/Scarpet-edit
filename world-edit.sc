@@ -4,24 +4,39 @@ global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
 __config()->{
     'commands'->{
-        'fill <block>'->['fill',null],
-        'fill <block> <replacement>'->'fill',
+        'fill <block>'->['fill',null,null],
+        'fill <block> <replacement>'->['fill',null],
+        'fill <block> f <flag>'->_(block,flags)->fill(block,null,flags),
+        'fill <block> <replacement> f <flag>'->'fill',
+
         'undo'->['undo', 1],
         'undo all'->['undo', 0],
         'undo <moves>'->'undo',
+        'undo history'->'print_history',
+
         'redo'->['redo', 1],
         'redo all'->['redo', 0],
         'redo <moves>'->'redo',
-        'undo history'->'print_history',
         'wand' -> '_set_or_give_wand',
         'wand <wand>'->_(wand)->(global_wand=wand:0),
+
         'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-        'stack'->['stack',1,null],
-        'stack <stackcount>'->['stack',null],
-        'stack <stackcount> <direction>'->'stack',
+
+	    'stack'->['stack',1,null,null],
+        'stack <stackcount>'->['stack',null,null],
+        'stack <stackcount> <direction>'->['stack',null],
+        'stack f <flag>'->_(flags)->stack(1,null,flags),
+        'stack <stackcount> f <flag>'->_(stackcount,flags)->stack(1,null,flags),
+        'stack <stackcount> <direction> f <flag>'->'stack',
+
         'expand <pos> <magnitude>'->'expand',
-        'clone <pos>'->['clone',false],
-        'move <pos>'->['clone',true],
+
+        'clone <pos>'->['clone',false,null],
+        'clone <pos> f <flags>'->_(pos,flags)->clone(pos,false,flags),
+
+        'move <pos>'->['clone',true,null],
+        'move <pos> f <flags>'->_(pos,flags)->clone(pos,true,flags),
+
         'selection clear' -> 'clear_selection',
         'selection expand' -> _() -> selection_expand(1),
         'selection expand <amount>' -> 'selection_expand',
@@ -29,6 +44,7 @@ __config()->{
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
         'settings quick_select <bool>' -> _(b) -> global_quick_select = b,
+        'lang'->_()->(_print('current_lang',global_lang)),
         'lang <lang>'->_(lang)->(global_lang=lang)
     },
     'arguments'->{
@@ -39,7 +55,19 @@ __config()->{
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
         'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
-        'flags'->{'type'->'text'},
+        'flag' -> {
+            'type' -> 'term',
+            'suggester' -> _(args) -> (
+                typed = if(args:'flag', args:'flag', typed = '-');
+                if(typed~'^-' == null, return());
+                ret = [];
+                for(global_flags_list,
+                    if(length(_) == length(typed)+1 && _~typed != null, ret += _)
+                );
+                ret
+            ),
+            //'options' -> global_flags_list
+        },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'lang'->{'type'->'term','options'->global_lang_ids}
@@ -218,7 +246,7 @@ _get_current_selection()->
 _set_or_give_wand() -> (
     p = player;
     //give player wand if hand is empty
-    if(held_item_tuple = p~'holds' == null, 
+    if(held_item_tuple = p~'holds' == null,
        slot = invenroty_set(p, p~'selected_slot', 1, global_wand);
        return()
     );
@@ -232,6 +260,41 @@ _set_or_give_wand() -> (
     )
 );
 
+global_flags = 'waehub';
+
+//FLAGS:
+//w     waterlog block is previous block was water(logged) too
+//a     only replace air
+//e     consider entities as well
+//h     make shapes hollow
+//u     set blocks without updates
+//b     set biome
+
+
+_permutation(str) -> (
+    if(type(str) == 'string', str = split('',str));
+    if(length(str) == 0, return([]));
+    ret = {};
+    for(str,
+        ret += (e = _);
+        substr = copy(str);
+        delete(substr,_i);
+        for(_permutation(substr), ret += e + _);
+    );
+    keys(ret)
+);
+global_flags_list = map(_permutation(global_flags), '-'+_);
+
+_parse(flags) ->(
+   symbols = split(flags);
+   if(symbols:0 != '-', return({}));
+   flag_set = {};
+   for(split(flags),
+       if(_~'[A-Z,a-z]',flag_set+=_);
+   );
+   flag_set;
+);
+
 //Config Parser
 
 _parse_config(config) -> (
@@ -240,7 +303,7 @@ _parse_config(config) -> (
     for(config,
         if(_ ~ '^\\w+ ?= *.+$' != null,
             key = _ ~ '^\\w+(?= ?= *.+)';
-            value = _ ~ ('(?<='+key+' ?= ?) *([^ ].*)');
+            value = _ ~ str('(?<=%s ?= ?) *([^ ].*)',key);
             ret:key = value
         )
     );
@@ -265,6 +328,9 @@ for(global_lang_ids,
             'no_undo =          r No actions to undo for player %s',                     // player
             'more_moves_undo =  w Your number is too high, undoing all moves for %s',     // player
             'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+            'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+
+            'current_lang =     gi Current language is:%s',                              //lang id. todo decide whether to hardcode this
 
             'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
             'no_selection_error =             Missing selection for operation',
@@ -284,13 +350,19 @@ _print(player, key, ... replace) -> print(player, format(_translate(key, replace
 
 //Command processing functions
 
-set_block(pos,block,replacement)->(//use this function to set blocks
+set_block(pos,block, replacement, flags, extra)->(//use this function to set blocks
     success=null;
     existing = block(pos);
+
+    state = if(flags,{},null);
+    if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
+
     if(block != existing && (!replacement || _block_matches(existing, replacement)),
-        postblock=set(existing,block);
+        postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
+        prev_biome=biome(pos);
+        if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
         success=existing;
-        global_affected_blocks+=[pos,postblock,existing];//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
+        global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
     );
     bool(success)//cos undo uses this
 );
@@ -334,18 +406,17 @@ print_history()->(
 
 undo(moves)->(
     player = player();
-    history=global_history;
-    if(length(history)==0||history==null,exit(_print(player, 'no_undo', player)));//incase an op was running command, we want to print error to them
-    if(length(history)<moves,_print(player, 'more_moves_undo', player);moves=0);
-    if(moves==0,moves=length(history));
+    if(length(global_history)==0||global_history==null,exit(_print(player, 'no_undo', player)));//incase an op was running command, we want to print error to them
+    if(length(global_history)<moves,_print(player, 'more_moves_undo', player);moves=0);
+    if(moves==0,moves=length(global_history));
     for(range(moves),
-        command = history:(length(history)-1);//to get last item of list properly
+        command = global_history:(length(global_history)-1);//to get last item of list properly
 
         for(command:'affected_positions',
-            set_block(_:0,_:2,null)//todo decide whether to replace all blocks or only blocks that were there before action (currently these are stored, but that may change if we dont want them to)
+            set_block(_:0,_:1,null,'b',_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
         );
 
-        delete(history,(length(history)-1))
+        delete(global_history,(length(global_history)-1))
     );
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
     print(player,format('gi Successfully undid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
@@ -354,29 +425,27 @@ undo(moves)->(
 
 redo(moves)->(
     player=player();
-    history=global_undo_history;
-    if(length(history)==0||history==null,exit(print(player,format('r No actions to redo for player '+player))));
-    if(length(history)<moves,print(player,'Too many moves to redo, redoing all moves for '+player);moves=0);
-    if(moves==0,moves=length(history));
+    if(length(global_undo_history)==0||global_undo_history==null,exit(print(player,format('r No actions to redo for player '+player))));
+    if(length(global_undo_history)<moves,print(player,'Too many moves to redo, redoing all moves for '+player);moves=0);
+    if(moves==0,moves=length(global_undo_history));
     for(range(moves),
-        command = history:(length(history)-1);//to get last item of list properly
+        command = global_undo_history:(length(global_undo_history)-1);//to get last item of list properly
 
         for(command,
-            set_block(_:0,_:2,null);
+            set_block(_:0,_:1,null,'b',_:2);
         );
 
-        delete(history,(length(history)-1))
+        delete(global_undo_history,(length(global_undo_history)-1))
     );
     global_history+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
-    print(player,format('gi Successfully redid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
+    _print(player, 'success_redo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
-    _print(player, 'success_undo', moves, affected);
 );
 
-fill(block,replacement)->(
+fill(block,replacement,flags)->(
     player=player();
     [pos1,pos2]=_get_current_selection();
-    volume(pos1,pos2,set_block(pos(_),block,replacement));
+    volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
 
     add_to_history('fill', player)
 );
@@ -420,36 +489,52 @@ rotate(centre, degrees, axis)->(
     );
 
     for(rotation_map,
-        set_block(_,rotation_map:_,null)
+        set_block(_,rotation_map:_,null,null,{})
     );
 
     add_to_history('rotate', player)
 );
 
-clone(new_pos, move)->(
+clone(new_pos, move,flag)->(
     player=player();
     [pos1,pos2]=_get_current_selection();
 
     min_pos=map(pos1,min(_,pos2:_i));
+    avg_pos=(pos1+pos2)/2;
     clone_map={};
     translation_vector=new_pos-min_pos;
+    flags=_parse(flag);
+    print(flags);
+    print(flags~'e');
+    entities=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
 
     volume(pos1,pos2,
-        put(clone_map,pos(_)+translation_vector,block(_));//not setting now cos still querying, could mess up and set block we wanted to query
-        if(move,set_block(pos(_),if(has(block_state(_),'waterlogged'),'water','air')),null)//check for waterlog
+        put(clone_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
+        if(move,set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}))//check for waterlog
     );
 
     for(clone_map,
-        set_block(_,clone_map:_,null)
+        set_block(_,clone_map:_:0,null,flags,{'biome'->clone_map:_:1});
+    );
+
+    for(entities,//if its empty, this just wont run, no errors
+        nbt=parse_nbt(_~'nbt');
+        old_pos=pos(_);
+        pos=old_pos-min_pos+new_pos;
+        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
+        spawn(_~'type',pos,encode_nbt(nbt));
+        if(move,modify(_,'remove'))
     );
 
     add_to_history(if(move,'move','clone'), player)
 );
 
-stack(count,direction) -> (
+stack(count,direction,flags) -> (
+    time = time();
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
     [pos1,pos2]=_get_current_selection();
+    flags = _parse(flags);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
@@ -457,11 +542,13 @@ stack(count,direction) -> (
         c = _;
         offset = translation_vector*(c+1);
         volume(pos1,pos2,
-            set_block(pos(_)+offset,_,null);
+            pos = pos(_)+offset;
+            set_block(pos,_,null,flags,{});
         );
     );
 
-    add_to_history('stack', player)
+    add_to_history('stack', player);
+    print(time()-time);
 );
 
 
@@ -481,7 +568,7 @@ expand(centre, magnitude)->(
     );
 
     for(expand_map,
-        set_block(_,expand_map:_,null)
+        set_block(_,expand_map:_,null,{})
     );
     add_to_history('expand',player)
 );
