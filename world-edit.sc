@@ -114,7 +114,7 @@ _help(page) ->
                             _translate('help_selection_bounds', global_selection:0, global_selection:1)
                             ,_translate('help_make_selection')), null, '?wand '],
         [_translate('help_selected_wand'), 'wand ', _translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
-        [_translate('help_app_lang'), 'lang ', _translate('help_app_lang',global_lang), 'help_app_lang_tooltip', '?lang '],
+        [_translate('help_app_lang'), 'lang ', _translate('help_app_lang_selected', global_lang), 'help_app_lang_tooltip', '?lang '],
         [_translate('help_list_title'), 'help', null, null]
     ];
     
@@ -353,7 +353,7 @@ for(global_lang_ids,
             'help_selected_wand_item = l %s',
             'help_sel_wand_tooltip =   g Use the wand command to change',
             'help_app_lang =           c App Language ', //Could probably be used in more places
-            'help_app_lang_selected =  l %s'
+            'help_app_lang_selected =  l %s',
             'help_app_lang_tooltip =   g Use the lang command to change it',
             'help_list_title =         y Command list (without prefix):',
             'help_pagination_prefix =  c --------------- ',
