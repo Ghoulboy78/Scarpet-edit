@@ -43,6 +43,7 @@ __config()->{
         'selection move' -> _() -> selection_move(1, null),
         'selection move <amount>' -> _(n) -> selection_move(n, null),
         'selection move <amount> <direction>' -> 'selection_move',
+        // we need a better way of changing 'settings'
         'settings quick_select <bool>' -> _(b) -> global_quick_select = b,
         'lang'->_()->(_print('current_lang',global_lang)),
         'lang <lang>'->_(lang)->(global_lang=lang)
@@ -80,6 +81,9 @@ global_history = [];
 global_undo_history = [];
 global_quick_select = true;
 
+global_debug_rendering = false;
+global_reach = 4.5;
+
 
 //Extra boilerplate
 
@@ -87,6 +91,8 @@ global_affected_blocks=[];
 
 //Block-selection
 
+global_cursor = null;
+global_highlighted_marker = null;
 global_selection = {}; // holds ids of two official corners of the selection
 global_markers = {};
 
@@ -153,71 +159,133 @@ selection_expand(amount) ->
     };
 );
 
+__on_tick() ->
+(
+    if (p = player(),
+        // put your catchall checks here
+        global_highlighted_marker = null;
+        new_cursor = if (p~'holds':0==global_wand,
+            if (marker = _trace_marker(p, global_reach), 
+                global_highlighted_marker = marker;
+                _get_marker_position(marker)
+            , 
+                _get_player_look_at_block(p, global_reach) )
+        );
+        if (global_cursor && new_cursor != global_cursor,
+            draw_shape('box', 0, 'from', global_cursor, 'to', global_cursor+1, 'fill', 0xffffff22);
+        );
+        if (new_cursor,
+             draw_shape('box', 50, 'from', new_cursor, 'to', new_cursor+1, 'fill', 0xffffff22);
+        );
+        global_cursor = new_cursor;
+    )
+);
+
+
 __on_player_swings_hand(player, hand) ->
 (
     if(player~'holds':0==global_wand,
-        if (length(global_selection)<2,
-            // finish selection
-            if (!global_selection, _set_start_point(player), _set_end_point(player) );
-        ,
-            // selection is already made
-            if (global_quick_select,
-                clear_selection();
-                _set_start_point(player)
+        if (global_quick_select,
+            _set_selection_point('from')
+        , // else
+            if (length(global_selection)<2,
+                _set_selection_point(if(!global_selection, 'from', null ));
             )
         )
     )
 );
 
-_set_start_point(player) ->
+__on_player_uses_item(player, item_tuple, hand) ->
 (
-    clear_markers();
-    start_pos = _get_player_look_at_block(player, 4.5);
-    marker = _create_marker(start_pos, 'lime_concrete');
-    global_selection = {'from' -> marker};
-    if (!global_rendering, _render_selection_tick(player~'name'));
+    if(player~'holds':0==global_wand,
+        if (global_quick_select,
+            _set_selection_point('to')
+        , // else
+            if (length(global_selection)<2,
+                //cancel selection
+                clear_selection();
+            ,
+                //grab marker
+                marker = global_highlighted_marker;
+                if (marker,
+                    selection_marker = first(global_selection, global_selection:_ == marker);
+                    if (selection_marker,
+                        // should be one really
+                        clear_markers(global_selection:selection_marker);
+                        delete(global_selection:selection_marker);
+                    )
+                )
+            )
+        )
+    )
 );
 
-_set_end_point(player) ->
+_trace_marker(player, distance) ->
 (
-    end_pos = _get_player_look_at_block(player, 4.5);
-    marker = _create_marker(end_pos, 'blue_concrete');
-    global_selection:'to' = marker;
+    precision = 0.5;
+    initial_position = pos(player)+[0,player~'eye_height',0];
+    look_vec = player ~ 'look';
+    marker_id = null;
+    while(!marker_id, distance/precision,
+        rnd_pos = map(initial_position, floor(_));
+        markers = filter(values(global_markers), _:'pos' == rnd_pos);
+        if (markers,
+            marker_id = markers:0:'id',
+        ,
+            initial_position = initial_position + look_vec * precision;
+            if (global_debug_rendering, particle('end_rod', initial_position, 1, 0, 0));
+        );
+    );
+    marker_id
 );
 
-global_rendering = false;
-_render_selection_tick(player_name) ->
+_set_selection_point(which) ->
+(
+    if (global_highlighted_marker,
+        clear_markers(global_highlighted_marker);
+    );
+    which = which || if(has(global_selection:'from'), 'to', 'from');
+    if (global_selection:which,
+        clear_markers(global_selection:which)
+    );
+    marker = _create_marker(global_cursor, if(which =='from', 'lime_concrete', 'blue_concrete'));
+    global_highlighted_marker = marker;
+
+    global_selection:which = marker;
+    if (!global_rendering_selection, _render_selection_tick());
+);
+
+global_rendering_selection = false;
+_render_selection_tick() ->
 (
     if (!global_selection,
-        global_rendering = false;
-        clear_markers(); // remove all selections, points etc. // debatable
+        global_rendering_selection = false;
         return()
     );
-    global_rendering = true;
-    p = player(player_name);
+    global_rendering_selection = true;
     active = (length(global_selection) == 1);
 
     start_marker = global_selection:'from';
     start = if(
         start_marker,  _get_marker_position(start_marker),
-        p,             _get_player_look_at_block(p, 4.5)
+        global_cursor
     );
 
     end_marker = global_selection:'to';
     end = if(
         end_marker,              _get_marker_position(end_marker),
-        p, _get_player_look_at_block(p, 4.5)
+        global_cursor
     );
 
     if (start && end,
         zipped = map(start, [_, end:_i]);
         from = map(zipped, min(_));
         to = map(zipped, max(_));
-        draw_shape('box', if(active, 1, 40), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
+        draw_shape('box', if(active, 1, 12), 'from', from, 'to', to+1, 'line', 3, 'color', if(active, 0x00ffffff, 0xAAAAAAff));
         if (!end_marker,   draw_shape('box', 1, 'from', end, 'to', end+1, 'line', 1, 'color', 0x0000FFFF, 'fill', 0x0000FF55 ));
-        if (!start_marker, draw_shape('box', 1, 'from', start, 'to', start+1, 'line', 1, 'color', 0xbfff00FF, 'fill', 0xbfff0055 ));
+        if (!start_marker, draw_shape('box', 1, 'from', start, 'to', start+1, 'line', 1, 'color', 0x3fff00FF, 'fill', 0x3fff0055 ));
     );
-    schedule(if(active, 1, 20), '_render_selection_tick', player_name);
+    schedule(if(active, 1, 10), '_render_selection_tick');
 );
 
 _get_player_look_at_block(player, range) ->
