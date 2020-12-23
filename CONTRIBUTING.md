@@ -9,6 +9,10 @@ If you have questions, these are the people to bother first of all.
 
 ## Contributions:
 
+### Make a PR for your contribution
+
+This applies to everyone, including admins. The PR needs at least 2 reviews before it can be merged.
+
 ### Adding new functions:
 
 #### Block manipulating commands
