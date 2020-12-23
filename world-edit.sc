@@ -4,10 +4,12 @@ global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
 __config()->{
     'commands'->{
-        'fill <block>'->['fill',null,null],
-        'fill <block> <replacement>'->['fill',null],
-        'fill <block> f <flag>'->_(block,flags)->fill(block,null,flags),
-        'fill <block> <replacement> f <flag>'->'fill',
+        'set <block>'->['set_in_selection',null,null],
+        'set <block> <replacement>'->['set_in_selection',null],
+        'set <block> f <flag>'->_(block,flags)->set_in_selection(block,null,flags),
+        'set <block> <replacement> f <flag>'->'set_in_selection',
+
+        'fill <block>' -> 'flood_fill',
 
         'undo'->['undo', 1],
         'undo all'->['undo', 0],
@@ -510,12 +512,18 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
-fill(block,replacement,flags)->(
+set_in_selection(block,replacement,flags)->
+(
     player=player();
     [pos1,pos2]=_get_current_selection();
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
 
     add_to_history('fill', player)
+);
+
+flood_fill(block) ->
+(
+    ... todo
 );
 
 rotate(centre, degrees, axis)->(
