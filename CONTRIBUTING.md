@@ -54,7 +54,9 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    'fill <block> f <flag>'
    'fill <block> <replacement> f <flag>'
    ```
-   Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command syntax. For the versions without the flags, just use `null` as the flags.
+   Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command
+   syntax: `flags = _parse_flags(flags)`. For the versions without the flags, just use `null` as the `flags` argument in
+   the `set_block` function.
    
    Whenever you use the `set_block()` function, put the flags from your command processing function at the last argument.
    The following flags currently exist:
@@ -63,8 +65,12 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    w     waterlog blocks that get placed inside water (handled by set_block)
    a     only replace air blocks (handled by set_block)
    e     copy/move entities as well
-   b     copy/move biomes as well
+   b     copy/move biomes as well (handled by set_block)
+   p     don't paste air
    ```
+   Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
+   argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to handle
+   undoing, `set_block` does that on its own.
 
 4. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
    about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
@@ -72,11 +78,15 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    
 #### Messages
 
-If you want to print a message as an output to the player, then use the `_print(message_id,player))` function. Input the string in the format:
-`message_id=  Your message` into the list which is under the `//translation` comment, under all the rest. If the message
-requires variables to be put in (like number, etc), just use `%s` in the message to stand for that value, it will be taken 
-care of by the rest of the app. NB: This message will appear in US english. If you want to translate for other languages,
-you need to add the US english *and* your own language's option.
+If you want to print a message as an output to the player, then use the `_print(player, message_id, extra_args))` function.
+Input the string in the format: `message_id=  Your message` into the list which is under the `//Translations` comment, 
+under all the other output messages. If the message requires variables to be put in (like a number, or player, etc), just
+use `%s` in the message to stand for that value, it will be taken care of by the rest of the app. Also, if the message is
+an error which should stop the function running, set the `fatal` argument to `true` and it will exit after telling the user
+what's wrong.
+
+*NB: This message will appear in US english. If you want to translate for other languages,
+you need to add the US english **and** your own language's option.*
 
 #### Other functions
 
