@@ -417,7 +417,7 @@ _get_player_look_at_block(player, range) ->
 _get_current_selection()->
 (
     if( length(global_selection) < 2,
-        exit(_translate('no_selection_error', []))
+        exit(_translate('no_selection_error'))
     );
     start = _get_marker_position(global_selection:'from');
     end = _get_marker_position(global_selection:'to');
