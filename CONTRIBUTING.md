@@ -42,7 +42,10 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
          don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, just
          run the function `add_to_history(your_function_name, player)` and it will all be handled behind the scenes.
          
-3. Your additions should take flags into account. If you want your command to set blocks, there needs to be two versions of each command you add. One with flags, one with out them. For example, the fill command would look like this:
+3. If it's the first time you are adding commands, you need to know how the commands preprocessor work. You have detailed
+   instructions for it in [Command System](#command-system).
+4. Your additions should take flags into account. If you want your command to set blocks, there needs to be two versions
+   of each command you add. One with flags, one with out them. For example, the fill command would look like this:
    ```
    'fill <block>'
    'fill <block> <replacement>'
@@ -71,10 +74,6 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
    argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to handle
    undoing, `set_block` does that on its own.
-
-4. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
-   about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
-   and add extra arguments underneath as well. Existing arg types are there too, if you feel like using them.
    
 #### Messages
 
@@ -88,6 +87,29 @@ the function running, set the `fatal` argument to `true` and it will exit after 
 
 *NB: This message will appear in US english. If you want to translate for other languages,
 you need to add the US english **and** your own language's option.*
+
+### Command System
+
+In order to partially automate the help creation process, the command system in the app is different than the regular Carpet's command system.
+It is generated in a separate map and pre-proccessed before being passed to Carpet. You have to add your commands into the `base_command_map` instead
+with the following format:
+
+-  `[command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)`
+-  `[command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]`
+
+Explained in words: In the list, you add the command for carpet ("syntax") (eg `'fill <block>'`) as the first element.
+The second element is the "interpretation" for Carpet (what will that do, basically the other side of a regular commands map), and then the third item is either `false` (to prevent it from appearing in help menu, for example, `help` can be hidden since `help [page]` is basically the same) or another list with the info for the help menu, which you can find below.
+
+- `command_for_carpet`: As mentioned, it is the command "syntax" that will be passed to Carpet, the equivalent to the first side of a regular commands map
+- `interpretation_for_carpet`: As mentioned, it is how Carpet will process that command, the equivalent to the other side of a regular commands map
+- `optional_arguments_since`: The position of the first argument to make visibly optional (`<arg>` to `[arg]`). Can be used to merge multiple commands in help menu (e.g. `help` and `help <page>` into `help [page]`). If the command shouldn't have any optional arguments, use `-1`
+- `description`: The description of the command in the help menu. Must be a translation string (see [Messages](#messages)) or a lambda (if you need arguments in the translation, `_()->_translate('string', ...args)`). (it can technically be `null`, but the idea is to add a description)
+- `description_tooltip`: An optional tooltip to show when the user is hovering the description. Can be `null`. If present, it must be a translation string or a lambda (if you need arguments in the translation)
+- `description_action` An optional action to run when the player clicks the description. Can be `null`. If present, it must start with either `!` (to specify it will _run_ the action) or `?` (to specify it will _suggest_ the action). The command is automatically prefixed with `/worldedit ` (and a space)
+
+The command suggestion will be derived from `command_for_carpet`: everything before the first `<`.
+
+You should try to fit each entry in a single line (when viewed in the help menu) for proper pagination (until something is done).
 
 #### Other functions
 

@@ -2,59 +2,89 @@
 
 global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
+//# New commands format:
+//#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
+//#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
+//# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
+//# 
+//# Suggestion is derived from command_for_carpet, everything before the first `<`.
+//# Command prefix (/world-edit ) is automatically added to description_action
+//# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
+//# Both description and description_tooltip must be a language string, or a lambda if string needs args.
+//# Try to fit each entry in a single line (help menu) for proper pagination (until something is done).
+base_commands_map = [
+    ['', _()->_help(1), false],
+    ['help', _()->_help(1), false],
+    ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
+    ['lang', _()->_print('current_lang',global_lang), false],
+    ['lang <lang>', _(lang)->(global_lang=lang), [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
+    ['set <block>', ['set_in_selection',null,null], false],
+    ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
+    ['set <block> f <flag>', _(block,flags)->set_in_selection(block,null,flags), false], //TO-DO Help for flags
+    ['set <block> <replacement> f <flag>', 'set_in_selection', false],
+    ['undo', ['undo', 1], false],
+    ['undo <moves>', 'undo', [0, 'help_cmd_undo', null, null]],
+    ['undo all', ['undo', 0], [-1, 'help_cmd_undo_all', null, null]],
+    ['undo history', 'print_history', [-1, 'help_cmd_undo_history', null, null]],
+    ['redo', ['redo', 1], false],
+    ['redo <moves>', 'redo', [0, 'help_cmd_redo', 'help_cmd_redo_tooltip', null]],
+    ['redo all', ['redo', 0], [-1, 'help_cmd_redo_all', null, null]],
+    ['wand', ['_set_or_give_wand',null], [-1, 'help_cmd_wand', null, null]],
+    ['wand <wand>', '_set_or_give_wand', [-1, 'help_cmd_wand_2', null, null]],
+    ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['stack', ['stack',1,null,null], false],
+    ['stack <count>', ['stack',null,null], false],
+    ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
+    ['stack f <flag>', _(flags)->stack(1,null,flags), false], //TODO here too Help for flags
+    ['stack <count> f <flag>', _(stackcount,flags)->stack(1,null,flags), false],
+    ['stack <count> <direction> f <flag>', 'stack', false],
+    ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
+    ['move <pos>', ['clone',true,null], [-1, 'help_cmd_move', null, null]],
+    ['move <pos> f <flags>', _(pos,flags)->clone(pos,true,flags), false], //TODO flags help
+    ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),false,'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
+    ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
+    ['copy force',['_copy',null, true],false],
+    ['copy <pos>',['_copy', false],false],
+    ['copy <pos> force',['_copy', true],false],
+    ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
+    ['paste f <flags>',_(flags)->paste(null, flags),false],//todo flags help
+    ['paste <pos>',['paste', null],false],
+    ['paste <pos> f <flags>','paste',false],//todo last flags help
+    ['selection clear', 'clear_selection', false], //TODO help for this and below
+    ['selection expand', _()->selection_expand(1), false],
+    ['selection expand <amount>', 'selection_expand', false],
+    ['selection move', _() -> selection_move(1, null), false],
+    ['selection move <amount>', _(n)->selection_move(n, null), false],
+    ['selection move <amount> <direction>', 'selection_move',false],
+    // we need a better way of changing 'settings'
+    ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
+];
+
+// Proccess commands map for Carpet
+global_commands_map = {};
+for(base_commands_map,
+    global_commands_map:(_:0) = _:1;
+);
+// Proccess commands map for help
+global_help_commands = [];
+for(base_commands_map,
+    if(_:2, //Check it's not skipped (aka false)
+        visible_command = _:0;
+        suggestion = reduce(split(visible_command),if((_ == '<'),break(),_a+_),'');
+        if((search_pos = _:2:0) != -1, // Proccess arguments
+            current_pos = [-1, -1];
+            visible_command = reduce(map(split(visible_command),
+                if(_ == '<', current_pos:0 += 1; if(current_pos:0 >= search_pos, '[', _)
+                  ,_ == '>', current_pos:1 += 1; if(current_pos:1 >= search_pos, ']', _) ,_ ) ),
+                  _a+_,'');
+        );
+        global_help_commands += ['g - '+visible_command, suggestion, _:2:1, _:2:2, _:2:3];
+    )
+);
+
+
 __config()->{
-    'commands'->{
-        'fill <block>'->['fill',null,null],
-        'fill <block> <replacement>'->['fill',null],
-        'fill <block> f <flag>'->_(block,flags)->fill(block,null,flags),
-        'fill <block> <replacement> f <flag>'->'fill',
-
-        'undo'->['undo', 1],
-        'undo all'->['undo', 0],
-        'undo <moves>'->'undo',
-        'undo history'->'print_history',
-
-        'redo'->['redo', 1],
-        'redo all'->['redo', 0],
-        'redo <moves>'->'redo',
-        'wand' -> ['_set_or_give_wand',null],
-        'wand <wand>'->'_set_or_give_wand',
-
-        'rotate <pos> <degrees> <axis>'->'rotate',//will replace old stuff if need be
-
-	    'stack'->['stack',1,null,null],
-        'stack <stackcount>'->['stack',null,null],
-        'stack <stackcount> <direction>'->['stack',null],
-        'stack f <flag>'->_(flags)->stack(1,null,flags),
-        'stack <stackcount> f <flag>'->_(stackcount,flags)->stack(1,null,flags),
-        'stack <stackcount> <direction> f <flag>'->'stack',
-
-        'expand <pos> <magnitude>'->'expand',
-
-        'move <pos>'->['move',null],
-        'move <pos> f <flags>'->'move',
-
-        'copy clear_selection'->_()->(_print(player(),)),
-        'copy'->['_copy',null, false],
-        'copy force'->['_copy',null, true],
-        'copy <pos>'->['_copy', false],
-        'copy <pos> force'->['_copy', true],
-        'paste'->['paste', null, null],
-        'paste f <flags>'->_(flags)->paste(null, flags),
-        'paste <pos>'->['paste', null],
-        'paste <pos> f <flags>'->'paste',
-
-        'selection clear' -> 'clear_selection',
-        'selection expand' -> _() -> selection_expand(1),
-        'selection expand <amount>' -> 'selection_expand',
-        'selection move' -> _() -> selection_move(1, null),
-        'selection move <amount>' -> _(n) -> selection_move(n, null),
-        'selection move <amount> <direction>' -> 'selection_move',
-        // we need a better way of changing 'settings'
-        'settings quick_select <bool>' -> _(b) -> global_quick_select = b,
-        'lang'->_()->(_print(player(),false,'current_lang',global_lang)),
-        'lang <lang>'->_(lang)->(global_lang=lang)
-    },
+    'commands'-> global_commands_map,
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
@@ -62,7 +92,7 @@ __config()->{
         'axis'->{'type'->'term','options'->['x','y','z']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
-        'stackcount'->{'type'->'int','min'->1,'suggest'->[]},
+        'stack'->{'type'->'int','min'->1,'suggest'->[]},
         'flag' -> {
             'type' -> 'term',
             'suggester' -> _(args) -> (
@@ -78,7 +108,8 @@ __config()->{
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'lang'->{'type'->'term','options'->global_lang_ids}
+        'lang'->{'type'->'term','options'->global_lang_ids},
+        'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
     }
 };
 //player globals
@@ -103,6 +134,90 @@ global_cursor = null;
 global_highlighted_marker = null;
 global_selection = {}; // holds ids of two official corners of the selection
 global_markers = {};
+
+_help(page) ->
+(
+    command = '/'+system_info('app_name')+' ';
+    // Header
+    print(format(_translate('help_header_prefix'), _translate('help_header_title'), _translate('help_header_suffix')));
+    
+    // Help entries are generated on top, in the commands map. Check docs there
+    // Hardcoded help entries (info)
+    // Syntax: [pre-arrow, pre-arrow command to suggest, post-arrow text, post-arrow tooltip (lang string/lambda), post-arrow action]
+    help_entries = [
+        [null, null, 'help_welcome', 'help_welcome_tooltip', null],
+        [if(length(global_selection) > 1,_translate('help_your_selection')), '', if(length(global_selection) > 1,
+                            _()->_translate('help_selection_bounds', global_selection:0, global_selection:1)
+                            ,'help_make_selection'), null, '?wand '],
+        [_translate('help_selected_wand'), 'wand ', _()->_translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
+        [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', global_lang), 'help_app_lang_tooltip', '?lang '],
+        [_translate('help_list_title'), 'help', null, null]
+    ];
+    
+    for(global_help_commands,
+        help_entries += _;
+    );
+    remaining_to_display = 8;
+    current_entry = ((page-1)*8);
+    entry_number = length(help_entries);
+    while(remaining_to_display != 0 && current_entry < entry_number, entry_number,
+        entry = help_entries:current_entry;
+        //Allow different desc actions
+        if(slice(entry:4,0,1) == '!',
+            description_action = '!'+command+slice(entry:4,1);
+        , slice(entry:4,0,1) == '?',
+            description_action = '?'+command+slice(entry:4,1);
+        );
+        if(entry:2 != null, arrow = 'd  -> ');
+        //print(entry:2);
+        print(format(entry:0, '?'+command+entry:1, arrow, 
+            if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)), 
+            '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)),description_action)
+        );
+
+        current_entry += 1;
+        remaining_to_display += -1;
+        description_action = arrow = null;
+    );
+    
+    // Footer
+    footer = format('');
+    if (page < 10, // In case we reach this, make it still be centered
+        footer += ' ';
+    );
+    footer += format(_translate('help_pagination_prefix'));
+    if (page != 1,
+        footer += format('d [<<]',
+                    '^'+_translate('help_pagination_first'),
+                    '!'+command+'help');
+        footer += ' ';
+        footer += format('d [<]',
+                    '^'+_translate('help_pagination_prev',page-1),
+                    '!'+command+'help '+(page-1));
+    ,
+        footer += format('g [<<]');
+        footer += ' ';
+        footer += format('g [<]');
+    );
+    footer += ' ';
+    footer += format(_translate('help_pagination_page',page));
+    if ((8*page) < entry_number,
+        last_page = ceil((entry_number)/8);
+        footer += format('d [>]',
+                        '^'+_translate('help_pagination_next',page+1),
+                        '!'+command+'help '+(page+1));
+        footer += ' ';
+        footer += format('d [>>]',
+                        '^'+_translate('help_pagination_last',last_page),
+                        '!'+command+'help '+last_page);
+    ,
+        footer += format('g [>]');
+        footer += ' ';
+        footer += format('g [>>]');
+    );
+    footer += format(_translate('help_pagination_suffix'));
+    print(footer);
+);
 
 clear_markers(... ids) ->
 (
@@ -281,7 +396,7 @@ _render_selection_tick() ->
 
     end_marker = global_selection:'to';
     end = if(
-        end_marker,              _get_marker_position(end_marker),
+        end_marker, _get_marker_position(end_marker),
         global_cursor
     );
 
@@ -406,6 +521,52 @@ for(global_lang_ids,
         write_file(_, 'text', global_langs:_ = [
             'language_code =    en_us',
             'language =         english',
+            
+            'help_header_prefix =      c ----------------- [ ',
+            'help_header_title =       d World-Edit Help',
+            'help_header_suffix =      c  ] -----------------',
+            'help_welcome =            c Welcome to the World-Edit Scarpet app\'s help!',
+            'help_welcome_tooltip =    y Hooray!',
+            'help_your_selection =     c Your selection',
+            'help_selection_bounds =   l %s to %s',
+            'help_make_selection =     c Use your wand to select with a start and final position',
+            'help_selected_wand =      c Selected wand', //Could probably be used in more places
+            'help_selected_wand_item = l %s',
+            'help_sel_wand_tooltip =   g Use the wand command to change',
+            'help_app_lang =           c App Language ', //Could probably be used in more places
+            'help_app_lang_selected =  l %s',
+            'help_app_lang_tooltip =   g Use the lang command to change it',
+            'help_list_title =         y Command list (without prefix):',
+            'help_pagination_prefix =  c --------------- ',
+            'help_pagination_page =    y Page %d ',
+            'help_pagination_suffix =  c  ---------------',
+            'help_pagination_first =   g Go to first page',
+            'help_pagination_prev =    g Go to previous page (%d)',
+            'help_pagination_next =    g Go to next page (%d)',
+            'help_pagination_last =    g Go to last page (%d)',
+            'help_cmd_help =           l Shows this help menu, or a specified page',
+            'help_cmd_lang =           l Changes current app\'s language to [lang]',
+            'help_cmd_lang_tooltip =   g Available languages are %s',
+            'help_cmd_set =            l Set selection to block, filterable',
+            'help_cmd_set_tooltip =    g You can use a tag in the replacement argument',
+            'help_cmd_undo =           l Undoes last n moves, one by default',
+            'help_cmd_undo_all =       l Undoes the entire action history',
+            'help_cmd_undo_history =   l Shows the history of undone actions',
+            'help_cmd_redo =           l Redoes last n undoes, one by default',
+            'help_cmd_redo_tooltip =   g Also shows up in undo history',
+            'help_cmd_redo_all =       l Redoes the entire undo history',
+            'help_cmd_wand =           l Sets held item as wand or gives it if hand is empty',
+            'help_cmd_wand_2 =         l Changes the current wand item',
+            'help_cmd_rotate =         l Rotates [deg] about [pos]',
+            'help_cmd_rotate_tooltip = g Axis must be x, y or z',
+            'help_cmd_stack =          l Stacks selection n times in dir',
+            'help_cmd_stack_tooltip =  g If not provided, direction is player\'s view direction by default',
+            'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
+            'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
+            'help_cmd_move =           l Moves selection to <pos>',
+            'help_cmd_clear_clipboard = l Clears player clipboard',
+            'help_cmd_copy =           l Copies selection to player clipboard',
+            'help_cmd_paste =          l Pastes from player clipboard',
 
             'filled =           gi Filled %d blocks',                                    // blocks number
             'no_undo_history =  w No undo history to show for player %s',                // player
@@ -419,7 +580,8 @@ for(global_lang_ids,
             'more_moves_redo =  w Your number is too high, redoing all moves for %s',     // player
             'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
-            'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',
+            'clear_clipboard =                wi Cleared player %s\'s clipboard',
+            'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
             'copy_force =                     ri Overwriting previous clipboard selection with new one',
             'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
             'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
@@ -434,13 +596,18 @@ for(global_lang_ids,
     );
     global_langs:_ = _parse_config(global_langs:_)
 );
-_translate(key, replace_list) -> (
+_translate_internal(key, replace_list) -> (
     // print(player(),key+' '+replace_list);
     lang_id = global_lang;
     if(lang_id == null || !has(global_langs, lang_id),
         lang_id = global_lang_ids:0);
-    str(global_langs:lang_id:key, replace_list)
+    if(key == null,
+        null,
+    ,
+        str(global_langs:lang_id:key, replace_list)
+    )
 );
+
 _print(player, fatal, key, ... replace) -> (
     print(player, format(_translate(key, replace)));
     if(fatal,exit())
@@ -542,11 +709,17 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
-fill(block,replacement,flags)->(
+set_in_selection(block,replacement,flags)->
+(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
     add_to_history('fill', player)
+);
+
+flood_fill(block) ->
+(
+    null//... todo
 );
 
 rotate(centre, degrees, axis)->(
