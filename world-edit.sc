@@ -34,6 +34,7 @@ __config()->{
         'move <pos>'->['move',null],
         'move <pos> f <flags>'->'move',
 
+        'copy clear_selection'->_()->(_print(player(),)),
         'copy'->['_copy',null, false],
         'copy force'->['_copy',null, true],
         'copy <pos>'->['_copy', false],
@@ -409,7 +410,8 @@ for(global_lang_ids,
             'filled =           gi Filled %d blocks',                                    // blocks number
             'no_undo_history =  w No undo history to show for player %s',                // player
             'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
-            'entry_undo =       w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
+            'entry_undo_1 =     w %d: type: %s'                                          //index, command type
+            'entry_undo_2       w     affected positions: %s'                            //blocks number
             'no_undo =          r No actions to undo for player %s',                     // player
             'more_moves_undo =  w Your number is too high, undoing all moves for %s',     // player
             'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
@@ -495,7 +497,8 @@ print_history()->(
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, false, 'entry_undo', history~command+1,command:'type', length(command:'affected_positions'))
+        _print(player, false, 'entry_undo_1', history~command+1,command:'type')//printing twice so it goes on 2 separate lines
+        _print(player, false, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
 
