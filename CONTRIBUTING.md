@@ -32,7 +32,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
     - Your function probably needs to access the player's positions. This function will throw the appropriate errors if 
       the player doesn't have the positions defined. NB: This is useful, as you can use these positions however you want.
       
-        `[pos1,pos2]=_get_player_positions(player);`
+        `[pos1,pos2]=__get_current_selection(player);`
 
     - If you're setting blocks, you need to be able to undo that. Here's how:
         
@@ -42,7 +42,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
          don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, just
          run the function `add_to_history(your_function_name, player)` and it will all be handled behind the scenes.
          
-3. Your additions should take flags into account. If you want your command to support flags, there needs to be two versions of each command you add. One with flags, one with out them. For example, the fill command would look like this:
+3. Your additions should take flags into account. If you want your command to set blocks, there needs to be two versions of each command you add. One with flags, one with out them. For example, the fill command would look like this:
    ```
    'fill <block>'
    'fill <block> <replacement>'
@@ -78,7 +78,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    
 #### Messages
 
-If you want to print a message as an output to the player, then use the `_print(player, message_id, extra_args))` function.
+If you want to print a message as an output to the player, then use the `_print(player, fatal, message_id, extra_args))` function.
 Input the string in the format: `message_id=  Your message` into the list which is under the `//Translations` comment, 
 under all the other output messages. If the message requires variables to be put in (like a number, or player, etc), just
 use `%s` in the message to stand for that value, it will be taken care of by the rest of the app. Also, if the message is
