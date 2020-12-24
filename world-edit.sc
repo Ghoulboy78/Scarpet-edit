@@ -31,11 +31,8 @@ __config()->{
 
         'expand <pos> <magnitude>'->'expand',
 
-        'clone <pos>'->['clone',false,null],
-        'clone <pos> f <flags>'->_(pos,flags)->clone(pos,false,flags),
-
-        'move <pos>'->['clone',true,null],
-        'move <pos> f <flags>'->_(pos,flags)->clone(pos,true,flags),
+        'move <pos>'->['move',null],
+        'move <pos> f <flags>'->'move',
 
         'copy'->['_copy',null, false],
         'copy force'->['_copy',null, true],
@@ -594,24 +591,24 @@ rotate(centre, degrees, axis)->(
     add_to_history('rotate', player)
 );
 
-clone(new_pos, move,flags)->(
+move(new_pos,flags)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
-    clone_map={};
+    move_map={};
     translation_vector=new_pos-min_pos;
     flags=_parse_flags(flags);
     entities=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
 
     volume(pos1,pos2,
-        put(clone_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
-        if(move,set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}))//check for waterlog
+        put(move_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
+        set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{})//check for waterlog
     );
 
-    for(clone_map,
-        set_block(_,clone_map:_:0,null,flags,{'biome'->clone_map:_:1});
+    for(move_map,
+        set_block(_,move_map:_:0,null,flags,{'biome'->move_map:_:1});
     );
 
     for(entities,//if its empty, this just wont run, no errors
@@ -623,7 +620,7 @@ clone(new_pos, move,flags)->(
         if(move,modify(_,'remove'))
     );
 
-    add_to_history(if(move,'move','clone'), player)
+    add_to_history('move', player)
 );
 
 stack(count,direction,flags) -> (
