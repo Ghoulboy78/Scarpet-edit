@@ -39,8 +39,8 @@ base_commands_map = [
     ['stack <count> f <flag>', _(stackcount,flags)->stack(1,null,flags), false],
     ['stack <count> <direction> f <flag>', 'stack', false],
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
-    ['move <pos>', ['clone',true,null], [-1, 'help_cmd_move', null, null]],
-    ['move <pos> f <flags>', _(pos,flags)->clone(pos,true,flags), false], //TODO flags help
+    ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
+    ['move <pos> f <flags>', 'move', false], //TODO flags help
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),false,'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
     ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
     ['copy force',['_copy',null, true],false],
@@ -571,13 +571,13 @@ for(global_lang_ids,
             'filled =           gi Filled %d blocks',                                    // blocks number
             'no_undo_history =  w No undo history to show for player %s',                // player
             'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
-            'entry_undo_1 =     w %d: type: %s'                                          //index, command type
-            'entry_undo_2       w     affected positions: %s'                            //blocks number
+            'entry_undo_1 =     w %d: type: %s',                                         //index, command type
+            'entry_undo_2       w     affected positions: %s',                           //blocks number
             'no_undo =          r No actions to undo for player %s',                     // player
-            'more_moves_undo =  w Your number is too high, undoing all moves for %s',     // player
+            'more_moves_undo =  w Your number is too high, undoing all moves for %s',    // player
             'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
             'no_redo =          r No actions to redo for player %s',                     // player
-            'more_moves_redo =  w Your number is too high, redoing all moves for %s',     // player
+            'more_moves_redo =  w Your number is too high, redoing all moves for %s',    // player
             'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
             'clear_clipboard =                wi Cleared player %s\'s clipboard',
@@ -596,14 +596,14 @@ for(global_lang_ids,
     );
     global_langs:_ = _parse_config(global_langs:_)
 );
-_translate_internal(key, replace_list) -> (
+
+_translate(key, ... replace_list) -> (
     // print(player(),key+' '+replace_list);
     lang_id = global_lang;
     if(lang_id == null || !has(global_langs, lang_id),
         lang_id = global_lang_ids:0);
     if(key == null,
         null,
-    ,
         str(global_langs:lang_id:key, replace_list)
     )
 );
@@ -664,7 +664,7 @@ print_history()->(
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, false, 'entry_undo_1', history~command+1,command:'type')//printing twice so it goes on 2 separate lines
+        _print(player, false, 'entry_undo_1', (history~command)+1, command:'type');//printing twice so it goes on 2 separate lines
         _print(player, false, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
@@ -872,7 +872,7 @@ paste(pos, flags)->(
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
         if(!(flags~'p'&&air(old_block)),
-            set_block(new_pos, block, null, flags, {'biome'->old_biome})
+            set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
         )
     );
     add_to_history('paste',player)
