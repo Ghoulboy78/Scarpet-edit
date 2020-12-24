@@ -464,12 +464,12 @@ global_flags = 'waehubp';
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
-//a     only replace air
+//a     don't paste air
 //e     consider entities as well
 //h     make shapes hollow
 //u     set blocks without updates
 //b     set biome
-//p     don't paste air
+//p     only replace air
 
 
 _permutation(str) -> (
@@ -623,7 +623,7 @@ set_block(pos,block, replacement, flags, extra)->(//use this function to set blo
     state = if(flags,{},null);
     if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'a' || air(pos)),
+    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
         prev_biome=biome(pos);
         if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
@@ -871,7 +871,7 @@ paste(pos, flags)->(
     for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
-        if(!(flags~'p'&&air(old_block)),
+        if(!(flags~'a'&&air(old_block)),
             set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
         )
     );

@@ -60,9 +60,9 @@ Available flags:
 
  - `-u` -> Places blocks without block updates
  - `-w` -> Waterlogs blocks placed in water or in other waterlogged blocks
- - `-a` -> Only replaces air blocks when setting an area
+ - `-p` -> Only replaces air blocks when setting an area
  - `-e` -> Copies/moves entities from old location to new location. Technically, a new entity is generated with same data
     and position within the structure as the old one, so all that changes is UUID. Undoing will not remove these entities
  - `-b` -> Copies old biomes to new location.
- - `-p` -> Pasting a structure will not paste the air blocks within the structure.
+ - `-a` -> Pasting a structure will not paste the air blocks within the structure.
 

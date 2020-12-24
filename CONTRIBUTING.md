@@ -66,10 +66,10 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    ```
    u     no blockupdates (handled by set_block)
    w     waterlog blocks that get placed inside water (handled by set_block)
-   a     only replace air blocks (handled by set_block)
+   p     only replace air blocks (handled by set_block)
    e     copy/move entities as well
    b     copy/move biomes as well (handled by set_block)
-   p     don't paste air
+   a     don't paste air
    ```
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
    argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to handle
