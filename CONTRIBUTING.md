@@ -55,11 +55,11 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    'fill <block> <replacement> f <flag>'
    ```
    Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command
-   syntax: `flags = _parse_flags(flags)`. For the versions without the flags, just use `null` as the `flags` argument in
+   syntax. For the versions without the flags, just use `null` as the `flags` argument in
    the `set_block` function.
    
-   Whenever you use the `set_block()` function, put the flags from your command processing function at the last argument.
-   The following flags currently exist:
+   To access the flags as a map, run: `flags = _parse_flags(flags)`. Whenever you use the `set_block()` function, put the
+   flags from your command processing function as the last argument. The following flags currently exist for you to use:
    ```
    u     no blockupdates (handled by set_block)
    w     waterlog blocks that get placed inside water (handled by set_block)
@@ -78,12 +78,13 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    
 #### Messages
 
-If you want to print a message as an output to the player, then use the `_print(player, fatal, message_id, extra_args))` function.
-Input the string in the format: `message_id=  Your message` into the list which is under the `//Translations` comment, 
-under all the other output messages. If the message requires variables to be put in (like a number, or player, etc), just
-use `%s` in the message to stand for that value, it will be taken care of by the rest of the app. Also, if the message is
-an error which should stop the function running, set the `fatal` argument to `true` and it will exit after telling the user
-what's wrong.
+If you want to print a message as an output to the player, then use the `_print(player, fatal, message_id, extra_args))`
+function. This is important to be able to translate the message into other languages. Don't worry if you cannot do this,
+but make sure that you follow these steps so that someone else can translate it. Input the string in the format: 
+`message_id=  Your message` into the list which is under the `//Translations` comment, under all the other output messages. 
+If the message requires variables to be put in (like a number, or player, etc), just use `%s` in the message to stand for
+that value, it will be taken care of by the rest of the app. Also, if the message is for a fatal error which should stop
+the function running, set the `fatal` argument to `true` and it will exit after telling the user what's wrong.
 
 *NB: This message will appear in US english. If you want to translate for other languages,
 you need to add the US english **and** your own language's option.*
