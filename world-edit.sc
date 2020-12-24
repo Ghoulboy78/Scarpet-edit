@@ -18,10 +18,10 @@ base_commands_map = [
     ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
     ['lang', _()->_print('current_lang',global_lang), false],
     ['lang <lang>', _(lang)->(global_lang=lang), [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
-    ['fill <block>', ['fill',null,null], false],
-    ['fill <block> <replacement>', ['fill',null], [1, 'help_cmd_fill', 'help_cmd_fill_tooltip', null]],
-    ['fill <block> f <flag>', _(block,flags)->fill(block,null,flags), false], //TO-DO Help for flags
-    ['fill <block> <replacement> f <flag>', 'fill', false],
+    ['set <block>', ['set_in_selection',null,null], false],
+    ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
+    ['set <block> f <flag>', _(block,flags)->set_in_selection(block,null,flags), false], //TO-DO Help for flags
+    ['set <block> <replacement> f <flag>', 'set_in_selection', false],
     ['undo', ['undo', 1], false],
     ['undo <moves>', 'undo', [0, 'help_cmd_undo', null, null]],
     ['undo all', ['undo', 0], [-1, 'help_cmd_undo_all', null, null]],
@@ -513,7 +513,7 @@ for(global_lang_ids,
             'help_welcome_tooltip =    y Hooray!',
             'help_your_selection =     c Your selection',
             'help_selection_bounds =   l %s to %s',
-            'help_make_selection =     c Left click your wand at start and final position to select',
+            'help_make_selection =     c Use your wand to select with a start and final position',
             'help_selected_wand =      c Selected wand', //Could probably be used in more places
             'help_selected_wand_item = l %s',
             'help_sel_wand_tooltip =   g Use the wand command to change',
@@ -531,8 +531,8 @@ for(global_lang_ids,
             'help_cmd_help =           l Shows this help menu, or a specified page',
             'help_cmd_lang =           l Changes current app\'s language to [lang]',
             'help_cmd_lang_tooltip =   g Available languages are %s',
-            'help_cmd_fill =           l Fills the selection, filterable',
-            'help_cmd_fill_tooltip =   g You can use a tag in the replacement argument',
+            'help_cmd_set =            l Set selection to block, filterable',
+            'help_cmd_set_tooltip =    g You can use a tag in the replacement argument',
             'help_cmd_undo =           l Undoes last n moves, one by default',
             'help_cmd_undo_all =       l Undoes the entire action history',
             'help_cmd_undo_history =   l Shows the history of undone actions',
@@ -676,12 +676,18 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
-fill(block,replacement,flags)->(
+set_in_selection(block,replacement,flags)->
+(
     player=player();
     [pos1,pos2]=_get_current_selection();
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
 
     add_to_history('fill', player)
+);
+
+flood_fill(block) ->
+(
+    null//... todo
 );
 
 rotate(centre, degrees, axis)->(
