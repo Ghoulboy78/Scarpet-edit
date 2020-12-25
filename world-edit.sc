@@ -16,7 +16,7 @@ base_commands_map = [
     ['', _()->_help(1), false],
     ['help', _()->_help(1), false],
     ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
-    ['lang', _()->_print('current_lang',global_lang), false],
+    ['lang', _()->_print(player(),'current_lang',global_lang), false],
     ['lang <lang>', _(lang)->(global_lang=lang), [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
     ['set <block>', ['set_in_selection',null,null], false],
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
@@ -41,7 +41,7 @@ base_commands_map = [
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
     ['move <pos> f <flags>', 'move', false], //TODO flags help
-    ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),false,'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
+    ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
     ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
     ['copy force',['_copy',null, true],false],
     ['copy <pos>',['_copy', false],false],
@@ -252,7 +252,7 @@ selection_move(amount, direction) ->
     point1 = _get_marker_position(global_selection:'from');
     point2 = _get_marker_position(global_selection:'to');
     p = player();
-    if (p == null && direction == null, _print(player, true, 'move_selection_no_player_error'));
+    if (p == null && direction == null, _error(player, 'move_selection_no_player_error'));
     translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
     clear_markers(global_selection:'from', global_selection:'to');
     point1 = point1 + translation_vector;
@@ -424,7 +424,7 @@ _get_player_look_at_block(player, range) ->
 _get_current_selection(player)->
 (
     if( length(global_selection) < 2,
-        _print(player, true,'no_selection_error',player)
+        _error(player, 'no_selection_error',player)
     );
     start = _get_marker_position(global_selection:'from');
     end = _get_marker_position(global_selection:'to');
@@ -439,10 +439,10 @@ _set_or_give_wand(wand) -> (
     if(wand,//checking if player specified a wand to be added
         if((['tools', 'combat']~item_category(wand:0)) != null,
             global_wand = wand;
-            _print(p, false, 'new_wand', wand:0);
+            _print(p, 'new_wand', wand:0);
             return(),
             //else, can't set as wand
-            _print(p, true, 'invalid_wand')
+            _error(p, 'invalid_wand')
         )
     );//else, if just ran '/world-edit wand' with no extra args
     //give player wand if hand is empty
@@ -454,9 +454,9 @@ _set_or_give_wand(wand) -> (
     held_item = held_item_tuple:0;
     if( (['tools', 'combat']~item_category(held_item)) != null,
         global_wand = held_item;
-        _print(p, false, 'new_wand', held_item),
+        _print(p, 'new_wand', held_item),
        //else, can't set as wand
-       _print(p, true, 'invalid_wand')
+       _error(p, 'invalid_wand')
     )
 );
 
@@ -608,10 +608,11 @@ _translate(key, ... replace_list) -> (
     )
 );
 
-_print(player, fatal, key, ... replace) -> (
+_print(player, key, ... replace) ->
     print(player, format(_translate(key, replace)));
-    if(fatal,exit())
-);
+
+_error(player, key, ... replace)->
+    exit(print(player, format(_translate(key, replace))));
 
 
 //Command processing functions
@@ -645,13 +646,13 @@ _block_matches(existing, block_predicate) ->
 
 add_to_history(function,player)->(
 
-    if(length(global_affected_blocks)==0,exit(_print(player,false, 'filled',0)));//not gonna add empty list to undo ofc...
+    if(length(global_affected_blocks)==0,exit(_print(player, 'filled',0)));//not gonna add empty list to undo ofc...
     command={
         'type'->function,
         'affected_positions'->global_affected_blocks
     };
 
-    _print(player, false,'filled',length(global_affected_blocks));
+    _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
 );
@@ -659,13 +660,13 @@ add_to_history(function,player)->(
 print_history()->(
     player=player();
     history = global_history;
-    if(length(history)==0||history==null,_print(player, true, 'no_undo_history', player));
-    if(length(history)>10,_print(player, false, 'many_undo', player));
+    if(length(history)==0||history==null,_error(player, 'no_undo_history', player));
+    if(length(history)>10,_print(player, 'many_undo', player));
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, false, 'entry_undo_1', (history~command)+1, command:'type');//printing twice so it goes on 2 separate lines
-        _print(player, false, 'entry_undo_2', length(command:'affected_positions'))
+        _print(player, 'entry_undo_1', (history~command)+1, command:'type');//printing twice so it goes on 2 separate lines
+        _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
 
@@ -673,8 +674,8 @@ print_history()->(
 
 undo(moves)->(
     player = player();
-    if(length(global_history)==0||global_history==null,_print(player, true, 'no_undo', player));//incase an op was running command, we want to print error to them
-    if(length(global_history)<moves,_print(player, false, 'more_moves_undo', player);moves=0);
+    if(length(global_history)==0||global_history==null,_error(player, 'no_undo', player));//incase an op was running command, we want to print error to them
+    if(length(global_history)<moves,_print(player, 'more_moves_undo', player);moves=0);
     if(moves==0,moves=length(global_history));
     for(range(moves),
         command = global_history:(length(global_history)-1);//to get last item of list properly
@@ -686,14 +687,14 @@ undo(moves)->(
         delete(global_history,(length(global_history)-1))
     );
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
-    _print(player, false, 'success_undo', moves, length(global_affected_blocks));
+    _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
 );
 
 redo(moves)->(
     player=player();
-    if(length(global_undo_history)==0||global_undo_history==null,_print(player,true,'no_redo',player));
-    if(length(global_undo_history)<moves,_print(player, false, 'more_moves_redo', player);moves=0);
+    if(length(global_undo_history)==0||global_undo_history==null,_error(player,'no_redo',player));
+    if(length(global_undo_history)<moves,_print(player, 'more_moves_redo', player);moves=0);
     if(moves==0,moves=length(global_undo_history));
     for(range(moves),
         command = global_undo_history:(length(global_undo_history)-1);//to get last item of list properly
@@ -705,7 +706,7 @@ redo(moves)->(
         delete(global_undo_history,(length(global_undo_history)-1))
     );
     global_history+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
-    _print(player, false, 'success_redo', moves, length(global_affected_blocks));
+    _print(player, 'success_redo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
 );
 
@@ -843,9 +844,9 @@ _copy(centre, force)->(
     [pos1,pos2]=_get_current_selection(player);
     if(global_clipboard,
         if(force,
-            _print(player,false,'copy_force');
+            _print(player,'copy_force');
             global_clipboard=[],
-            _print(player,false,'copy_clipboard_not_empty')
+            _error(player,'copy_clipboard_not_empty')
         )
     );
 
@@ -857,14 +858,14 @@ _copy(centre, force)->(
         global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want
     );
 
-    _print(player,false,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
+    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
 );
 
 paste(pos, flags)->(
     player=player();
     if(!pos,pos=pos(player));
     [pos1,pos2]=_get_current_selection(player);
-    if(!global_clipboard,_print(player, false, 'paste_no_clipboard', player));
+    if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
     entities=global_clipboard:0;

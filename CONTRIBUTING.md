@@ -77,16 +77,17 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    
 #### Messages
 
-If you want to print a message as an output to the player, then use the `_print(player, fatal, message_id, extra_args))`
+If you want to print a message as an output to the player, then use the `_print(player, message_id, extra_args))`
 function. This is important to be able to translate the message into other languages. Don't worry if you cannot do this,
 but make sure that you follow these steps so that someone else can translate it. Input the string in the format: 
 `message_id=  Your message` into the list which is under the `//Translations` comment, under all the other output messages. 
 If the message requires variables to be put in (like a number, or player, etc), just use `%s` in the message to stand for
 that value, it will be taken care of by the rest of the app. Also, if the message is for a fatal error which should stop
-the function running, set the `fatal` argument to `true` and it will exit after telling the user what's wrong.
+the function running, use the `_error()` function with exactly the same arguments as `_print()` and it will exit after
+telling the user what's wrong.
 
-*NB: This message will appear in US english. If you want to translate for other languages,
-you need to add the US english **and** your own language's option.*
+*NB: This message will appear in US english translation. If you want to translate for other languages, you need to add
+the US english version **and** your own language's option.*
 
 ### Command System
 
