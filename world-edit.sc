@@ -302,8 +302,8 @@ __on_tick() ->
 );
 
 
-//__on_player_swings_hand(player, hand) ->
-__on_player_clicks_block(player, block, face) -> 
+__on_player_swings_hand(player, hand) ->
+//__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
