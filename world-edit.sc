@@ -569,23 +569,37 @@ global_default_lang=[
     'help_cmd_stack_tooltip =  g If not provided, direction is player\s view direction by default',
     'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
-    'help_cmd_clone =          l Clones selection to <pos>',
     'help_cmd_move =           l Moves selection to <pos>',
 
-    'filled =                  gi Filled %d blocks',                                    // blocks number
-    'no_undo_history =         w No undo history to show for player %s',                // player
-    'many_undo =               w Undo history for player %s is very long, showing only the last ten items', // player
-    'entry_undo =              w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
-    'no_undo =                 r No actions to undo for player %s',                     // player
-    'more_moves_undo =         w Your number is too high, undoing all moves for %s',     // player
-    'success_undo =            gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
-    'success_redo =            gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+    'filled =           gi Filled %d blocks',                                    // blocks number
+    'no_undo_history =  w No undo history to show for player %s',                // player
+    'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
+    'entry_undo_1 =     w %d: type: %s',                                         //index, command type
+    'entry_undo_2       w     affected positions: %s',                           //blocks number
+    'no_undo =          r No actions to undo for player %s',                     // player
+    'more_moves_undo =  w Your number is too high, undoing all moves for %s',    // player
+    'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+    'no_redo =          r No actions to redo for player %s',                     // player
+    'more_moves_redo =  w Your number is too high, redoing all moves for %s',    // player
+    'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+
     'missing_translation =     gi Missing translations for %s:',                         //language
     'current_lang =            gi Current language: %s'                                  //current language
     'changed_lang =            gi Language changed to %s'                                //language we changed to
 
-    'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
-    'no_selection_error =             Missing selection for operation',
+    'clear_clipboard =                wi Cleared player %s\'s clipboard',
+    'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
+    'copy_force =                     ri Overwriting previous clipboard selection with new one',
+    'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+    'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
+
+    'current_lang =     gi Current language is: %s',                              //lang id. todo decide whether to hardcode this
+
+    'move_selection_no_player_error = r To move selection in the direction of the player, you need to have a player',
+    'no_selection_error =             r Missing selection for operation for player %s', //player
+    'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
+    'invalid_wand =                   r Wand has to be a tool or weapon',
+
 ];
 
 global_missing_translations={};
