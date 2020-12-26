@@ -49,6 +49,10 @@ base_commands_map = [
     ['selection move', _() -> selection_move(1, null), false],
     ['selection move <amount>', _(n)->selection_move(n, null), false],
     ['selection move <amount> <direction>', 'selection_move',false],
+    ['flood <block>', ['flood_fill', null, null], false],
+    ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
+    ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
+    ['flood <block> <axis> f <flags>', 'flood_fill', false],
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -280,7 +284,7 @@ __on_tick() ->
     if (p = player(),
         // put your catchall checks here
         global_highlighted_marker = null;
-        new_cursor = if (p~'holds':0==global_wand,
+        new_cursor = if (p~'holds':0==global_wand && p~'gamemode'!='spectator',
             if (marker = _trace_marker(p, global_reach), 
                 global_highlighted_marker = marker;
                 _get_marker_position(marker)
@@ -298,7 +302,8 @@ __on_tick() ->
 );
 
 
-__on_player_swings_hand(player, hand) ->
+//__on_player_swings_hand(player, hand) ->
+__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -549,6 +554,8 @@ for(global_lang_ids,
             'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
             'help_cmd_clone =          l Clones selection to <pos>',
             'help_cmd_move =           l Moves selection to <pos>',
+            'help_cmd_flood =          l Flood fill with [block] starting at player\'s position',
+            'help_cmd_set_flood =      g Flood will happen in plane perpendicular to [axis], if given',
 
             'filled =                  gi Filled %d blocks',                                    // blocks number
             'no_undo_history =         w No undo history to show for player %s',                // player
@@ -685,10 +692,59 @@ set_in_selection(block,replacement,flags)->
     add_to_history('fill', player)
 );
 
-flood_fill(block) ->
+global_max_delete_radius_sq = 100; //temporary, should be replaced by in_selection(block) later on
+_sq_distance(a, b) -> reduce(a-b, _a + _*_, 0);
+
+flood_fill(block, axis, flags) ->
 (
-    null//... todo
+    player = player();
+    start = player~'pos'; 
+    if(start==block, return());
+
+    // Define function to request neighbours perpendiular to axis
+    if(
+        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
+        axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
+        axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
+        axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
+    );
+
+    [pos1,pos2]=_get_current_selection();
+    min_pos = map(pos1, min(_, pos2:_i));
+    max_pos = map(pos1, max(_, pos2:_i));
+    print(min_pos);
+    print(max_pos);
+    is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
+        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
+    );
+
+    interior_block = block(start);
+    if(is_inside_selection(start), set_block(start, block, null, flags, {}), return());
+    
+    visited = {start->null};
+    queue = [start];
+    
+    while(length(queue)>0, 10000,
+        current_pos = queue:0;
+        delete(queue, 0);
+        
+        for(flood_neighbours(current_pos),
+            current_neighbour = _;
+            // check neighbours, add the non visited ones to the visited set
+            if(!has(visited, current_neighbour),
+                visited:current_neighbour = null;
+                // if the block is not too far and is interior, delete it and add to queue to check neighbours later
+                if( _sq_distance(current_neighbour, start) < global_max_delete_radius_sq && block(_)==interior_block && is_inside_selection(_),
+                    queue:length(queue) = current_neighbour;
+                    set_block(current_neighbour, block, null, flags, {})
+                );
+            );
+        );
+    );
+
+    add_to_history('flood', player)
 );
+
 
 rotate(centre, degrees, axis)->(
     player=player();
