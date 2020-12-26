@@ -49,6 +49,9 @@ Left clicking again will reselect the whole box.
  - `/world-edit paste` -> Pastes selection relative to player position. Be careful incase you didnt' choose a wise spot
     when making the selection.
  - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
+ - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the player's position. Can both "fill"
+ what used to be air or replace some other block.
+ - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for isntance, will fill the horizontal plane.
 
 #### Flags
 
