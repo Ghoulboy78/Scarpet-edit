@@ -629,7 +629,9 @@ for(global_lang_ids,
 _change_lang(lang)->(
     if(lang!=global_lang && lang!=null,
         if(global_missing_translations:lang,
-            _print(player(),'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang)),
+            _print(player(),'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
+            logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos its log file and lang keys r in english anyways
+            for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:global_lang:_))
         );
         global_lang=lang;
         _print(player(),'changed_lang',lang),
