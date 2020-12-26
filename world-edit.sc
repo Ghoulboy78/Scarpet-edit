@@ -692,8 +692,6 @@ set_in_selection(block,replacement,flags)->
     add_to_history('fill', player)
 );
 
-global_max_delete_radius_sq = 100; //temporary, should be replaced by in_selection(block) later on
-_sq_distance(a, b) -> reduce(a-b, _a + _*_, 0);
 
 flood_fill(block, axis, flags) ->
 (
@@ -734,7 +732,7 @@ flood_fill(block, axis, flags) ->
             if(!has(visited, current_neighbour),
                 visited:current_neighbour = null;
                 // if the block is not too far and is interior, delete it and add to queue to check neighbours later
-                if( _sq_distance(current_neighbour, start) < global_max_delete_radius_sq && block(_)==interior_block && is_inside_selection(_),
+                if( block(_)==interior_block && is_inside_selection(_),
                     queue:length(queue) = current_neighbour;
                     set_block(current_neighbour, block, null, flags, {})
                 );
