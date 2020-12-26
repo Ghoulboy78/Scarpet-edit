@@ -60,6 +60,10 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
+    ['brush clear', ['brush', 'clear'], false],
+    ['brush list', ['brush', 'list'], false],
+    ['brush info', ['brush', 'info'], false],
+    ['brush cube <block> <size_int>', _(block, size_int) -> brush('cube', block, size_int), false],
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -309,8 +313,8 @@ __on_tick() ->
 );
 
 
-__on_player_swings_hand(player, hand) ->
-//__on_player_clicks_block(player, block, face) -> 
+//__on_player_swings_hand(player, hand) ->
+__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -325,7 +329,7 @@ __on_player_swings_hand(player, hand) ->
 
 __on_player_uses_item(player, item_tuple, hand) ->
 (
-    if(player~'holds':0==global_wand,
+    if( (held = player~'holds':0)==global_wand,
         if (global_quick_select,
             _set_selection_point('to')
         , // else
@@ -344,7 +348,10 @@ __on_player_uses_item(player, item_tuple, hand) ->
                     )
                 )
             )
-        )
+        ),
+        has(global_brushes, held),
+        pos = _get_player_look_at_block(player, global_brush_range);
+        _brush_action(pos, held)
     )
 );
 
@@ -599,6 +606,16 @@ for(global_lang_ids,
             'no_selection_error =             r Missing selection for operation for player %s', //player
             'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
             'invalid_wand =                   r Wand has to be a tool or weapon',
+
+            'bad_wand_brush_error =           r Your wand can\'t be a brush',
+            'no_brush_error =                 r %s is not a brush',
+            'new_brush =                      wi %s is now a brush with action %s',
+            'brush_info =                     w %s has action %s bound to it with parameters %s',
+            'brush_replaced =                 w Replacing previous action for brush in %s',
+            'brush_list_header =              bc === Current brushes are ===',
+            'brush_empty_list =               gi No brushes registerd so far',
+            'brush_extra_info =               ig For detailed info on a brush use /world-edit brush info,'
+
 
         ])
     );
@@ -932,3 +949,62 @@ paste(pos, flags)->(
     add_to_history('paste',player)
 );
 
+
+// Brush
+
+global_brushes = {};
+global_brush_range = 100;
+
+brush(action, ...args) -> (
+    player = player();
+    held_item = player~'holds':0;
+    if(held_item==global_wand, _error(player, 'bad_wand_brush_error'); return());
+    
+    if(
+        action=='clear',
+        if(has(global_brushes, held_item), 
+            delete(global_brushes, held_item),
+            _error(player, 'no_brush_error', held_item)
+        ),
+        action=='list',
+        if(global_brushes, 
+            _print(player, 'brush_list_header');
+            for(pairs(global_brushes), 
+                print(player, str('%s: %s', _:0, _:1:0));
+            );
+            _print(player, 'brush_extra_info'),
+            _print(player, 'brush_empty_list')
+        ),
+        action=='info',
+        if(has(global_brushes, held_item),
+            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1),
+            _error(player, 'no_brush_error', held_item)
+        ),
+        // else, register new brush with given action
+        if(has(global_brushes, held_item),
+            _print(player, 'brush_replaced', held_item)
+        );
+        global_brushes:held_item = [action, args];
+    )
+);
+
+_brush_action(pos, brush) -> (
+    [action, args] = global_brushes:brush;
+    call(action, pos, args)
+);
+
+cube(pos, args) -> (
+    [block, size] = args;
+    player = player();
+
+    if(size == 1, 
+        set_block(pos, block, null, null, {}),
+
+        half_size = (size-1)/2;
+        volume(pos-half_size, pos+half_size,
+            set_block(_, block, null, null, {})
+        );  
+    );
+    
+    add_to_history('brush_cube',player)
+);
