@@ -29,7 +29,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
       
       `player=player()`
 
-    - Your function probably needs to access the player's positions. This function will throw the appropriate errors if 
+    - Your function probably needs to access the player's selected points. This function will throw the appropriate errors if 
       the player doesn't have the positions defined. NB: This is useful, as you can use these positions however you want.
       
         `[pos1,pos2]=__get_current_selection(player);`
