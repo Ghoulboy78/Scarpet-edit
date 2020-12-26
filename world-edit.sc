@@ -20,7 +20,7 @@ base_commands_map = [
     ['lang <lang>', _(lang)->(global_lang=lang), [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
     ['set <block>', ['set_in_selection',null,null], false],
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
-    ['set <block> f <flag>', _(block,flags)->set_in_selection(block,null,flags), false], //TO-DO Help for flags
+    ['set <block> f <flag>', _(block,flag)->set_in_selection(block,null,flag), false], //TO-DO Help for flags
     ['set <block> <replacement> f <flag>', 'set_in_selection', false],
     ['undo', ['undo', 1], false],
     ['undo <moves>', 'undo', [0, 'help_cmd_undo', null, null]],
@@ -60,10 +60,13 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
-    ['brush clear', ['brush', 'clear'], false],
-    ['brush list', ['brush', 'list'], false],
-    ['brush info', ['brush', 'info'], false],
-    ['brush cube <block> <size_int>', _(block, size_int) -> brush('cube', block, size_int), false],
+    ['brush clear', ['brush', 'clear', null], false],
+    ['brush list', ['brush', 'list', null], false],
+    ['brush info', ['brush', 'info', null], false],
+    ['brush cube <block> <size_int>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
+    ['brush cube <block> <size_int> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
+    ['brush cube <block> <size_int> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), false],
+    ['brush cube <block> <size_int> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false], 
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -610,7 +613,7 @@ for(global_lang_ids,
             'bad_wand_brush_error =           r Your wand can\'t be a brush',
             'no_brush_error =                 r %s is not a brush',
             'new_brush =                      wi %s is now a brush with action %s',
-            'brush_info =                     w %s has action %s bound to it with parameters %s',
+            'brush_info =                     w %s has action %s bound to it with parameters %s and flags %s',
             'brush_replaced =                 w Replacing previous action for brush in %s',
             'brush_list_header =              bc === Current brushes are ===',
             'brush_empty_list =               gi No brushes registerd so far',
@@ -955,7 +958,10 @@ paste(pos, flags)->(
 global_brushes = {};
 global_brush_range = 100;
 
-brush(action, ...args) -> (
+brush(action, flags, ...args) -> (
+    print(flags);
+    print(args);
+
     player = player();
     held_item = player~'holds':0;
     if(held_item==global_wand, _error(player, 'bad_wand_brush_error'); return());
@@ -977,34 +983,33 @@ brush(action, ...args) -> (
         ),
         action=='info',
         if(has(global_brushes, held_item),
-            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1),
+            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
             _error(player, 'no_brush_error', held_item)
         ),
         // else, register new brush with given action
         if(has(global_brushes, held_item),
             _print(player, 'brush_replaced', held_item)
         );
-        global_brushes:held_item = [action, args];
+        global_brushes:held_item = [action, args, flags];
     )
 );
 
 _brush_action(pos, brush) -> (
-    [action, args] = global_brushes:brush;
-    call(action, pos, args)
+    [action, args, flags] = global_brushes:brush;
+    call(action, pos, args, flags)
 );
 
-cube(pos, args) -> (
-    [block, size] = args;
-    player = player();
+cube(pos, args, flags) -> (
+    [block, size, replacement] = args;
 
     if(size == 1, 
-        set_block(pos, block, null, null, {}),
+        set_block(pos, block, replacement, flags, {}),
 
         half_size = (size-1)/2;
         volume(pos-half_size, pos+half_size,
-            set_block(_, block, null, null, {})
+            set_block(_, block, replacement, flags, {})
         );  
     );
     
-    add_to_history('brush_cube',player)
+    add_to_history('brush_cube',player())
 );
