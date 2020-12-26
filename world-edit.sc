@@ -1,4 +1,6 @@
-//World edit
+//World edit for scarpet
+
+import('math','_round');
 
 global_lang_ids = {//defining up here for command to work
     'en_us'->'US English',
@@ -583,9 +585,6 @@ global_default_lang=[
     'more_moves_redo =  w Your number is too high, redoing all moves for %s',    // player
     'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
-    'missing_translation =     gi Missing translations for %s:',                         //language
-    'current_lang =            gi Current language: %s'                                  //current language
-    'changed_lang =            gi Language changed to %s'                                //language we changed to
 
     'clear_clipboard =                wi Cleared player %s\'s clipboard',
     'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
@@ -593,13 +592,14 @@ global_default_lang=[
     'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
     'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
 
-    'current_lang =     gi Current language is: %s',                              //lang id. todo decide whether to hardcode this
+    'translation_completeness =       gi Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
+    'current_lang =                   gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
+    'changed_lang =                   gi Language changed to %s',                               //language we changed to
 
     'move_selection_no_player_error = r To move selection in the direction of the player, you need to have a player',
     'no_selection_error =             r Missing selection for operation for player %s', //player
     'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand =                   r Wand has to be a tool or weapon',
-
 ];
 
 global_missing_translations={};
@@ -619,7 +619,7 @@ for(global_lang_ids,
                 put(lang_config,_,default_config:_)
             )
         );
-        put(global_missing_translations,global_lang_ids:_,missing_translations_list)//So the map will be saved with lang's full name and missing translations
+        put(global_missing_translations,_,missing_translations_list)//So the map will be saved with lang's full name and missing translations
     );
     global_langs:_ = lang_config;
 );
@@ -627,19 +627,17 @@ for(global_lang_ids,
 //telling user about missing translations when they try to change lang
 
 _change_lang(lang)->(
-    if(lang!=global_lang,//default is 'en_us', so only null will return false
+    if(lang!=global_lang && lang!=null,
         if(global_missing_translations:lang,
-            _print(player(),'missing_translation',lang);
-            print(player(),format('gi     '+lang+':'+length(global_missing_translations:lang)))
+            _print(player(),'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang)),
         );
         global_lang=lang;
-        _print(player(),'changed_lang',lang)
-    );
-
+        _print(player(),'changed_lang',lang),
+        _print(player(),'current_lang',global_lang)
+    )
 );
 
-_translate(key, ... replace_list) -> (
-    // print(player(),key+' '+replace_list);
+_translate(key, replace_list) -> (
     lang_id = global_lang;
     if(lang_id == null || !has(global_langs, lang_id),
         lang_id = global_lang_ids:0);
