@@ -710,8 +710,6 @@ flood_fill(block, axis, flags) ->
     [pos1,pos2]=_get_current_selection();
     min_pos = map(pos1, min(_, pos2:_i));
     max_pos = map(pos1, max(_, pos2:_i));
-    print(min_pos);
-    print(max_pos);
     is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
         all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
     );
