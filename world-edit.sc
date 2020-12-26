@@ -1,6 +1,9 @@
 //World edit
 
-global_lang_ids = ['en_us','it_it'];//defining up here for command to work
+global_lang_ids = {//defining up here for command to work
+    'en_us'->'US English',
+    'it_it'->'Italiano'
+};
 
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
@@ -16,8 +19,8 @@ base_commands_map = [
     ['', _()->_help(1), false],
     ['help', _()->_help(1), false],
     ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
-    ['lang', _()->(print(format(_translate('help_app_lang')+' '+global_lang))), false],
-    ['lang <lang>', _(lang)->(global_lang=lang), [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
+    ['lang', ['_change_lang',null], false],
+    ['lang <lang>', '_change_lang', [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
     ['set <block>', ['set_in_selection',null,null], false],
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
     ['set <block> f <flag>', _(block,flags)->set_in_selection(block,null,flags), false], //TO-DO Help for flags
@@ -108,7 +111,7 @@ __config()->{
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'lang'->{'type'->'term','options'->global_lang_ids},
+        'lang'->{'type'->'term','options'->keys(global_lang_ids)},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
     }
 };
@@ -572,10 +575,15 @@ global_default_lang=[
     'more_moves_undo =         w Your number is too high, undoing all moves for %s',     // player
     'success_undo =            gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
     'success_redo =            gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+    'missing_translation =     gi Missing translations for %s:',                         //language
+    'current_lang =            gi Current language: %s'                                  //current language
+    'changed_lang =            gi Language changed to %s'                                //language we changed to
 
     'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
     'no_selection_error =             Missing selection for operation',
 ];
+
+global_missing_translations={};
 
 for(global_lang_ids,
     global_langs:_ = read_file(_, 'text');
@@ -585,14 +593,30 @@ for(global_lang_ids,
 
         lang_config=_parse_config(global_langs:_);//checking if the lang file has all the translations. This is also applied to en_us, cos it may be outdated
         default_config=_parse_config(global_default_lang);
-
+        missing_translations_list=[];
         for(default_config,//couldn't add the missing lines to config file, cos I cant guarantee that map keys r ordered same exact way as list items
             if(!has(lang_config,_),
+                missing_translations_list+=_;
                 put(lang_config,_,default_config:_)
             )
         );
+        put(global_missing_translations,global_lang_ids:_,missing_translations_list)//So the map will be saved with lang's full name and missing translations
     );
     global_langs:_ = lang_config;
+);
+
+//telling user about missing translations when they try to change lang
+
+_change_lang(lang)->(
+    if(lang!=global_lang,//default is 'en_us', so only null will return false
+        if(global_missing_translations:lang,
+            _print(player(),'missing_translation',lang);
+            print(player(),format('gi     '+lang+':'+length(global_missing_translations:lang)))
+        );
+        global_lang=lang;
+        _print(player(),'changed_lang',lang)
+    );
+
 );
 
 _translate(key, ... replace_list) -> (
