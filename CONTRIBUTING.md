@@ -32,7 +32,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
     - Your function probably needs to access the player's positions. This function will throw the appropriate errors if 
       the player doesn't have the positions defined. NB: This is useful, as you can use these positions however you want.
       
-        `[pos1,pos2]=_get_player_positions(player);`
+        `[pos1,pos2]=__get_current_selection(player);`
 
     - If you're setting blocks, you need to be able to undo that. Here's how:
         
@@ -42,8 +42,10 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
          don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, just
          run the function `add_to_history(your_function_name, player)` and it will all be handled behind the scenes.
          
-3. If it's the first time you are adding commands, you need to know how the commands preprocessor work. You have detailed instructions for it in [Command System](#command-system).
-3. Your additions should take flags into account. If you want your command to support flags, there needs to be two versions of each command you add. One with flags, one with out them. For example, the fill command would look like this:
+3. If it's the first time you are adding commands, you need to know how the commands preprocessor work. You have detailed
+   instructions for it in [Command System](#command-system).
+4. Your additions should take flags into account. If you want your command to set blocks, there needs to be two versions
+   of each command you add. One with flags, one with out them. For example, the fill command would look like this:
    ```
    'fill <block>'
    'fill <block> <replacement>'
@@ -55,29 +57,37 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    'fill <block> f <flag>'
    'fill <block> <replacement> f <flag>'
    ```
-   Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command syntax. For the versions without the flags, just use `null` as the flags.
+   Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command
+   syntax. For the versions without the flags, just use `null` as the `flags` argument in
+   the `set_block` function.
    
-   Whenever you use the `set_block()` function, put the flags from your command processing function at the last argument.
-   The following flags currently exist:
+   To access the flags as a map, run: `flags = _parse_flags(flags)`. Whenever you use the `set_block()` function, put the
+   flags from your command processing function as the last argument. The following flags currently exist for you to use:
    ```
    u     no blockupdates (handled by set_block)
    w     waterlog blocks that get placed inside water (handled by set_block)
-   a     only replace air blocks (handled by set_block)
+   p     only replace air blocks (handled by set_block)
    e     copy/move entities as well
-   b     copy/move biomes as well
+   b     copy/move biomes as well (handled by set_block)
+   a     don't paste air
    ```
-
-4. Add a command that the player can input to call this function. If you are submitting a pr, then please don't worry 
-   about this if you don't understand, the contributors can do it for you. Otherwise, define it below the existing ones, 
-   and add extra arguments underneath as well. Existing arg types are there too, if you feel like using them.
+   Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
+   argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to handle
+   undoing, `set_block` does that on its own.
    
 #### Messages
 
-If you want to print a message as an output to the player, then use the `_print(message_id,player))` function. Input the string in the format:
-`message_id=  Your message` into the list which is under the `//translation` comment, under all the rest. If the message
-requires variables to be put in (like number, etc), just use `%s` in the message to stand for that value, it will be taken 
-care of by the rest of the app. NB: This message will appear in US english. If you want to translate for other languages,
-you need to add the US english *and* your own language's option.
+If you want to print a message as an output to the player, then use the `_print(player, message_id, extra_args))`
+function. This is important to be able to translate the message into other languages. Don't worry if you cannot do this,
+but make sure that you follow these steps so that someone else can translate it. Input the string in the format: 
+`message_id=  Your message` into the list which is under the `//Translations` comment, under all the other output messages. 
+If the message requires variables to be put in (like a number, or player, etc), just use `%s` in the message to stand for
+that value, it will be taken care of by the rest of the app. Also, if the message is for a fatal error which should stop
+the function running, use the `_error()` function with exactly the same arguments as `_print()` and it will exit after
+telling the user what's wrong.
+
+*NB: This message will appear in US english translation. If you want to translate for other languages, you need to add
+the US english version **and** your own language's option.*
 
 ### Command System
 

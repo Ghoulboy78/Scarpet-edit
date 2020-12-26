@@ -32,6 +32,7 @@ Left clicking again will reselect the whole box.
  - `/world-edit redo` -> Redoes a move undone by the player. Also shows up in undo history
  - `/world-edit redo all` -> Redoes all undone moves
  - `/world-edit redo <moves>` -> Redoes specific number of moves
+ - `/world-edit wand` -> Sets wand to held item, or if your hand is empty, gives you the wand.
  - `/world-edit wand <wand>` -> Sets wand to specified item
  - `/world-edit rotate <pos> <degrees> <axis>` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
     `y` or `z`.
@@ -40,8 +41,28 @@ Left clicking again will reselect the whole box.
  - `/world-edit stack <stackcount> <direction>` -> Stacks selection specified number of times in direction specified by
     player
  - `/world-edit expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
- - `/world-edit clone <pos>` -> Clones selection to `pos`
  - `/world-edit move <pos>` -> Moves selection to `pos`
+ - `/world-edit copy` -> Copies selection to clipboard. By default, will not override the existing clipboard (can be changed
+    by adding keyword `force`), and will also take the positions relative to position of player.
+ - `/world-edit copy <pos>` -> Copies selection to clipboard, with positions relative to `pos`. This is significant when 
+    pasting blocks, in terms of how it is pasted.
+ - `/world-edit paste` -> Pastes selection relative to player position. Be careful incase you didnt' choose a wise spot
+    when making the selection.
+ - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
 
+#### Flags
 
+All the above commands which can set (not save) blocks, can also take flags. eg: `/fill <block> f <flags>`. Flags syntax
+is the same as in original WE, i.e a dash before the flag. All available flags will be suggested, but not all will have
+an effect in each case.
+
+Available flags:
+
+ - `-u` -> Places blocks without block updates
+ - `-w` -> Waterlogs blocks placed in water or in other waterlogged blocks
+ - `-p` -> Only replaces air blocks when setting an area
+ - `-e` -> Copies/moves entities from old location to new location. Technically, a new entity is generated with same data
+    and position within the structure as the old one, so all that changes is UUID. Undoing will not remove these entities
+ - `-b` -> Copies old biomes to new location.
+ - `-a` -> Pasting a structure will not paste the air blocks within the structure.
 
