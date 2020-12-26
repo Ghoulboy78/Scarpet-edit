@@ -66,7 +66,11 @@ base_commands_map = [
     ['brush cube <block> <size_int>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
     ['brush cube <block> <size_int> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
     ['brush cube <block> <size_int> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), false],
-    ['brush cube <block> <size_int> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false], 
+    ['brush cube <block> <size_int> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
+    ['brush sphere <block> <radius_int>', _(block, radius_int) -> brush('sphere', null, block, radius_int, null), false],
+    ['brush sphere <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('sphere', flags, block, radius_int, null), false],
+    ['brush sphere <block> <radius_int> <replacement>', _(block, radius_int, replacement) -> brush('sphere', null, block, radius_int, replacement), false],
+    ['brush sphere <block> <radius_int> <replacement> f <flags>', _(block, radius_int, replacement, flags) -> brush('sphere', flags, block, radius_int, replacement), false],  
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -959,9 +963,6 @@ global_brushes = {};
 global_brush_range = 100;
 
 brush(action, flags, ...args) -> (
-    print(flags);
-    print(args);
-
     player = player();
     held_item = player~'holds':0;
     if(held_item==global_wand, _error(player, 'bad_wand_brush_error'); return());
@@ -999,6 +1000,7 @@ _brush_action(pos, brush) -> (
     call(action, pos, args, flags)
 );
 
+//TODO: missing support for hollow shapes
 cube(pos, args, flags) -> (
     [block, size, replacement] = args;
 
@@ -1008,6 +1010,25 @@ cube(pos, args, flags) -> (
         half_size = (size-1)/2;
         volume(pos-half_size, pos+half_size,
             set_block(_, block, replacement, flags, {})
+        );  
+    );
+    
+    add_to_history('brush_cube',player())
+);
+
+_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+
+//TODO: missing support for hollow shapes
+sphere(pos, args, flags) -> (
+    [block, radius, replacement] = args;
+
+    if(radius == 1, 
+        set_block(pos, block, replacement, flags, {}),
+
+        volume(pos-radius, pos+radius,
+            if(_sq_distance(pos, pos(_)) <= radius*radius,
+                set_block(_, block, replacement, flags, {})
+            );
         );  
     );
     
