@@ -16,7 +16,7 @@ base_commands_map = [
     ['', _()->_help(1), false],
     ['help', _()->_help(1), false],
     ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
-    ['lang', _()->_print('current_lang',global_lang), false],
+    ['lang', _()->_print(player(),'current_lang',global_lang), false],
     ['lang <lang>', _(lang)->(global_lang=lang), [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
     ['set <block>', ['set_in_selection',null,null], false],
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
@@ -29,8 +29,8 @@ base_commands_map = [
     ['redo', ['redo', 1], false],
     ['redo <moves>', 'redo', [0, 'help_cmd_redo', 'help_cmd_redo_tooltip', null]],
     ['redo all', ['redo', 0], [-1, 'help_cmd_redo_all', null, null]],
-    ['wand', '_set_or_give_wand', [-1, 'help_cmd_wand', null, null]],
-    ['wand <wand>', _(wand)->(global_wand=wand:0), [-1, 'help_cmd_wand_2', null, null]],
+    ['wand', ['_set_or_give_wand',null], [-1, 'help_cmd_wand', null, null]],
+    ['wand <wand>', '_set_or_give_wand', [-1, 'help_cmd_wand_2', null, null]],
     ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
@@ -39,10 +39,17 @@ base_commands_map = [
     ['stack <count> f <flag>', _(stackcount,flags)->stack(1,null,flags), false],
     ['stack <count> <direction> f <flag>', 'stack', false],
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
-    ['clone <pos>', ['clone',false,null], [-1, 'help_cmd_clone', null, null]],
-    ['clone <pos> f <flags>', _(pos,flags)->clone(pos,false,flags), false], //TODO the flags help again
-    ['move <pos>', ['clone',true,null], [-1, 'help_cmd_move', null, null]],
-    ['move <pos> f <flags>', _(pos,flags)->clone(pos,true,flags), false], //TODO Last flags help
+    ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
+    ['move <pos> f <flags>', 'move', false], //TODO flags help
+    ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
+    ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
+    ['copy force',['_copy',null, true],false],
+    ['copy <pos>',['_copy', false],false],
+    ['copy <pos> force',['_copy', true],false],
+    ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
+    ['paste f <flags>',_(flags)->paste(null, flags),false],//todo flags help
+    ['paste <pos>',['paste', null],false],
+    ['paste <pos> f <flags>','paste',false],//todo last flags help
     ['selection clear', 'clear_selection', false], //TODO help for this and below
     ['selection expand', _()->selection_expand(1), false],
     ['selection expand <amount>', 'selection_expand', false],
@@ -111,6 +118,7 @@ global_wand = 'wooden_sword';
 global_history = [];
 global_undo_history = [];
 global_quick_select = true;
+global_clipboard = [];
 
 global_debug_rendering = false;
 global_reach = 4.5;
@@ -157,7 +165,6 @@ _help(page) ->
         //Allow different desc actions
         if(slice(entry:4,0,1) == '!',
             description_action = '!'+command+slice(entry:4,1);
-            print('Hello');
         , slice(entry:4,0,1) == '?',
             description_action = '?'+command+slice(entry:4,1);
         );
@@ -241,11 +248,11 @@ clear_selection() ->
 
 selection_move(amount, direction) ->
 (
-    [from, to] = _get_current_selection();
+    [from, to] = _get_current_selection(player());
     point1 = _get_marker_position(global_selection:'from');
     point2 = _get_marker_position(global_selection:'to');
     p = player();
-    if (p == null && direction == null, exit(_translate('move_selection_no_player_error')));
+    if (p == null && direction == null, _error(player, 'move_selection_no_player_error'));
     translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
     clear_markers(global_selection:'from', global_selection:'to');
     point1 = point1 + translation_vector;
@@ -258,7 +265,7 @@ selection_move(amount, direction) ->
 
 selection_expand(amount) ->
 (
-    [from, to] = _get_current_selection();
+    [from, to] = _get_current_selection(player());
     point1 = _get_marker_position(global_selection:'from');
     point2 = _get_marker_position(global_selection:'to');
     for (range(3),
@@ -389,7 +396,7 @@ _render_selection_tick() ->
 
     end_marker = global_selection:'to';
     end = if(
-        end_marker,              _get_marker_position(end_marker),
+        end_marker, _get_marker_position(end_marker),
         global_cursor
     );
 
@@ -414,10 +421,10 @@ _get_player_look_at_block(player, range) ->
     )
 );
 
-_get_current_selection()->
+_get_current_selection(player)->
 (
     if( length(global_selection) < 2,
-        exit(_translate('no_selection_error'))
+        _error(player, 'no_selection_error',player)
     );
     start = _get_marker_position(global_selection:'from');
     end = _get_marker_position(global_selection:'to');
@@ -427,32 +434,42 @@ _get_current_selection()->
 
 //Misc functions
 
-_set_or_give_wand() -> (
-    p = player;
+_set_or_give_wand(wand) -> (
+    p = player();
+    if(wand,//checking if player specified a wand to be added
+        if((['tools', 'combat']~item_category(wand:0)) != null,
+            global_wand = wand;
+            _print(p, 'new_wand', wand:0);
+            return(),
+            //else, can't set as wand
+            _error(p, 'invalid_wand')
+        )
+    );//else, if just ran '/world-edit wand' with no extra args
     //give player wand if hand is empty
     if(held_item_tuple = p~'holds' == null,
-       slot = invenroty_set(p, p~'selected_slot', 1, global_wand);
+       slot = inventory_set(p, p~'selected_slot', 1, global_wand);
        return()
     );
     //else, set current held item as wand, if valid
     held_item = held_item_tuple:0;
-    if( (['tools', 'weapons']~item_category(held_item)) != null,
+    if( (['tools', 'combat']~item_category(held_item)) != null,
         global_wand = held_item;
-        print(p, str('%s is now the app\'s wand, use it with care.', held_item)),
+        _print(p, 'new_wand', held_item),
        //else, can't set as wand
-       print(p, 'Wand has to be a tool or weapon')
+       _error(p, 'invalid_wand')
     )
 );
 
-global_flags = 'waehub';
+global_flags = 'waehubp';
 
 //FLAGS:
-//w     waterlog block is previous block was water(logged) too
-//a     only replace air
+//w     waterlog block if previous block was water(logged) too
+//a     don't paste air
 //e     consider entities as well
 //h     make shapes hollow
 //u     set blocks without updates
 //b     set biome
+//p     only replace air
 
 
 _permutation(str) -> (
@@ -469,7 +486,7 @@ _permutation(str) -> (
 );
 global_flags_list = map(_permutation(global_flags), '-'+_);
 
-_parse(flags) ->(
+_parse_flags(flags) ->(
    symbols = split(flags);
    if(symbols:0 != '-', return({}));
    flag_set = {};
@@ -504,7 +521,6 @@ for(global_lang_ids,
         write_file(_, 'text', global_langs:_ = [
             'language_code =    en_us',
             'language =         english',
-
             
             'help_header_prefix =      c ----------------- [ ',
             'help_header_title =       d World-Edit Help',
@@ -544,42 +560,59 @@ for(global_lang_ids,
             'help_cmd_rotate =         l Rotates [deg] about [pos]',
             'help_cmd_rotate_tooltip = g Axis must be x, y or z',
             'help_cmd_stack =          l Stacks selection n times in dir',
-            'help_cmd_stack_tooltip =  g If not provided, direction is player\s view direction by default',
+            'help_cmd_stack_tooltip =  g If not provided, direction is player\'s view direction by default',
             'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
             'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
-            'help_cmd_clone =          l Clones selection to <pos>',
             'help_cmd_move =           l Moves selection to <pos>',
+            'help_cmd_clear_clipboard = l Clears player clipboard',
+            'help_cmd_copy =           l Copies selection to player clipboard',
+            'help_cmd_paste =          l Pastes from player clipboard',
 
-            'filled =                  gi Filled %d blocks',                                    // blocks number
-            'no_undo_history =         w No undo history to show for player %s',                // player
-            'many_undo =               w Undo history for player %s is very long, showing only the last ten items', // player
-            'entry_undo =              w %d: type: %s\\n    affected positions: %s',             // index, command type, blocks number
-            'no_undo =                 r No actions to undo for player %s',                     // player
-            'more_moves_undo =         w Your number is too high, undoing all moves for %s',     // player
-            'success_undo =            gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
-            'success_redo =            gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+            'filled =           gi Filled %d blocks',                                    // blocks number
+            'no_undo_history =  w No undo history to show for player %s',                // player
+            'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
+            'entry_undo_1 =     w %d: type: %s',                                         //index, command type
+            'entry_undo_2       w     affected positions: %s',                           //blocks number
+            'no_undo =          r No actions to undo for player %s',                     // player
+            'more_moves_undo =  w Your number is too high, undoing all moves for %s',    // player
+            'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+            'no_redo =          r No actions to redo for player %s',                     // player
+            'more_moves_redo =  w Your number is too high, redoing all moves for %s',    // player
+            'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
-            'current_lang =            gi Current language is:%s',                              //lang id. todo decide whether to hardcode this
+            'clear_clipboard =                wi Cleared player %s\'s clipboard',
+            'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
+            'copy_force =                     ri Overwriting previous clipboard selection with new one',
+            'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+            'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
 
-            'move_selection_no_player_error = To move selection in the direction of the player, you need to have a player',
-            'no_selection_error =             Missing selection for operation',
+            'current_lang =     gi Current language is: %s',                              //lang id. todo decide whether to hardcode this
+
+            'move_selection_no_player_error = r To move selection in the direction of the player, you need to have a player',
+            'no_selection_error =             r Missing selection for operation for player %s', //player
+            'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
+            'invalid_wand =                   r Wand has to be a tool or weapon',
         ])
     );
     global_langs:_ = _parse_config(global_langs:_)
 );
-_translate_internal(key, replace_list) -> (
+
+_translate(key, ... replace_list) -> (
     // print(player(),key+' '+replace_list);
     lang_id = global_lang;
     if(lang_id == null || !has(global_langs, lang_id),
         lang_id = global_lang_ids:0);
     if(key == null,
         null,
-    ,
         str(global_langs:lang_id:key, replace_list)
     )
 );
-_print(player, key, ... replace) -> print(player, format(_translate_internal(key, replace)));
-_translate(key, ... replace) -> _translate_internal(key, replace);
+
+_print(player, key, ... replace) ->
+    print(player, format(_translate(key, replace)));
+
+_error(player, key, ... replace)->
+    exit(print(player, format(_translate(key, replace))));
 
 
 //Command processing functions
@@ -591,7 +624,7 @@ set_block(pos,block, replacement, flags, extra)->(//use this function to set blo
     state = if(flags,{},null);
     if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)),
+    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
         prev_biome=biome(pos);
         if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
@@ -613,7 +646,7 @@ _block_matches(existing, block_predicate) ->
 
 add_to_history(function,player)->(
 
-    if(length(global_affected_blocks)==0,return());//not gonna add empty list to undo ofc...
+    if(length(global_affected_blocks)==0,exit(_print(player, 'filled',0)));//not gonna add empty list to undo ofc...
     command={
         'type'->function,
         'affected_positions'->global_affected_blocks
@@ -627,12 +660,13 @@ add_to_history(function,player)->(
 print_history()->(
     player=player();
     history = global_history;
-    if(length(history)==0||history==null,_print(player, 'no_undo_history', player));
+    if(length(history)==0||history==null,_error(player, 'no_undo_history', player));
     if(length(history)>10,_print(player, 'many_undo', player));
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, 'entry_undo', history~command+1,command:'type', length(command:'affected_positions'))
+        _print(player, 'entry_undo_1', (history~command)+1, command:'type');//printing twice so it goes on 2 separate lines
+        _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
 
@@ -640,7 +674,7 @@ print_history()->(
 
 undo(moves)->(
     player = player();
-    if(length(global_history)==0||global_history==null,exit(_print(player, 'no_undo', player)));//incase an op was running command, we want to print error to them
+    if(length(global_history)==0||global_history==null,_error(player, 'no_undo', player));//incase an op was running command, we want to print error to them
     if(length(global_history)<moves,_print(player, 'more_moves_undo', player);moves=0);
     if(moves==0,moves=length(global_history));
     for(range(moves),
@@ -653,14 +687,14 @@ undo(moves)->(
         delete(global_history,(length(global_history)-1))
     );
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
-    print(player,format('gi Successfully undid '+moves+' operations, filling '+length(global_affected_blocks)+' blocks'));
+    _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
 );
 
 redo(moves)->(
     player=player();
-    if(length(global_undo_history)==0||global_undo_history==null,exit(print(player,format('r No actions to redo for player '+player))));
-    if(length(global_undo_history)<moves,print(player,'Too many moves to redo, redoing all moves for '+player);moves=0);
+    if(length(global_undo_history)==0||global_undo_history==null,_error(player,'no_redo',player));
+    if(length(global_undo_history)<moves,_print(player, 'more_moves_redo', player);moves=0);
     if(moves==0,moves=length(global_undo_history));
     for(range(moves),
         command = global_undo_history:(length(global_undo_history)-1);//to get last item of list properly
@@ -679,9 +713,8 @@ redo(moves)->(
 set_in_selection(block,replacement,flags)->
 (
     player=player();
-    [pos1,pos2]=_get_current_selection();
+    [pos1,pos2]=_get_current_selection(player);
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
-
     add_to_history('fill', player)
 );
 
@@ -692,7 +725,7 @@ flood_fill(block) ->
 
 rotate(centre, degrees, axis)->(
     player=player();
-    [pos1,pos2]=_get_current_selection();
+    [pos1,pos2]=_get_current_selection(player);
 
     rotation_map={};
     rotation_matrix=[];
@@ -735,26 +768,24 @@ rotate(centre, degrees, axis)->(
     add_to_history('rotate', player)
 );
 
-clone(new_pos, move,flag)->(
+move(new_pos,flags)->(
     player=player();
-    [pos1,pos2]=_get_current_selection();
+    [pos1,pos2]=_get_current_selection(player);
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
-    clone_map={};
+    move_map={};
     translation_vector=new_pos-min_pos;
-    flags=_parse(flag);
-    print(flags);
-    print(flags~'e');
+    flags=_parse_flags(flags);
     entities=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
 
     volume(pos1,pos2,
-        put(clone_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
-        if(move,set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}))//check for waterlog
+        put(move_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
+        set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{})//check for waterlog
     );
 
-    for(clone_map,
-        set_block(_,clone_map:_:0,null,flags,{'biome'->clone_map:_:1});
+    for(move_map,
+        set_block(_,move_map:_:0,null,flags,{'biome'->move_map:_:1});
     );
 
     for(entities,//if its empty, this just wont run, no errors
@@ -766,15 +797,14 @@ clone(new_pos, move,flag)->(
         if(move,modify(_,'remove'))
     );
 
-    add_to_history(if(move,'move','clone'), player)
+    add_to_history('move', player)
 );
 
 stack(count,direction,flags) -> (
-    time = time();
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
-    [pos1,pos2]=_get_current_selection();
-    flags = _parse(flags);
+    [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
@@ -788,21 +818,16 @@ stack(count,direction,flags) -> (
     );
 
     add_to_history('stack', player);
-    print(time()-time);
 );
 
 
 expand(centre, magnitude)->(
     player=player();
-    [pos1,pos2]=_get_current_selection();
+    [pos1,pos2]=_get_current_selection(player);
     expand_map={};
-    min_pos=map(pos1,min(_,pos2:_i));
-    max_pos=map(pos1,max(_,pos2:_i));
 
-
-    step=max(1,magnitude)-1;
     volume(pos1,pos2,
-        if(block(_)!='air',//cos that way shrinkage retains more blocks and less garbage
+        if(air(_),//cos that way shrinkage retains more blocks and less garbage
             put(expand_map,(pos(_)-centre)*(magnitude-1)+pos(_),block(_))
         )
     );
@@ -812,3 +837,45 @@ expand(centre, magnitude)->(
     );
     add_to_history('expand',player)
 );
+
+_copy(centre, force)->(
+    player = player();
+    if(!centre,centre=pos(player));
+    [pos1,pos2]=_get_current_selection(player);
+    if(global_clipboard,
+        if(force,
+            _print(player,'copy_force');
+            global_clipboard=[],
+            _error(player,'copy_clipboard_not_empty')
+        )
+    );
+
+    min_pos=map(pos1,min(_,pos2:_i));
+    avg_pos=(pos1+pos2)/2;
+    global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have
+
+    volume(pos1,pos2,
+        global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want
+    );
+
+    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
+);
+
+paste(pos, flags)->(
+    player=player();
+    if(!pos,pos=pos(player));
+    [pos1,pos2]=_get_current_selection(player);
+    if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
+    flags=_parse_flags(flags);
+
+    entities=global_clipboard:0;
+    for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
+        [pos_vector, old_block, old_biome]=global_clipboard:_;
+        new_pos=pos+pos_vector;
+        if(!(flags~'a'&&air(old_block)),
+            set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
+        )
+    );
+    add_to_history('paste',player)
+);
+
