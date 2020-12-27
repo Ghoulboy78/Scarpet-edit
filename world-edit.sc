@@ -60,24 +60,24 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
-    ['brush clear', ['brush', 'clear', null], false],
-    ['brush list', ['brush', 'list', null], false],
-    ['brush info', ['brush', 'info', null], false],
+    ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
+    ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
+    ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
     ['brush cube <block> <size_int>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
     ['brush cube <block> <size_int> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
-    ['brush cube <block> <size_int> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), false],
+    ['brush cube <block> <size_int> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), [2, 'help_cmd_brush_cube', 'help_cmd_brush_generic', null]],
     ['brush cube <block> <size_int> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
     ['brush cuboid <block> <x_int> <y_int> <z_int>', _(block, x_int, y_int, z_int) -> brush('cuboid', null, block, [x_int, y_int, z_int], null), false],
     ['brush cuboid <block> <x_int> <y_int> <z_int> f <flags>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
-    ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement), false],
+    ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement), [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
     ['brush sphere <block> <radius_int>', _(block, radius_int) -> brush('sphere', null, block, radius_int, null), false],
     ['brush sphere <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('sphere', flags, block, radius_int, null), false],
-    ['brush sphere <block> <radius_int> <replacement>', _(block, radius_int, replacement) -> brush('sphere', null, block, radius_int, replacement), false],
+    ['brush sphere <block> <radius_int> <replacement>', _(block, radius_int, replacement) -> brush('sphere', null, block, radius_int, replacement), [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
     ['brush sphere <block> <radius_int> <replacement> f <flags>', _(block, radius_int, replacement, flags) -> brush('sphere', flags, block, radius_int, replacement), false],
     ['brush flood <block> <radius_int>', _(block, radius_int) -> brush('flood', null, block, radius_int, null), false],
     ['brush flood <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('flood', flags, block, radius_int, null), false], 
-    ['brush flood <block> <radius_int> <axis>', _(block, radius_int, axis) -> brush('flood', null, block, radius_int, axis), false],
+    ['brush flood <block> <radius_int> <axis>', _(block, radius_int, axis) -> brush('flood', null, block, radius_int, axis), [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
     ['brush flood <block> <radius_int> <axis> f <flags>', _(block, radius_int, axis, flags) -> brush('flood', flags, block, radius_int, axis), false], 
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
@@ -310,12 +310,13 @@ __on_tick() ->
     if (p = player(),
         // put your catchall checks here
         global_highlighted_marker = null;
-        new_cursor = if (p~'holds':0==global_wand && p~'gamemode'!='spectator',
+        reach = if( (held = p~'holds':0)==global_wand, global_reach, has(global_brushes, held), global_brush_reach);
+        new_cursor = if ( reach && p~'gamemode'!='spectator',
             if (marker = _trace_marker(p, global_reach), 
                 global_highlighted_marker = marker;
                 _get_marker_position(marker)
             , 
-                _get_player_look_at_block(p, global_reach) )
+                _get_player_look_at_block(p, reach) )
         );
         if (global_cursor && new_cursor != global_cursor,
             draw_shape('box', 0, 'from', global_cursor, 'to', global_cursor+1, 'fill', 0xffffff22);
@@ -364,8 +365,8 @@ __on_player_uses_item(player, item_tuple, hand) ->
                 )
             )
         ),
-        has(global_brushes, held),
-        pos = _get_player_look_at_block(player, global_brush_range);
+        has(global_brushes, held), // TODO: make it so that if brush is a block, placing is not processed
+        pos = _get_player_look_at_block(player, global_brush_reach);
         _brush_action(pos, held)
     )
 );
@@ -596,6 +597,15 @@ for(global_lang_ids,
             'help_cmd_clear_clipboard = l Clears player clipboard',
             'help_cmd_copy =           l Copies selection to player clipboard',
             'help_cmd_paste =          l Pastes from player clipboard',
+            'help_cmd_brush_clear =    l Unregisters current item as brush',
+            'help_cmd_brush_list =     l Lists all currently regiestered brushes and their actions',
+            'help_cmd_brush_info =     l Gives detailed info of currently held brush',
+            'help_cmd_brush_generic =  l Hold item to turn into brush',
+            'help_cmd_brush_cube =     l Register brush to create cube of side length [size] out of [block]',
+            'help_cmd_brush_cuboid =   l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
+            'help_cmd_brush_sphere =   l Register brush to create sphere of radius [size] out of [block]',
+            'help_cmd_brush_flood =    l Register brush to perfrm flood fill out of [block] starting on right clicked block',
+
 
             'filled =           gi Filled %d blocks',                                    // blocks number
             'no_undo_history =  w No undo history to show for player %s',                // player
@@ -975,7 +985,7 @@ paste(pos, flags)->(
 // Brush
 
 global_brushes = {};
-global_brush_range = 100;
+global_brush_reach = 100;
 
 brush(action, flags, ...args) -> (
     player = player();
