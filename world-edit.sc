@@ -639,7 +639,10 @@ _change_lang(lang)->(
     )
 );
 
-_translate(key, replace_list) -> (
+_translate(key, ... replace_list) -> 
+    _translate_internal(key, replace_list);
+
+_translate_internal(key, replace_list) -> (
     lang_id = global_lang;
     if(lang_id == null || !has(global_langs, lang_id),
         lang_id = global_lang_ids:0);
@@ -650,11 +653,10 @@ _translate(key, replace_list) -> (
 );
 
 _print(player, key, ... replace) ->
-    print(player, format(_translate(key, replace)));
+    print(player, format(_translate_internal(key, replace)));
 
 _error(player, key, ... replace)->
-    exit(print(player, format(_translate(key, replace))));
-
+    exit(print(player, format(_translate_internal(key, replace))));
 
 //Command processing functions
 
