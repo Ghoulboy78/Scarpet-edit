@@ -70,7 +70,11 @@ base_commands_map = [
     ['brush sphere <block> <radius_int>', _(block, radius_int) -> brush('sphere', null, block, radius_int, null), false],
     ['brush sphere <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('sphere', flags, block, radius_int, null), false],
     ['brush sphere <block> <radius_int> <replacement>', _(block, radius_int, replacement) -> brush('sphere', null, block, radius_int, replacement), false],
-    ['brush sphere <block> <radius_int> <replacement> f <flags>', _(block, radius_int, replacement, flags) -> brush('sphere', flags, block, radius_int, replacement), false],  
+    ['brush sphere <block> <radius_int> <replacement> f <flags>', _(block, radius_int, replacement, flags) -> brush('sphere', flags, block, radius_int, replacement), false],
+    ['brush flood <block> <radius_int>', _(block, radius_int) -> brush('flood', null, block, radius_int, null), false],
+    ['brush flood <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('flood', flags, block, radius_int, null), false], 
+    ['brush flood <block> <radius_int> <axis>', _(block, radius_int, axis) -> brush('flood', null, block, radius_int, axis), false],
+    ['brush flood <block> <radius_int> <axis> f <flags>', _(block, radius_int, axis, flags) -> brush('flood', flags, block, radius_int, axis), false], 
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -755,7 +759,21 @@ flood_fill(block, axis, flags) ->
 (
     player = player();
     start = player~'pos'; 
-    if(start==block, return());
+    if(block(start)==block, return());
+
+    [pos1,pos2]=_get_current_selection(player);
+    min_pos = map(pos1, min(_, pos2:_i));
+    max_pos = map(pos1, max(_, pos2:_i));
+    // test if inside selection
+    _flood_tester(pos, outer(min_pos), outer(max_pos)) -> (
+        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
+    );
+    _flood_generic(block, axis, start, flags);
+
+);
+
+_flood_generic(block, axis, start, flags) -> 
+(
 
     // Define function to request neighbours perpendiular to axis
     if(
@@ -765,20 +783,14 @@ flood_fill(block, axis, flags) ->
         axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
     );
 
-    [pos1,pos2]=_get_current_selection();
-    min_pos = map(pos1, min(_, pos2:_i));
-    max_pos = map(pos1, max(_, pos2:_i));
-    is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
-        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
-    );
-
     interior_block = block(start);
-    if(is_inside_selection(start), set_block(start, block, null, flags, {}), return());
+    if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
     
     visited = {start->null};
     queue = [start];
     
     while(length(queue)>0, 10000,
+
         current_pos = queue:0;
         delete(queue, 0);
         
@@ -788,7 +800,7 @@ flood_fill(block, axis, flags) ->
             if(!has(visited, current_neighbour),
                 visited:current_neighbour = null;
                 // if the block is not too far and is interior, delete it and add to queue to check neighbours later
-                if( block(_)==interior_block && is_inside_selection(_),
+                if( block(_)==interior_block && _flood_tester(_),
                     queue:length(queue) = current_neighbour;
                     set_block(current_neighbour, block, null, flags, {})
                 );
@@ -796,9 +808,8 @@ flood_fill(block, axis, flags) ->
         );
     );
 
-    add_to_history('flood', player)
+    add_to_history('flood', player())
 );
-
 
 rotate(centre, degrees, axis)->(
     player=player();
@@ -973,7 +984,7 @@ brush(action, flags, ...args) -> (
             delete(global_brushes, held_item),
             _error(player, 'no_brush_error', held_item)
         ),
-        action=='list',
+        action=='list', //TODO imprvove list with interactiveness
         if(global_brushes, 
             _print(player, 'brush_list_header');
             for(pairs(global_brushes), 
@@ -982,7 +993,7 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_extra_info'),
             _print(player, 'brush_empty_list')
         ),
-        action=='info',
+        action=='info', //TODO improve info with better descriptions
         if(has(global_brushes, held_item),
             _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
             _error(player, 'no_brush_error', held_item)
@@ -1033,4 +1044,18 @@ sphere(pos, args, flags) -> (
     );
     
     add_to_history('brush_cube',player())
+);
+
+flood(pos, args, flag) -> (
+
+    start = pos;
+    [block, radius, axis] = args;
+    if(block(start)==block, return());
+
+    // test if inside sphere
+    _flood_tester(pos, outer(start), outer(radius)) -> (
+        _sq_distance(pos, start) <= radius*radius
+    );
+
+    _flood_generic(block, axis, start, flags);
 );
