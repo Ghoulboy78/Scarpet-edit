@@ -67,6 +67,10 @@ base_commands_map = [
     ['brush cube <block> <size_int> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
     ['brush cube <block> <size_int> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), false],
     ['brush cube <block> <size_int> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
+    ['brush cuboid <block> <x_int> <y_int> <z_int>', _(block, x_int, y_int, z_int) -> brush('cuboid', null, block, [x_int, y_int, z_int], null), false],
+    ['brush cuboid <block> <x_int> <y_int> <z_int> f <flags>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
+    ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement), false],
+    ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
     ['brush sphere <block> <radius_int>', _(block, radius_int) -> brush('sphere', null, block, radius_int, null), false],
     ['brush sphere <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('sphere', flags, block, radius_int, null), false],
     ['brush sphere <block> <radius_int> <replacement>', _(block, radius_int, replacement) -> brush('sphere', null, block, radius_int, replacement), false],
@@ -1022,6 +1026,18 @@ cube(pos, args, flags) -> (
         volume(pos-half_size, pos+half_size,
             set_block(_, block, replacement, flags, {})
         );  
+    );
+    
+    add_to_history('brush_cube',player())
+);
+
+//TODO: missing support for hollow shapes
+cuboid(pos, args, flags) -> (
+    [block, size, replacement] = args;
+
+    half_size = (size-1)/2;
+    volume(pos-half_size, pos+half_size,
+        set_block(_, block, replacement, flags, {})
     );
     
     add_to_history('brush_cube',player())
