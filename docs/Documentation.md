@@ -53,6 +53,18 @@ Left clicking again will reselect the whole box.
  what used to be air or replace some other block.
  - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for isntance, will fill the horizontal plane.
 
+#### Brushes
+
+`brushes` let you attach some actions or commands to specific items to use them at a distance. When registering an action with `/world-edit brush <action> <arguments>`, the held item type will be converted into a brush and righ clicking with it will perform the registered action at the highlited block. To view the currently registered brushes use `/world-edit brush list`. To remove a brush from said list or get more info on the registered action for that brush, hold the corresponding item type and use `/world-edit brush clear` or `/world-edit brush info`, respectively.
+
+The available actions for brushes are:
+- `cube <block> <size> [replacement]` -> creates a cube out of `block` and with side length `size`, replacing only blocks that match `replacement` (block or tag), if given.
+- `cuboid <block> <x> <y> <z> [replacement]` -> creates a cuboid out of `block` and with side lengths `x`, `y` and `z`, replacing only blocks that match `replacement` (block or tag), if given.
+- `sphere <block> <radius> [replacement]` -> creates a sphere out of `block` and with `radius`, replacing only blocks that match `replacement` (block or tag), if given.
+- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
+
+All brush functions can be appended with flags, same as fill commands, adding `f -<flags>` at the end of the regular commands.
+
 #### Flags
 
 All the above commands which can set (not save) blocks, can also take flags. eg: `/fill <block> f <flags>`. Flags syntax
