@@ -59,7 +59,6 @@ copy_clipboard_not_empty =       ri Appunti per il giovatore %s non sono vuoti, 
 copy_force =                     ri Sovrascrivendo selezione precedenti con la selezione nuova
 copy_success =                   gi Copiati con successo %s blocchi e %s entità agli appunti
 paste_no_clipboard =             ri Non si può eseguire questa azione, non ci sono appunti per il giocatore %s
-current_lang =                   gi Current language is: %s
 move_selection_no_player_error = r Non puoi muovere la selezione nella direzione di un giocatore senza il giocatore
 no_selection_error =             r Selezione mancante per l'operazione per il giocatore %s
 selection_required_error =       L'operazione ha bisogno d'una selezione specificata
