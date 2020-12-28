@@ -68,6 +68,8 @@ base_commands_map = [
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
+    ['brush reach', ['brush', 'reach', null], false],
+    ['brush reach <length>', _(length)-> brush('reach', null, length), [0, 'help_cmd_brush_reach', null, null]],
     ['brush cube <block> <size_int>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
     ['brush cube <block> <size_int> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
     ['brush cube <block> <size_int> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), [2, 'help_cmd_brush_cube', 'help_cmd_brush_generic', null]],
@@ -76,14 +78,32 @@ base_commands_map = [
     ['brush cuboid <block> <x_int> <y_int> <z_int> f <flags>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
     ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement), [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['brush cuboid <block> <x_int> <y_int> <z_int> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
-    ['brush sphere <block> <radius_int>', _(block, radius_int) -> brush('sphere', null, block, radius_int, null), false],
-    ['brush sphere <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('sphere', flags, block, radius_int, null), false],
-    ['brush sphere <block> <radius_int> <replacement>', _(block, radius_int, replacement) -> brush('sphere', null, block, radius_int, replacement), [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
-    ['brush sphere <block> <radius_int> <replacement> f <flags>', _(block, radius_int, replacement, flags) -> brush('sphere', flags, block, radius_int, replacement), false],
-    ['brush flood <block> <radius_int>', _(block, radius_int) -> brush('flood', null, block, radius_int, null), false],
-    ['brush flood <block> <radius_int> f <flags>', _(block, radius_int, flags) -> brush('flood', flags, block, radius_int, null), false], 
-    ['brush flood <block> <radius_int> <axis>', _(block, radius_int, axis) -> brush('flood', null, block, radius_int, axis), [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
-    ['brush flood <block> <radius_int> <axis> f <flags>', _(block, radius_int, axis, flags) -> brush('flood', flags, block, radius_int, axis), false], 
+    ['brush sphere <block> <radius>', _(block, radius) -> brush('sphere', null, block, radius, null), false],
+    ['brush sphere <block> <radius> f <flags>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
+    ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement), [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
+    ['brush sphere <block> <radius> <replacement> f <flags>', _(block, radius, replacement, flags) -> brush('sphere', flags, block, radius, replacement), false],
+    ['brush cylinder <block> <radius> <height>', _(block, radius, height) -> brush('cylinder', null, block, radius, height, 'y', null), false],
+    ['brush cylinder <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> brush('cylinder', flags, block, radius, height, 'y', null), false],
+    ['brush cylinder <block> <radius> <height> <axis>', _(block, radius, height, axis) -> brush('cylinder', null, block, radius, height, axis, null), false],
+    ['brush cylinder <block> <radius> <height> <axis> f <flags>', _(block, radius, height, axis, flags) -> brush('cylinder', flags, block, radius, height, axis, null), false],
+    ['brush cylinder <block> <radius> <height> <axis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cylinder', null, block, radius, height, axis, replacement), [2, 'help_cmd_brush_cylinder', 'help_cmd_brush_generic', null]],
+    ['brush cylinder <block> <radius> <height> <axis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> brush('cylinder', flags, block, radius, height, axis, replacement), false],
+    ['brush cone <block> <radius> <height>', _(block, radius, height) -> brush('cone', null, block, radius, height, '+y', null), false],
+    ['brush cone <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
+    ['brush cone <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
+    ['brush cone <block> <radius> <height> <saxis> f <flags>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
+    ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement), [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
+    ['brush cone <block> <radius> <height> <saxis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
+    ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
+    ['brush flood <block> <radius> f <flags>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false], 
+    ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis), [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
+    ['brush flood <block> <radius> <axis> f <flags>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false], 
+    ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
+    ['brush line <block> f <flags>', _(block, flags) -> brush('line', flags, block, null, null), false],
+    ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
+    ['brush line <block> <length> f <flags>', _(block, length, flags) -> brush('line', flags, block, length,  null), false],
+    ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement), [2, 'help_cmd_brush_line', 'help_cmd_brush_generic', null]],
+    ['brush line <block> <length> <replacement> f <flags>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -118,6 +138,7 @@ __config()->{
         'moves'->{'type'->'int','min'->1,'suggest'->[]},//todo decide on whether or not to add max undo limit
         'degrees'->{'type'->'int','suggest'->[]},
         'axis'->{'type'->'term','options'->['x','y','z']},
+        'saxis'->{'type'->'term', 'options'->['+x', '-x', '+y', '-y', '+z', '-z']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
         'stack'->{'type'->'int','min'->1,'suggest'->[]},
@@ -138,6 +159,10 @@ __config()->{
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'lang'->{'type'->'term','options'->keys(global_lang_ids)},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
+        'radius'->{'type'->'int','min'->1,'suggest'->[]},
+        'height'->{'type'->'int','min'->1,'suggest'->[]},
+        'size'->{'type'->'int','min'->1,'suggest'->[]},
+        'length'->{'type'->'int','min'->1,'suggest'->[]},
     }
 };
 //player globals
@@ -1028,6 +1053,12 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
             _error(player, 'no_brush_error', held_item)
         ),
+        action=='reach', 
+        if(args, 
+            global_brush_reach = args:0;
+            _print(player, 'brush_new_reach', args:0),
+            _print(player, 'brush_reach')
+        ),
         // else, register new brush with given action
         if(has(global_brushes, held_item),
             _print(player, 'brush_replaced', held_item)
@@ -1045,6 +1076,8 @@ _brush_action(pos, brush) -> (
 cube(pos, args, flags) -> (
     [block, size, replacement] = args;
 
+    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+
     if(size == 1, 
         set_block(pos, block, replacement, flags, {}),
 
@@ -1061,6 +1094,8 @@ cube(pos, args, flags) -> (
 cuboid(pos, args, flags) -> (
     [block, size, replacement] = args;
 
+    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+
     half_size = (size-1)/2;
     volume(pos-half_size, pos+half_size,
         set_block(_, block, replacement, flags, {})
@@ -1075,6 +1110,8 @@ _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 sphere(pos, args, flags) -> (
     [block, radius, replacement] = args;
 
+    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+
     if(radius == 1, 
         set_block(pos, block, replacement, flags, {}),
 
@@ -1088,7 +1125,73 @@ sphere(pos, args, flags) -> (
     add_to_history('brush_cube',player())
 );
 
-flood(pos, args, flag) -> (
+//TODO: missing support for hollow shapes
+cylinder(pos, args, flags) -> (
+    [block, radius, height, axis, replacement] = args;
+
+    offset = _define_flat_distance_squared(axis, radius, height);
+
+    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+
+    if(radius == 1, 
+        set_block(pos, block, replacement, flags, {}),
+
+        volume(pos-offset, pos+offset,
+            if( _flat_sq_distance(pos, pos(_)) <= radius*radius,
+                set_block(_, block, replacement, flags, {})
+            );
+        );  
+    );
+    
+    add_to_history('brush_cube',player())
+);
+
+
+//TODO: missing support for hollow shapes
+cone(pos, args, flags) -> (
+    [block, radius, height, signed_axis, replacement] = args;
+
+    axis = slice(signed_axis, 1);
+    offset = _define_flat_distance_squared(axis, radius, height);
+    axis_index = ['x', 'y', 'z']~axis;
+    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+
+    // define direction
+    if( slice(signed_axis, 0, 1) == '-',
+        _inside_cone_fun(y, r, outer(height), outer(radius)) -> y <= height/2 - height/radius * r,
+        _inside_cone_fun(y, r, outer(height), outer(radius)) -> y >= -height/2 + height/radius * r,
+    );
+
+
+    if(radius == 1, 
+        set_block(pos, block, replacement, flags, {}),
+
+        volume(pos-offset, pos+offset,
+            r = sqrt( _flat_sq_distance(pos, pos(_)) );
+            if( r <= radius && _inside_cone_fun((pos-pos(_)):axis_index, r),
+                set_block(_, block, replacement, flags, {})
+            );
+        );  
+    );
+    
+    add_to_history('brush_cube',player())
+);
+
+_define_flat_distance_squared(axis, radius, size) -> (
+    if(
+        axis=='x', 
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:1*p:1 + p:2*p:2);
+            offset = [radius, (size-1)/2, radius],
+        axis=='y', 
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:2*p:2);
+            offset = [radius, (size-1)/2, radius],
+        axis=='z',  
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:1*p:1);
+            offset = [radius, radius, (size-1)/2]
+    );
+);
+
+flood(pos, args, flags) -> (
 
     start = pos;
     [block, radius, axis] = args;
@@ -1100,4 +1203,38 @@ flood(pos, args, flag) -> (
     );
 
     _flood_generic(block, axis, start, flags);
+);
+
+line(pos, args, flags) -> (
+    [block, length, replacement] = args;
+
+    player = player();
+    if(length, 
+        final_pos = map(pos(player)+player~'look'*length+[0, player~'eye_height', 0], floor(_)),
+        final_pos = pos
+    );
+
+    m = player ~ 'pos' + [0, player~'eye_height', 0] - final_pos; // line slopes
+
+    max_size = max(map(m, abs(_)));
+    t = l(range(max_size))/max_size;
+    for(t, 
+        b = m * _ + final_pos;
+        set_block(b, block, replacement, flags, {})
+    );
+
+    add_to_history('brush_cube',player)
+);
+
+__line_fast(p1, p2, material, width) -> (
+    m = p2-p1;
+    max_size = max(map(m, abs(_)));
+    t = l(range(max_size))/max_size;
+    for(t, 
+        b = m * _ + p1;
+        __set_and_save(b, material);
+    );
+    
+    dim = player() ~ 'dimension';
+    __put_into_history(global_this_story, dim); 
 );
