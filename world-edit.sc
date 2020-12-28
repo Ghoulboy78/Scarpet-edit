@@ -620,6 +620,17 @@ global_default_lang=[
     'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
     'help_cmd_move =           l Moves selection to <pos>',
+    'help_cmd_brush_clear =    l Unregisters current item as brush',
+    'help_cmd_brush_list =     l Lists all currently regiestered brushes and their actions',
+    'help_cmd_brush_info =     l Gives detailed info of currently held brush',
+    'help_cmd_brush_generic =  l Hold item to turn into brush',
+    'help_cmd_brush_cube =     l Register brush to create cube of side length [size] out of [block]',
+    'help_cmd_brush_cuboid =   l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
+    'help_cmd_brush_sphere =   l Register brush to create sphere of radius [size] out of [block]',
+    'help_cmd_brush_cylinder = l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
+    'help_cmd_brush_cone =     l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
+    'help_cmd_brush_line =     l Register brush to create line from player to where you click of [length], if given',
+    'help_cmd_brush_flood =    l Register brush to perfrm flood fill out of [block] starting on right clicked block',
 
     'filled =           gi Filled %d blocks',                                    // blocks number
     'no_undo_history =  w No undo history to show for player %s',                // player
@@ -648,6 +659,16 @@ global_default_lang=[
     'no_selection_error =             r Missing selection for operation for player %s', //player
     'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand =                   r Wand has to be a tool or weapon',
+
+    'new_brush =                      wi %s is now a brush with action %s',
+    'brush_info =                     w %s has action %s bound to it with parameters %s and flags %s',
+    'brush_replaced =                 w Replacing previous action for brush in %s',
+    'brush_list_header =              bc === Current brushes are ===',
+    'brush_empty_list =               gi No brushes registerd so far',
+    'brush_extra_info =               ig For detailed info on a brush use /world-edit brush info',
+    'brush_new_reach =                w Brush reach was set to %d blocks',
+    'brush_reach =                    w Brush reach is currently %d blocks',
+
 ];
 
 global_missing_translations={};
@@ -1057,7 +1078,7 @@ brush(action, flags, ...args) -> (
         if(args, 
             global_brush_reach = args:0;
             _print(player, 'brush_new_reach', args:0),
-            _print(player, 'brush_reach')
+            _print(player, 'brush_reach', global_brush_reach)
         ),
         // else, register new brush with given action
         if(has(global_brushes, held_item),
