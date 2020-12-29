@@ -60,6 +60,14 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
+    ['palette make', ['make_palette', null], false],
+    ['palette make <index>', 'make_palette', false],
+    ['palette save <index> <palette>', ['manage_palettes', 'save'], false],
+    ['palette give <index>', ['manage_palettes', null, 'give'], false],
+    ['palette delete <index>', ['manage_palettes', null, 'delete'], false],
+    ['palette list', ['manage_palettes', null, null, 'list'], false],
+    ['palette clear', ['manage_palettes', null, null, 'clear'], false],
+    
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -114,6 +122,7 @@ __config()->{
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'lang'->{'type'->'term','options'->global_lang_ids},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
+        'index'->{'type'->'int', 'min'->0, 'suggest'->[]}
     }
 };
 //player globals
@@ -600,6 +609,13 @@ for(global_lang_ids,
             'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
             'invalid_wand =                   r Wand has to be a tool or weapon',
 
+            'no_shulker_palette_error =       r Need to hold a shulker box with stuff in it to make a palette',
+            'palettes_new =                   w Saved new palette with index %d',
+            'palettes_bad_index =             d There\'s no palette with index %d',
+            'palettes_show_header =           bc === Your saved palettes are ===',
+            'palettes_deleted =               w Delete palette with index %d',
+            'plaettes_clear =                 w Deleted all palettes',
+
         ])
     );
     global_langs:_ = _parse_config(global_langs:_)
@@ -932,3 +948,136 @@ paste(pos, flags)->(
     add_to_history('paste',player)
 );
 
+// Palettes
+
+global_palettes = [];
+
+manage_palettes(index, palette, action) -> (
+    player = player();
+
+    if(index >= length(global_palettes), 
+        _print(player, 'palettes_bad_index');
+        return();
+    );
+
+    if(
+        action=='list',
+            _print(player, 'palettes_show_header');
+            for(global_palettes, 
+                print(player, format(str('b %d:',_i)));
+                for(pairs(_), print( str(' %.0f %s', 100*_:1, _:0)))
+            ),
+        action=='give',
+            _give_player_palette(index),
+        action=='delete',
+            delete(global_palettes, index);
+            _print(player, 'palettes_deleted', index),
+        action=='clear',
+            global_palettes = [];
+            _print(player, 'palettes_clear'),
+        action=='save', // for command line palettes
+            global_palettes:index = palette;
+            _print(player, 'palettes_new', index)
+    );
+);
+
+_give_player_palette(index) -> (
+    //TODO: this requires a bit of maths to see what ammputn of blocks in a shulker result in the best approximation of the percentages
+    print(player(), 'This is work in progress, sorry. Come back later!')
+);
+
+make_palette(index) -> (
+
+    player = player();
+    held = player~'holds';
+
+    if(index >= length(global_palettes), 
+        _print(player, 'palettes_bad_index');
+        index = length(global_palettes)
+    );
+
+    if(index==null, index=length(global_palettes));
+
+    // if it's not a shulker with nbt data, exit
+    if( !(held:0~'shulker_box') || !held:2,
+        _error(player, 'no_shulker_palette_error');
+        return()
+    );
+    
+    //parese palette
+    held_list = map(_get_item_list(held:2), if(_, _process_special_cases(_), continue()));
+    inverse_total_ammount = 1/length(held_list);
+    palette = {};
+    for(held_list, palette:_ += inverse_total_ammount);
+
+    //save it
+    global_palettes:index = palette;
+    _print(player, 'palettes_new', index);
+);
+
+// Uses lists of lists in case some block needs more properties
+global_special_cases = {
+    '_button' -> [['face', 'floor']],
+    'sea_pickle' -> [['waterlogged', 'false']],
+};
+global_special_counts = { // pairs of [property, max] to modify
+    'sea_pickle' -> ['pickles', 4],
+    'snow' -> ['layers', 8]
+};
+_process_special_cases(block_name_count_tuple) -> (
+    [block_name, count] = block_name_count_tuple;
+    for(keys(global_special_cases), if(block_name~_, prop_list = global_special_cases:_) );
+    for(keys(global_special_counts), 
+        if(_==block_name,
+            count_prop = copy(global_special_counts:_); 
+            count_prop:1 = min(count_prop:1, count)
+        )
+    );
+
+    if( // both exist
+        prop_list && count_prop, prop_list += count_prop,
+        // else if only prop_list, do nothing
+        prop_list, null,
+        // else if only count_prop, that's the whole list
+        count_prop, prop_list = [count_prop],
+        // else, if none exist, just return plane block
+        return(block_name)
+    );
+
+    // parse the properties string and return the block
+    props_str = join(',', map(prop_list, str('%s="%s"', _:0, _:1)) );
+    return( block(str('%s[%s]', block_name, props_str)) )
+);
+
+global_aliases = {
+                        'water_bucket' -> 'water' ,
+                        'lava_bucket' -> 'lava' ,
+                        'feather' -> 'air' ,
+                        'ender_eye' -> 'end_portal' ,
+                        'flint_and_steel' -> 'nether_portal',
+                        'redstone' -> 'redstone_wire',
+                        'wheat_seeds' -> 'wheat',
+                        'beetroot_seeds' -> 'beetroots',
+                        'melon_seeds' -> 'melon_stem',
+                        'pumpkin_seeds' -> 'pumpkin_stem',
+                        'sweet_berries' -> 'sweet_berry_bush',
+                        'carrot' -> 'carrots',
+                        'potato' -> 'potatoes',
+                    };
+
+_get_item_list(box_data) -> (
+    item_tuple_list = parse_nbt(box_data:'BlockEntityTag':'Items');
+    // empty list of 27 elements
+    item_list = map(range(27), null);
+    // fill with items in their slots
+    for(item_tuple_list,
+        item = _:'id' - 'minecraft:';
+        item_list:(_:'Slot') = [_process_alias(item), _:'Count']
+    );
+    return(item_list)
+);
+
+_process_alias(item) -> (
+    if(global_aliases:item, item=global_aliases:item);
+    return(item)
+);
