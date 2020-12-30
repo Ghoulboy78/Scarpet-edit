@@ -66,7 +66,14 @@ base_commands_map = [
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
     // we need a better way of changing 'settings'
-    ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
+    ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
+    ['schematic list',['schematic',null,null,'list',null],false],//todo help for this
+    ['schematic load <schem>',['schematic',null,'load',null],false],//todo once I figure out tilentity data
+    ['schematic delete <schem>',['schematic',null,'delete',null],false],//todo
+    ['schematic save <name>',['schematic',false,'save',false],false],
+    ['schematic save <name> force',['schematic',false,'save',true],false],
+    ['schematic save <name> entities',['schematic',true,'save',false],false],
+    ['schematic save <name> entities force',['schematic',true,'save',true],false],
 ];
 
 // Proccess commands map for Carpet
@@ -119,6 +126,17 @@ __config()->{
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'lang'->{'type'->'term','options'->keys(global_lang_ids)},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
+        'name'->{'type'->'string','suggest'->[]},
+        'schem'->{
+            'type'->'term',
+            'suggester'->_(args)->(
+                valid_schem={''};//adding default empty or it will break
+                for(get_valid_schematics(),
+                    valid_schem+=_
+                );
+                keys(valid_schem)
+            )
+        },
     }
 };
 //player globals
@@ -506,6 +524,15 @@ _parse_flags(flags) ->(
    flag_set;
 );
 
+get_valid_schematics()->
+    filter(list_files('','nbt'),type(_)=='nbt'&&parse_nbt(_):'Metadata'!=null);//todo implement more rigorous litematica check for valid schem
+
+volume_blocks(pos1,pos2)->(
+    retlist=[];
+    volume(pos1,pos2,retlist+=_);
+    retlist
+);
+
 //Config Parser
 
 _parse_config(config) -> (
@@ -600,6 +627,11 @@ global_default_lang=[
     'no_selection_error =             r Missing selection for operation for player %s', //player
     'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand =                   r Wand has to be a tool or weapon',
+
+    'schematic_list =                 w List of schematics:',
+    'saved_schematic =                w Saved schematic as %s.nbt',                                 //Schematic name
+    'existing_schematic =             r Existing file %s.nbt, use \'force\' keyword to overwrite',  //Schematic name
+    'schematic_overwrite =            ri Overwriting %s.nbt with a new schematic',                  //Schematic name
 ];
 
 global_missing_translations={};
@@ -751,6 +783,75 @@ redo(moves)->(
     global_history+={'type'->'redo','affected_positions'->global_affected_blocks};//Doing this the hacky way so I can add custom goodbye message
     _print(player, 'success_redo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
+);
+
+schematic(name, include_entities, action, force)->(//load,delete,save
+    p=player();
+    if(action=='save',
+        if(read_file(name,'nbt'),
+            if(force,
+                _print(p,'schematic_overwrite',name);
+                delete_file(name,'nbt'),
+                _error(p,'existing_schematic',name)
+            )
+        );
+
+        [pos1,pos2]=_get_current_selection(player);
+        data={};
+        blocks=volume_blocks(pos1,pos2);
+
+        pos_diff=map(pos1-pos2,abs(_)+1);
+
+        //mc nbt dat a structure (cos schemtatic have weird format which is unreplicable in scarpet)
+        min_pos=map(pos1,min(_,pos2:_i));
+        avg_pos=(pos1+pos2)/2;
+        entities=if(include_entities,entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);
+
+        palette_map={};
+
+        states=[];
+        key_map(block)->(
+            map={'Name'->str('minecraft:%s',block)};
+            if(block_state(block),put(map,'Properties',block_state(block)));
+            map
+        );
+
+        for(blocks,
+            palette_map:key_map(_)+=1;
+
+            state_map={//adding minecraft: prefix so it works with regular schems
+                'pos'->(pos(_)-min_pos),
+                'state'->(keys(palette_map)~key_map(_))
+            };
+            if((nbt=parse_nbt(block_data(_)))!='null',
+                delete(nbt,'x');
+                delete(nbt,'y');
+                delete(nbt,'z');
+                put(state_map,'nbt',nbt)
+            );
+            states+=state_map
+        );
+
+        data={//todo add regular schematic saving later, gonna use my own method now cos even after reading litematica code idk how to do
+            'blocks'->states,
+            'entities'->entities,
+            'palette'->keys(palette_map),
+            'size'->{
+                'x'->pos_diff:0,
+                'y'->pos_diff:1,
+                'z'->pos_diff:2
+            },
+            'DataVersion'->system_info('game_data_version')
+        };
+
+        _print(p,'saved_schematic',name);
+        write_file(name,'nbt',encode_nbt(data)),
+
+        action=='list',
+        _print(p,'schematic_list');
+        schems=get_valid_schematics();//todo change to 'schematic' files when/if that is added
+        print(str(schems)-'['-']')
+    )
 );
 
 set_in_selection(block,replacement,flags)->
@@ -921,7 +1022,7 @@ expand(centre, magnitude)->(
     );
 
     for(expand_map,
-        set_block(_,expand_map:_,null,{})
+        set_block(_,expand_map:_,null,null,{})
     );
     add_to_history('expand',player)
 );
@@ -940,7 +1041,7 @@ _copy(centre, force)->(
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
-    global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have
+    global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
         global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want

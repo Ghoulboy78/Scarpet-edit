@@ -13,7 +13,9 @@ The main contributors to this project are:
  - BisUmTo      (GitHub: BisUmTo, Discord: BisUmTo#8383)
 
 ## How to use
-First of all, ensure you are running fabric-carpet 1.4.22 or above, or the area selection will not work.
+
+If you are running an outdated version of fabric-carpet, WorldEdit for scarpet won't work. Currently, the oldest compatible
+version is: carpet 1.4.22
 
 ### Area selection
 
