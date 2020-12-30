@@ -127,7 +127,7 @@ __config()->{
         'lang'->{'type'->'term','options'->keys(global_lang_ids)},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
         'name'->{'type'->'string','suggest'->[]},
-        'schem'->{
+        'schem'->{//todo figure out why this dont work
             'type'->'term',
             'suggester'->_(args)->(
                 valid_schem={''};//adding default empty or it will break
@@ -619,7 +619,7 @@ global_default_lang=[
     'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
     'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
 
-    'translation_completeness =       gi Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
+    'translation_completeness =       ri Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
     'current_lang =                   gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
     'changed_lang =                   gi Language changed to %s',                               //language we changed to
 
@@ -630,8 +630,10 @@ global_default_lang=[
 
     'schematic_list =                 w List of schematics:',
     'saved_schematic =                w Saved schematic as %s.nbt',                                 //Schematic name
-    'existing_schematic =             r Existing file %s.nbt, use \'force\' keyword to overwrite',  //Schematic name
+    'existing_schematic =             r Existing file %s.nbt, use \'force\' to overwrite',          //Schematic name
     'schematic_overwrite =            ri Overwriting %s.nbt with a new schematic',                  //Schematic name
+    'schematic_delete_success =       gi Successfully deleted %s.nbt',                              //Schematic name
+    'schematic_delete_fail =          ri Failed to delete %s.nbt, no such file exists',             //Schematic name
 ];
 
 global_missing_translations={};
@@ -846,6 +848,12 @@ schematic(name, include_entities, action, force)->(//load,delete,save
 
         _print(p,'saved_schematic',name);
         write_file(name,'nbt',encode_nbt(data)),
+
+        action=='delete',
+        if(delete_file(name,'nbt'),
+            _print(p,'schematic_delete_success',name),
+            _print(p,'schematic_delete_fail',name)
+        ),
 
         action=='list',
         _print(p,'schematic_list');
