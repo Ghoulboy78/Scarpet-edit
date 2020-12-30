@@ -61,6 +61,9 @@ The available actions for brushes are:
 - `cube <block> <size> [replacement]` -> creates a cube out of `block` and with side length `size`, replacing only blocks that match `replacement` (block or tag), if given.
 - `cuboid <block> <x> <y> <z> [replacement]` -> creates a cuboid out of `block` and with side lengths `x`, `y` and `z`, replacing only blocks that match `replacement` (block or tag), if given.
 - `sphere <block> <radius> [replacement]` -> creates a sphere out of `block` and with `radius`, replacing only blocks that match `replacement` (block or tag), if given.
+- `cylinder <block> <radius> <height> [axis] [replacement]` -> creates a cylinder out of `block` and with `radius` and `height` along `axis` (if given; else, defaults to `y` for a vertical cylinder), replacing only blocks that match `replacement` (block or tag), if given.
+- `cone <block> <radius> <height> [signed_axis] [replacement]` -> creates a cone out of `block` and with `radius` and `height` along `signed_axis` (if given; else, defaults to `+y` for a vertical cone pointing up), replacing only blocks that match `replacement` (block or tag), if given.
+- `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed and it only uses the clicked block to get the direction of the line.
 - `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
 
 All brush functions can be appended with flags, same as fill commands, adding `f -<flags>` at the end of the regular commands.
