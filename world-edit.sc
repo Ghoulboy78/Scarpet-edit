@@ -635,6 +635,8 @@ global_default_lang=[
     'structure_load_fail =            ri Failed to load %s.nbt, no such file exists',               //structure name
 ];
 
+global_default_config=_parse_config(global_default_lang);
+
 global_missing_translations={};
 
 for(global_lang_ids,
@@ -644,12 +646,12 @@ for(global_lang_ids,
         write_file(_, 'text', global_langs:_ = global_default_lang),//doing if statement here so dont have to iterate unnecessarily
 
         lang_config=_parse_config(global_langs:_);//checking if the lang file has all the translations. This is also applied to en_us, cos it may be outdated
-        default_config=_parse_config(global_default_lang);
+
         missing_translations_list=[];
-        for(default_config,//couldn't add the missing lines to config file, cos I cant guarantee that map keys r ordered same exact way as list items
+        for(global_default_config,//couldn't add the missing lines to config file, cos I cant guarantee that map keys r ordered same exact way as list items
             if(!has(lang_config,_),
                 missing_translations_list+=_;
-                put(lang_config,_,default_config:_)
+                put(lang_config,_,global_default_config:_)
             )
         );
         put(global_missing_translations,_,missing_translations_list)//So the map will be saved with lang's full name and missing translations
@@ -665,7 +667,7 @@ _change_lang(lang)->(
         if(global_missing_translations:lang,
             _print(p,'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
             logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos its log file and lang keys r in english anyways
-            for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:global_lang:_))
+            for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:'en_us':_))
         );
         global_lang=lang;
         _print(p,'changed_lang',str('%s (%s)',_translate('language'),lang)),
