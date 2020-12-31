@@ -67,13 +67,14 @@ base_commands_map = [
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
-    ['schematic list',['schematic',null,null,'list',null],false],//todo help for this
-    ['schematic load <schem>',['schematic',null,'load',null],false],//todo once I figure out tilentity data
-    ['schematic delete <schem>',['schematic',null,'delete',null],false],//todo
-    ['schematic save <name>',['schematic',false,'save',false],false],
-    ['schematic save <name> force',['schematic',false,'save',true],false],
-    ['schematic save <name> entities',['schematic',true,'save',false],false],
-    ['schematic save <name> entities force',['schematic',true,'save',true],false],
+    ['structure list',['structure',null,null,'list',null,null],false],//todo help for this
+    ['structure load <structure>',['structure',null,'load',null,null],false],
+    ['structure load <structure> <pos>',_(s,p)->structure(s,null,'load',null,p),false],
+    ['structure delete <structure>',['structure',null,'delete',null,null],false],
+    ['structure save <name>',['structure',false,'save',false,null],false],
+    ['structure save <name> force',['structure',false,'save',true,null],false],
+    ['structure save <name> entities',['structure',true,'save',false],false],
+    ['structure save <name> entities force',['structure',true,'save',true,null],false],
 ];
 
 // Proccess commands map for Carpet
@@ -127,14 +128,14 @@ __config()->{
         'lang'->{'type'->'term','options'->keys(global_lang_ids)},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
         'name'->{'type'->'string','suggest'->[]},
-        'schem'->{//todo figure out why this dont work
+        'structure'->{//todo figure out why this dont work
             'type'->'term',
             'suggester'->_(args)->(
-                valid_schem={''};//adding default empty or it will break
-                for(get_valid_schematics(),
-                    valid_schem+=_
+                valid_structure={''};//adding default empty or it will break
+                for(get_valid_structures(),
+                    valid_structure+=_
                 );
-                keys(valid_schem)
+                keys(valid_structure)
             )
         },
     }
@@ -524,8 +525,8 @@ _parse_flags(flags) ->(
    flag_set;
 );
 
-get_valid_schematics()->
-    filter(list_files('','nbt'),type(_)=='nbt'&&parse_nbt(_):'Metadata'!=null);//todo implement more rigorous litematica check for valid schem
+get_valid_structures()->
+    filter(list_files('','nbt'),type(_)=='nbt'&&parse_nbt(_):'Metadata'!=null);//todo implement more rigorous litematica check for valid structure
 
 volume_blocks(pos1,pos2)->(
     retlist=[];
@@ -628,12 +629,13 @@ global_default_lang=[
     'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand =                   r Wand has to be a tool or weapon',
 
-    'schematic_list =                 w List of schematics:',
-    'saved_schematic =                w Saved schematic as %s.nbt',                                 //Schematic name
-    'existing_schematic =             r Existing file %s.nbt, use \'force\' to overwrite',          //Schematic name
-    'schematic_overwrite =            ri Overwriting %s.nbt with a new schematic',                  //Schematic name
-    'schematic_delete_success =       gi Successfully deleted %s.nbt',                              //Schematic name
-    'schematic_delete_fail =          ri Failed to delete %s.nbt, no such file exists',             //Schematic name
+    'structure_list =                 w List of structures:',
+    'saved_structure =                w Saved structure as %s.nbt',                                 //structure name
+    'existing_structure =             r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
+    'structure_overwrite =            ri Overwriting %s.nbt with a new structure',                  //structure name
+    'structure_delete_success =       gi Successfully deleted %s.nbt',                              //structure name
+    'structure_delete_fail =          ri Failed to delete %s.nbt, no such file exists',             //structure name
+    'structure_load_fail =            ri Failed to load %s.nbt, no such file exists',               //structure name
 ];
 
 global_missing_translations={};
@@ -787,14 +789,14 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
-schematic(name, include_entities, action, force)->(//load,delete,save
+structure(name, include_entities, action, force, pos)->(//load
     p=player();
     if(action=='save',
         if(read_file(name,'nbt'),
             if(force,
-                _print(p,'schematic_overwrite',name);
+                _print(p,'structure_overwrite',name);
                 delete_file(name,'nbt'),
-                _error(p,'existing_schematic',name)
+                _error(p,'existing_structure',name)
             )
         );
 
@@ -804,7 +806,7 @@ schematic(name, include_entities, action, force)->(//load,delete,save
 
         pos_diff=map(pos1-pos2,abs(_)+1);
 
-        //mc nbt dat a structure (cos schemtatic have weird format which is unreplicable in scarpet)
+        //mc nbt data structure (cos schematic have weird format which is unreplicable in scarpet)
         min_pos=map(pos1,min(_,pos2:_i));
         avg_pos=(pos1+pos2)/2;
         entities=if(include_entities,entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);
@@ -821,7 +823,7 @@ schematic(name, include_entities, action, force)->(//load,delete,save
         for(blocks,
             palette_map:key_map(_)+=1;
 
-            state_map={//adding minecraft: prefix so it works with regular schems
+            state_map={
                 'pos'->(pos(_)-min_pos),
                 'state'->(keys(palette_map)~key_map(_))
             };
@@ -834,7 +836,7 @@ schematic(name, include_entities, action, force)->(//load,delete,save
             states+=state_map
         );
 
-        data={//todo add regular schematic saving later, gonna use my own method now cos even after reading litematica code idk how to do
+        data={//todo add regular structure saving later, gonna use my own method now cos even after reading litematica code idk how to do
             'blocks'->states,
             'entities'->entities,
             'palette'->keys(palette_map),
@@ -846,19 +848,34 @@ schematic(name, include_entities, action, force)->(//load,delete,save
             'DataVersion'->system_info('game_data_version')
         };
 
-        _print(p,'saved_schematic',name);
+        _print(p,'saved_structure',name);
         write_file(name,'nbt',encode_nbt(data)),
+
+        action=='load',
+        if(!(file=read_file(name,'nbt')),
+           _error(p,'structure_load_fail',name)
+        );
+        pos=if(pos,pos,p~'pos');
+        file=parse_nbt(file);
+        palette=parse_nbt(file:'palette');
+        blocks=parse_nbt(file:'blocks');
+        entities=parse_nbt(file:'entities');
+        for(blocks,
+            set_block(_:'pos'+pos,palette:(_:'state'):'Name',palette:(_:'state'):'Properties',_:'nbt');
+        );
+        add_to_history('structure_paste',p)//todo translation keys for actions
+        ,
 
         action=='delete',
         if(delete_file(name,'nbt'),
-            _print(p,'schematic_delete_success',name),
-            _print(p,'schematic_delete_fail',name)
+            _print(p,'structure_delete_success',name),
+            _error(p,'structure_delete_fail',name)
         ),
 
         action=='list',
-        _print(p,'schematic_list');
-        schems=get_valid_schematics();//todo change to 'schematic' files when/if that is added
-        print(str(schems)-'['-']')
+        _print(p,'structure_list');
+        strucs=get_valid_structures();
+        print(str(strucs)-'['-']')
     )
 );
 
