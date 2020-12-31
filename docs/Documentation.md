@@ -51,9 +51,19 @@ Left clicking again will reselect the whole box.
  - `/world-edit paste` -> Pastes selection relative to player position. Be careful incase you didnt' choose a wise spot
     when making the selection.
  - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
- - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the player's position. Can both "fill"
+ - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
+    player's position. Can both "fill"
  what used to be air or replace some other block.
- - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for isntance, will fill the horizontal plane.
+ - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
+    instance, will fill the horizontal plane.
+ - `/world-edit structure list` -> Lists all available structures. Currently, they are all in the same file as the lang 
+    files, this may change soon. You can add other structure files, and they will load properly 
+ - `/world-edit structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
+    position if not specified.
+ - `/world-edit structure save <name> entities?|force?` -> Saves current selection to a `.nbt` file compatible with vanilla 
+    structure blocks. `entities` will make it save entities, and `force` will override an existing strucute with the same
+    name.
+ - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
 
 #### Flags
 
