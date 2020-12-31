@@ -1,5 +1,5 @@
 language_code =    en_us
-language =         english
+language =         US English
 help_header_prefix =      c ----------------- [ 
 help_header_title =       d World-Edit Help
 help_header_suffix =      c  ] -----------------

@@ -2,10 +2,7 @@
 
 import('math','_round');
 
-global_lang_ids = {//defining up here for command to work
-    'en_us'->'US English',
-    'it_it'->'Italiano'
-};
+global_lang_ids = ['en_us','it_it'];//defining up here for command to work
 
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
@@ -125,7 +122,7 @@ __config()->{
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'lang'->{'type'->'term','options'->keys(global_lang_ids)},
+        'lang'->{'type'->'term','options'->global_lang_ids},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
         'name'->{'type'->'string','suggest'->[]},
         'structure'->{//todo figure out why this dont work
@@ -555,7 +552,7 @@ global_lang='en_us';//default en_us
 global_langs = {};
 global_default_lang=[
     'language_code =    en_us',
-    'language =         english',
+    'language =         US English',
 
 
     'help_header_prefix =      c ----------------- [ ',
@@ -664,14 +661,15 @@ for(global_lang_ids,
 
 _change_lang(lang)->(
     if(lang!=global_lang && lang!=null,
+        p=player();
         if(global_missing_translations:lang,
-            _print(player(),'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
+            _print(p,'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
             logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos its log file and lang keys r in english anyways
             for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:global_lang:_))
         );
         global_lang=lang;
-        _print(player(),'changed_lang',lang),
-        _print(player(),'current_lang',global_lang)
+        _print(p,'changed_lang',str('%s (%s)',_translate('language'),lang)),
+        _print(p,'current_lang',global_lang)
     )
 );
 
