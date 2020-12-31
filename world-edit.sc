@@ -73,7 +73,7 @@ base_commands_map = [
     ['structure delete <structure>',['structure',null,'delete',null,null],false],
     ['structure save <name>',['structure',false,'save',false,null],false],
     ['structure save <name> force',['structure',false,'save',true,null],false],
-    ['structure save <name> entities',['structure',true,'save',false],false],
+    ['structure save <name> entities',['structure',true,'save',false,null],false],
     ['structure save <name> entities force',['structure',true,'save',true,null],false],
 ];
 
@@ -700,11 +700,13 @@ set_block(pos,block, replacement, flags, extra)->(//use this function to set blo
     success=null;
     existing = block(pos);
 
-    state = if(flags,{},null);
+    nbt = if(extra:'nbt',extra:'nbt',{});//putting here incase future nbt manipulation flags are added
+
+    state = if(extra:'state',extra:'state',{});
     if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
 
     if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
-        postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
+        postblock=if(flags && flags~'u',without_updates(set(existing,block,state,encode_nbt(nbt))),set(existing,block,state,encode_nbt(nbt))); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
         prev_biome=biome(pos);
         if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
         success=existing;
@@ -857,11 +859,14 @@ structure(name, include_entities, action, force, pos)->(//load
         );
         pos=if(pos,pos,p~'pos');
         file=parse_nbt(file);
-        palette=parse_nbt(file:'palette');
-        blocks=parse_nbt(file:'blocks');
-        entities=parse_nbt(file:'entities');
+        palette=file:'palette';
+        blocks=file:'blocks';
+        entities=file:'entities';
+
         for(blocks,
-            set_block(_:'pos'+pos,palette:(_:'state'):'Name',palette:(_:'state'):'Properties',_:'nbt');
+            state=palette:(_:'state');
+            print(_:'nbt');
+            set_block(_:'pos'+pos,state:'Name',null,null,{'state'->state:'Properties','nbt'->_:'nbt'});
         );
         add_to_history('structure_paste',p)//todo translation keys for actions
         ,
