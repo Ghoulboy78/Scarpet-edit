@@ -82,6 +82,10 @@ base_commands_map = [
     ['brush sphere <block> <radius> f <flags>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
     ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement), [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
     ['brush sphere <block> <radius> <replacement> f <flags>', _(block, radius, replacement, flags) -> brush('sphere', flags, block, radius, replacement), false],
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> brush('ellipsoid', null, block, [xr, yr, zr], null), false],
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flags>', _(block, xr, yr, zr, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], null), false],
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> brush('ellipsoid', null, block, [xr, yr, zr], replacement), [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flags>', _(block, xr, yr, zr, replacement, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], replacement), false],
     ['brush cylinder <block> <radius> <height>', _(block, radius, height) -> brush('cylinder', null, block, radius, height, 'y', null), false],
     ['brush cylinder <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> brush('cylinder', flags, block, radius, height, 'y', null), false],
     ['brush cylinder <block> <radius> <height> <axis>', _(block, radius, height, axis) -> brush('cylinder', null, block, radius, height, axis, null), false],
@@ -104,6 +108,8 @@ base_commands_map = [
     ['brush line <block> <length> f <flags>', _(block, length, flags) -> brush('line', flags, block, length,  null), false],
     ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement), [2, 'help_cmd_brush_line', 'help_cmd_brush_generic', null]],
     ['brush line <block> <length> <replacement> f <flags>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
+    ['brush paste ', _() -> brush('paste_brush', null), [2, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
+    ['brush paste f <flags>',  _(flags) -> brush('paste_brush', flags), false],
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -359,8 +365,8 @@ __on_tick() ->
 );
 
 
-__on_player_swings_hand(player, hand) ->
-//__on_player_clicks_block(player, block, face) -> 
+//__on_player_swings_hand(player, hand) ->
+__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -627,10 +633,12 @@ global_default_lang=[
     'help_cmd_brush_cube =     l Register brush to create cube of side length [size] out of [block]',
     'help_cmd_brush_cuboid =   l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
     'help_cmd_brush_sphere =   l Register brush to create sphere of radius [size] out of [block]',
+    'help_cmd_brush_ellipsoid =l Register brush to create ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
     'help_cmd_brush_cylinder = l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
     'help_cmd_brush_cone =     l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
     'help_cmd_brush_line =     l Register brush to create line from player to where you click of [length], if given',
     'help_cmd_brush_flood =    l Register brush to perfrm flood fill out of [block] starting on right clicked block',
+    'help_cmd_brush_paste =    l Register brush to paste current clipboard with origin on targeted block',
 
     'filled =           gi Filled %d blocks',                                    // blocks number
     'no_undo_history =  w No undo history to show for player %s',                // player
@@ -1108,7 +1116,7 @@ cube(pos, args, flags) -> (
         );  
     );
     
-    add_to_history('brush_cube',player())
+    add_to_history('cube',player())
 );
 
 //TODO: missing support for hollow shapes
@@ -1122,10 +1130,26 @@ cuboid(pos, args, flags) -> (
         set_block(_, block, replacement, flags, {})
     );
     
-    add_to_history('brush_cube',player())
+    add_to_history('cuboid',player())
 );
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+
+//TODO: missing support for hollow shapes
+ellipsoid(pos, args, flags) -> (
+    [block, radii, replacement] = args;
+
+    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+
+    volume(pos-radii, pos+radii,
+        R = (pos(_)-pos) / radii;
+        if(_sq_distance(R, 0)<=1,
+            set_block(_, block, replacement, flags, {})
+        );
+    );
+    
+    add_to_history('ellipsoid',player())
+);
 
 //TODO: missing support for hollow shapes
 sphere(pos, args, flags) -> (
@@ -1143,7 +1167,7 @@ sphere(pos, args, flags) -> (
         );  
     );
     
-    add_to_history('brush_cube',player())
+    add_to_history('sphere',player())
 );
 
 //TODO: missing support for hollow shapes
@@ -1164,7 +1188,7 @@ cylinder(pos, args, flags) -> (
         );  
     );
     
-    add_to_history('brush_cube',player())
+    add_to_history('cylinder',player())
 );
 
 
@@ -1195,7 +1219,7 @@ cone(pos, args, flags) -> (
         );  
     );
     
-    add_to_history('brush_cube',player())
+    add_to_history('cone',player())
 );
 
 _define_flat_distance_squared(axis, radius, size) -> (
@@ -1244,7 +1268,7 @@ line(pos, args, flags) -> (
         set_block(b, block, replacement, flags, {})
     );
 
-    add_to_history('brush_cube',player)
+    add_to_history('line',player)
 );
 
 __line_fast(p1, p2, material, width) -> (
@@ -1258,4 +1282,8 @@ __line_fast(p1, p2, material, width) -> (
     
     dim = player() ~ 'dimension';
     __put_into_history(global_this_story, dim); 
+);
+
+paste_brush(pos, args, flags) -> (
+    paste(pos, flags);
 );
