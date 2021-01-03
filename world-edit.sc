@@ -117,7 +117,7 @@ base_commands_map = [
     ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement), 
         [2, 'help_cmd_brush_line', 'help_cmd_brush_generic', null]],
     ['brush line <block> <length> <replacement> f <flags>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
-    ['brush paste ', _() -> brush('paste_brush', null), [2, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
+    ['brush paste ', _() -> brush('paste_brush', null), [-1, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
     ['brush paste f <flags>',  _(flags) -> brush('paste_brush', flags), false],
     ['brush prism_polygon <block> <radius> <height> <vertices>', 
         _(block, radius, height, n_points) -> brush('prism_polygon', null, block, radius, height, n_points, 'y', 0, null), false],
@@ -153,7 +153,8 @@ base_commands_map = [
        [5, 'help_cmd_brush_star', 'help_cmd_brush_generic', null]],
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>', 
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
-    
+    ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
+
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
     ['shape cube <block> <size> f <flags>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
     ['shape cube <block> <size> <replacement>', _(block, size_int, replacement) -> cube(player()~'pos', [block, size_int, replacement], null), 
@@ -249,6 +250,12 @@ for(base_commands_map,
     )
 );
 
+get_features_list() -> (
+    features = plop():'features';
+    put(features, null, , 'extend');
+    put(features, null, plop():'scarpet_custom', 'extend');
+    features;
+);
 
 __config()->{
     'commands'-> global_commands_map,
@@ -284,6 +291,10 @@ __config()->{
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'rotation'->{'type'->'int','suggest'->[0, 90]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
+        'feature'->{
+            'type'->'term', 
+            'options'-> get_features_list()
+        },
     }
 };
 //player globals
@@ -751,9 +762,12 @@ global_default_lang=[
     'help_cmd_brush_ellipsoid =l Register brush to create ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
     'help_cmd_brush_cylinder = l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
     'help_cmd_brush_cone =     l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
+    'help_cmd_brush_polygon =  l Register brush to create polygon prism with [vertices] ammount of sides',
+    'help_cmd_brush_star =  l Register brush to create star prism with [vertices] ammount of points',
     'help_cmd_brush_line =     l Register brush to create line from player to where you click of [length], if given',
     'help_cmd_brush_flood =    l Register brush to perfrm flood fill out of [block] starting on right clicked block',
     'help_cmd_brush_paste =    l Register brush to paste current clipboard with origin on targeted block',
+    'help_cmd_brush_feature =  l Register brush to plop feature',
 
     'filled =           gi Filled %d blocks',                                    // blocks number
     'no_undo_history =  w No undo history to show for player %s',                // player
@@ -1208,6 +1222,8 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_replaced', held_item)
         );
         global_brushes:held_item = [action, args, flags];
+
+        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
     )
 );
 
@@ -1533,3 +1549,9 @@ _flood_fill_shape(perimeter, center, axis) ->(
     );
     interior;   
 );
+
+feature(pos, args, flags) -> (
+    [what] = args;
+    plop(pos, what)
+);
+
