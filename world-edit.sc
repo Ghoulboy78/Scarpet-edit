@@ -1232,76 +1232,75 @@ _brush_action(pos, brush) -> (
     call(action, pos, args, flags)
 );
 
-//TODO: missing support for hollow shapes
 cube(pos, args, flags) -> (
     [block, size, replacement] = args;
 
-    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
+    half_size = (size-1)/2;
 
-    if(size == 1, 
-        set_block(pos, block, replacement, flags, {}),
-
-        half_size = (size-1)/2;
-        volume(pos-half_size, pos+half_size,
-            set_block(_, block, replacement, flags, {})
-        );  
-    );
+    _is_inside_shape(block) -> true;
+    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
     
     add_to_history('cube',player())
 );
 
-//TODO: missing support for hollow shapes
 cuboid(pos, args, flags) -> (
     [block, size, replacement] = args;
 
-    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
-
     half_size = (size-1)/2;
-    volume(pos-half_size, pos+half_size,
-        set_block(_, block, replacement, flags, {})
-    );
+
+    _is_inside_shape(block) -> true;
+    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
     
     add_to_history('cuboid',player())
 );
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 
-//TODO: missing support for hollow shapes
+_fill_shape(from, to, block, replacement, flags) -> (
+    if(flags~'h',
+        // hollow
+        to_set = {};
+        volume(from, to,
+            if( _is_inside_shape(_), to_set += pos(_))
+        );
+        for(keys(to_set), 
+            if(!all(neighbours(_), has(to_set, pos(_))), 
+                set_block(_, block, replacement, flags, {})
+            )
+        ),
+
+        // not hollow
+        volume(from, to,
+            if( _is_inside_shape(_),
+                    set_block(_, block, replacement, flags, {})
+            )
+        )
+    )
+
+);
+
 ellipsoid(pos, args, flags) -> (
     [block, radii, replacement] = args;
 
-    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
-
-    volume(pos-radii, pos+radii,
-        R = (pos(_)-pos) / radii;
-        if(_sq_distance(R, 0)<=1,
-            set_block(_, block, replacement, flags, {})
-        );
-    );
+    _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
+    _fill_shape(pos-radii, pos+radii, block, replacement, flags);
     
     add_to_history('ellipsoid',player())
 );
 
-//TODO: missing support for hollow shapes
 sphere(pos, args, flags) -> (
     [block, radius, replacement] = args;
-
-    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
 
     if(radius == 1, 
         set_block(pos, block, replacement, flags, {}),
 
-        volume(pos-radius, pos+radius,
-            if(_sq_distance(pos, pos(_)) <= radius*radius,
-                set_block(_, block, replacement, flags, {})
-            );
-        );  
+        _is_inside_shape(block, outer(pos), outer(radius)) -> _sq_distance(pos, pos(block)) <= radius*radius;
+        _fill_shape(pos-radius, pos+radius, block, replacement, flags);
     );
     
     add_to_history('sphere',player())
 );
 
-//TODO: missing support for hollow shapes
 cylinder(pos, args, flags) -> (
     [block, radius, height, axis, replacement] = args;
 
@@ -1312,13 +1311,10 @@ cylinder(pos, args, flags) -> (
     if(radius == 1, 
         set_block(pos, block, replacement, flags, {}),
 
-        volume(pos-offset, pos+offset,
-            if( _flat_sq_distance(pos, pos(_)) <= radius*radius,
-                set_block(_, block, replacement, flags, {})
-            );
-        );  
+         _is_inside_shape(block, outer(pos), outer(radius)) -> _flat_sq_distance(pos, pos(block)) <= radius*radius;
+        _fill_shape(pos-offset, pos+offset, block, replacement, flags);
     );
-    
+
     add_to_history('cylinder',player())
 );
 
@@ -1342,12 +1338,11 @@ cone(pos, args, flags) -> (
     if(radius == 1, 
         set_block(pos, block, replacement, flags, {}),
 
-        volume(pos-offset, pos+offset,
-            r = sqrt( _flat_sq_distance(pos, pos(_)) );
-            if( r <= radius && _inside_cone_fun((pos-pos(_)):axis_index, r),
-                set_block(_, block, replacement, flags, {})
-            );
-        );  
+        _is_inside_shape(block, outer(pos), outer(radius), outer(axis_index)) -> (
+            r = sqrt( _flat_sq_distance(pos, pos(block)) );
+            r <= radius && _inside_cone_fun((pos-pos(block)):axis_index, r)
+        );
+        _fill_shape(pos-offset, pos+offset, block, replacement, flags);
     );
     
     add_to_history('cone',player())
