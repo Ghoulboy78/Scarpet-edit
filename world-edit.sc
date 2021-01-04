@@ -491,8 +491,8 @@ __on_tick() ->
 );
 
 
-//__on_player_swings_hand(player, hand) ->
-__on_player_clicks_block(player, block, face) -> 
+__on_player_swings_hand(player, hand) ->
+//__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -1319,14 +1319,12 @@ cylinder(pos, args, flags) -> (
 );
 
 
-//TODO: missing support for hollow shapes
 cone(pos, args, flags) -> (
     [block, radius, height, signed_axis, replacement] = args;
 
     axis = slice(signed_axis, 1);
     offset = _define_flat_distance_squared(axis, radius, height);
     axis_index = ['x', 'y', 'z']~axis;
-    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
 
     // define direction
     if( slice(signed_axis, 0, 1) == '-',
