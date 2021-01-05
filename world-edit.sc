@@ -773,7 +773,7 @@ global_default_lang=[
     'no_undo_history =  w No undo history to show for player %s',                // player
     'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
     'entry_undo_1 =     w %d: type: %s',                                         //index, command type
-    'entry_undo_2       w     affected positions: %s',                           //blocks number
+    'entry_undo_2 =     w     affected positions: %d',                           //blocks number
     'no_undo =          r No actions to undo for player %s',                     // player
     'more_moves_undo =  w Your number is too high, undoing all moves for %s',    // player
     'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
@@ -864,6 +864,371 @@ _print(player, key, ... replace) ->
 _error(player, key, ... replace)->
     exit(print(player, format(_translate_internal(key, replace))));
 
+// Brush
+
+global_brushes = {};
+global_brush_reach = 100;
+
+brush(action, flags, ...args) -> (
+    player = player();
+    held_item = player~'holds':0;
+    if(held_item==global_wand, _error(player, 'bad_wand_brush_error'));
+
+    if(
+        action=='clear',
+        if(has(global_brushes, held_item),
+            delete(global_brushes, held_item),
+            _error(player, 'no_brush_error', held_item)
+        ),
+        action=='list', //TODO imprvove list with interactiveness
+        if(global_brushes,
+            _print(player, 'brush_list_header');
+            for(pairs(global_brushes),
+                print(player, str('%s: %s', _:0, _:1:0));
+            );
+            _print(player, 'brush_extra_info'),
+            _print(player, 'brush_empty_list')
+        ),
+        action=='info', //TODO improve info with better descriptions
+        if(has(global_brushes, held_item),
+            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
+            _error(player, 'no_brush_error', held_item)
+        ),
+        action=='reach',
+        if(args,
+            global_brush_reach = args:0;
+            _print(player, 'brush_new_reach', args:0),
+            _print(player, 'brush_reach', global_brush_reach)
+        ),
+        // else, register new brush with given action
+        if(has(global_brushes, held_item),
+            _print(player, 'brush_replaced', held_item)
+        );
+        global_brushes:held_item = [action, args, flags];
+
+        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
+    )
+);
+
+_brush_action(pos, brush) -> (
+    [action, args, flags] = global_brushes:brush;
+    call(action, pos, args, flags)
+);
+
+cube(pos, args, flags) -> (
+    [block, size, replacement] = args;
+
+    half_size = (size-1)/2;
+
+    _is_inside_shape(block) -> true;
+    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
+
+    add_to_history('cube',player())
+);
+
+cuboid(pos, args, flags) -> (
+    [block, size, replacement] = args;
+
+    half_size = (size-1)/2;
+
+    _is_inside_shape(block) -> true;
+    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
+
+    add_to_history('cuboid',player())
+);
+
+_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+
+_fill_shape(from, to, block, replacement, flags) -> (
+    if(flags~'h',
+        // hollow
+        to_set = {};
+        volume(from, to,
+            if( _is_inside_shape(_), to_set += pos(_))
+        );
+        for(keys(to_set),
+            if(!all(neighbours(_), has(to_set, pos(_))),
+                set_block(_, block, replacement, flags, {})
+            )
+        ),
+
+        // not hollow
+        volume(from, to,
+            if( _is_inside_shape(_),
+                set_block(_, block, replacement, flags, {})
+            )
+        )
+    )
+
+);
+
+ellipsoid(pos, args, flags) -> (
+    [block, radii, replacement] = args;
+
+    _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
+    _fill_shape(pos-radii, pos+radii, block, replacement, flags);
+
+    add_to_history('ellipsoid',player())
+);
+
+sphere(pos, args, flags) -> (
+    [block, radius, replacement] = args;
+
+    if(radius == 1,
+        set_block(pos, block, replacement, flags, {}),
+
+        _is_inside_shape(block, outer(pos), outer(radius)) -> _sq_distance(pos, pos(block)) <= radius*radius;
+        _fill_shape(pos-radius, pos+radius, block, replacement, flags);
+    );
+
+    add_to_history('sphere',player())
+);
+
+cylinder(pos, args, flags) -> (
+    [block, radius, height, axis, replacement] = args;
+
+    offset = _define_flat_distance_squared(axis, radius, height);
+
+    if(radius == 1,
+        set_block(pos, block, replacement, flags, {}),
+
+         _is_inside_shape(block, outer(pos), outer(radius)) -> _flat_sq_distance(pos, pos(block)) <= radius*radius;
+        _fill_shape(pos-offset, pos+offset, block, replacement, flags);
+    );
+
+    add_to_history('cylinder',player())
+);
+
+
+cone(pos, args, flags) -> (
+    [block, radius, height, signed_axis, replacement] = args;
+
+    axis = slice(signed_axis, 1);
+    offset = _define_flat_distance_squared(axis, radius, height);
+    axis_index = ['x', 'y', 'z']~axis;
+
+    // define direction
+    if( slice(signed_axis, 0, 1) == '-',
+        _inside_cone_fun(y, r, outer(height), outer(radius)) -> y <= height/2 - height/radius * r,
+        _inside_cone_fun(y, r, outer(height), outer(radius)) -> y >= -height/2 + height/radius * r,
+    );
+
+
+    if(radius == 1,
+        set_block(pos, block, replacement, flags, {}),
+
+        _is_inside_shape(block, outer(pos), outer(radius), outer(axis_index)) -> (
+            r = sqrt( _flat_sq_distance(pos, pos(block)) );
+            r <= radius && _inside_cone_fun((pos-pos(block)):axis_index, r)
+        );
+        _fill_shape(pos-offset, pos+offset, block, replacement, flags);
+    );
+
+    add_to_history('cone',player())
+);
+
+_define_flat_distance_squared(axis, radius, size) -> (
+    if(
+        axis=='x',
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:1*p:1 + p:2*p:2);
+            offset = [radius, (size-1)/2, radius],
+        axis=='y',
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:2*p:2);
+            offset = [radius, (size-1)/2, radius],
+        axis=='z',
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:1*p:1);
+            offset = [radius, radius, (size-1)/2]
+    );
+);
+
+flood(pos, args, flags) -> (
+
+    start = pos;
+    [block, radius, axis] = args;
+    if(block(start)==block, return());
+
+    // test if inside sphere
+    _flood_tester(pos, outer(start), outer(radius)) -> (
+        _sq_distance(pos, start) <= radius*radius
+    );
+
+    _flood_generic(block, axis, start, flags);
+);
+
+line(pos, args, flags) -> (
+    [block, length, replacement] = args;
+
+    player = player();
+    if(length,
+        final_pos = map(pos(player)+player~'look'*length+[0, player~'eye_height', 0], floor(_)),
+        final_pos = pos
+    );
+
+    m = player ~ 'pos' + [0, player~'eye_height', 0] - final_pos; // line slopes
+
+    max_size = max(map(m, abs(_)));
+    t = l(range(max_size))/max_size;
+    for(t,
+        b = m * _ + final_pos;
+        set_block(b, block, replacement, flags, {})
+    );
+
+    add_to_history('line',player)
+);
+
+paste_brush(pos, args, flags) -> (
+    paste(pos, flags);
+);
+
+
+prism_polygon(pos, args, flags) -> (
+    [block, radius, height, n_points, axis, rotation, replacement] = args;
+
+    center = map(pos, floor(_));
+    flags = _parse_flags(flags);
+
+    // get points in inner and pouter radius + interlace them
+    points = _get_circle_points(radius, n_points, rotation);
+    points:length(points) = points:0; // add first point at the end to close curve
+
+    // get points and draw the connecting lines
+    perimeter = _connect_with_lines(points, center, axis);
+    interior = _flood_fill_shape(perimeter, center, axis);
+
+    offset = _get_prism_offset(height, axis);
+    if(flags~'h',
+        for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
+        for(interior,
+            set_block(_+offset, block, replacement, flags, {});
+            set_block(_-offset, block, replacement, flags, {});
+        ),
+        for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
+    );
+
+    add_to_history('prism_polygon',player())
+);
+
+prism_star(pos, args, flags) -> (
+    [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement] = args;
+
+    center = map(pos, floor(_));
+    flags = _parse_flags(flags);
+
+    // get points in inner and pouter radius + interlace them
+    inner_points = _get_circle_points(inner_radius, n_points, phase);
+    outer_points = _get_circle_points(outer_radius, n_points, phase + 360/n_points/2);
+    interlaced_list = _interlace_lists(inner_points, outer_points);
+    interlaced_list += inner_points:0; // add first point at the end to close curve
+
+    // get points and draw the connecting lines
+    perimeter = _connect_with_lines(interlaced_list, center, axis);
+    interior = _flood_fill_shape(perimeter, center, axis);
+
+    offset = _get_prism_offset(height, axis);
+    if(flags~'h',
+        for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
+        for(interior,
+            set_block(_+offset, block, replacement, flags, {});
+            set_block(_-offset, block, replacement, flags, {});
+        ),
+        for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
+    );
+
+    add_to_history('prism_star',player())
+);
+
+_get_circle_points(R, n, phase) -> (
+    // retunrs <n> equidistant points on a circle
+    angle_step = 360/n;
+    get_step(i, outer(R), outer(angle_step), outer(phase)) -> R * [ cos(i*angle_step + phase), sin(i*angle_step + phase)];
+    map(range(n), get_step(_) );
+);
+
+_connect_with_lines(points, center, axis) -> (
+    // takes in a list of points in 2D and an axis, projects them to 3D and connects them with lines
+    // returns the lines as a continous list of pints, the perimeter
+    if(
+        axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
+        axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
+        axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
+    );
+
+    perimeter = [];
+    loop(length(points)-1,
+        p1 = center + _2D_to_3D(points:_:0, points:_:1, 0) ;
+        p2 = center + _2D_to_3D(points:(_+1):0, points:(_+1):1, 0) ;
+        _draw_line(p1, p2, perimeter);
+    );
+    perimeter
+);
+
+_draw_line(p1, p2, perimeter) -> (
+    m = p2-p1;
+    max_size = max(map(m, abs(_)));
+    t = l(range(max_size))/max_size;
+    for(t,
+        b = m * _ + p1;
+        perimeter += map(b, floor(_));
+    );
+);
+
+_interlace_lists(l1, l2) -> (
+    // asumes l1 and l2 of same length
+    out = [];
+    for(l1,
+        out:length(out) = _;
+        out:length(out) =  l2:_i;
+    );
+    return(out);
+);
+
+_get_prism_offset(height, axis) -> (
+    // returns offset half column given axis
+    halfheight = (height-1)/2;
+    if(
+        axis=='x', [halfheight, 0, 0],
+        axis=='y', [0, halfheight, 0],
+        axis=='z', [0, 0, halfheight],
+    )
+);
+
+_flood_fill_shape(perimeter, center, axis) ->(
+    // returns blocks corresponding to the interior of the shape defined by <perimeter>
+    // should work in 3D too giving a close surphase and passing null as <axis>
+    if(
+        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
+        axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
+        axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
+        axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
+    );
+
+
+    interior = {center->null};
+    map(perimeter,interior:_ = null);
+    queue = [center];
+
+    while(length(queue)>0, 10000,
+
+        current_pos = queue:0;
+        delete(queue, 0);
+
+        for(flood_neighbours(current_pos),
+            current_neighbour = _;
+            // check neighbours, add the non visited ones to the visited set
+            if(!has(interior, current_neighbour),
+                interior:current_neighbour = null;
+                queue:length(queue) = current_neighbour;
+            );
+        );
+    );
+    interior;
+);
+
+feature(pos, args, flags) -> (
+    [what] = args;
+    plop(pos, what)
+);
+
 //Command processing functions
 
 set_block(pos,block, replacement, flags, extra)->(//use this function to set blocks
@@ -900,7 +1265,7 @@ add_to_history(function,player)->(
         'type'->function,
         'affected_positions'->global_affected_blocks
     };
-
+    print(global_affected_blocks);
     _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
@@ -935,6 +1300,7 @@ undo(moves)->(
 
         delete(global_history,(length(global_history)-1))
     );
+    print(global_affected_blocks);
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
     _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
@@ -1179,372 +1545,3 @@ paste(pos, flags)->(
     );
     add_to_history('paste',player)
 );
-
-
-// Brush
-
-global_brushes = {};
-global_brush_reach = 100;
-
-brush(action, flags, ...args) -> (
-    player = player();
-    held_item = player~'holds':0;
-    if(held_item==global_wand, _error(player, 'bad_wand_brush_error'); return());
-    
-    if(
-        action=='clear',
-        if(has(global_brushes, held_item), 
-            delete(global_brushes, held_item),
-            _error(player, 'no_brush_error', held_item)
-        ),
-        action=='list', //TODO imprvove list with interactiveness
-        if(global_brushes, 
-            _print(player, 'brush_list_header');
-            for(pairs(global_brushes), 
-                print(player, str('%s: %s', _:0, _:1:0));
-            );
-            _print(player, 'brush_extra_info'),
-            _print(player, 'brush_empty_list')
-        ),
-        action=='info', //TODO improve info with better descriptions
-        if(has(global_brushes, held_item),
-            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
-            _error(player, 'no_brush_error', held_item)
-        ),
-        action=='reach', 
-        if(args, 
-            global_brush_reach = args:0;
-            _print(player, 'brush_new_reach', args:0),
-            _print(player, 'brush_reach', global_brush_reach)
-        ),
-        // else, register new brush with given action
-        if(has(global_brushes, held_item),
-            _print(player, 'brush_replaced', held_item)
-        );
-        global_brushes:held_item = [action, args, flags];
-
-        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
-    )
-);
-
-_brush_action(pos, brush) -> (
-    [action, args, flags] = global_brushes:brush;
-    call(action, pos, args, flags)
-);
-
-cube(pos, args, flags) -> (
-    [block, size, replacement] = args;
-
-    half_size = (size-1)/2;
-
-    _is_inside_shape(block) -> true;
-    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
-    
-    add_to_history('cube',player())
-);
-
-cuboid(pos, args, flags) -> (
-    [block, size, replacement] = args;
-
-    half_size = (size-1)/2;
-
-    _is_inside_shape(block) -> true;
-    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
-    
-    add_to_history('cuboid',player())
-);
-
-_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
-
-_fill_shape(from, to, block, replacement, flags) -> (
-    if(flags~'h',
-        // hollow
-        to_set = {};
-        volume(from, to,
-            if( _is_inside_shape(_), to_set += pos(_))
-        );
-        for(keys(to_set), 
-            if(!all(neighbours(_), has(to_set, pos(_))), 
-                set_block(_, block, replacement, flags, {})
-            )
-        ),
-
-        // not hollow
-        volume(from, to,
-            if( _is_inside_shape(_),
-                    set_block(_, block, replacement, flags, {})
-            )
-        )
-    )
-
-);
-
-ellipsoid(pos, args, flags) -> (
-    [block, radii, replacement] = args;
-
-    _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
-    _fill_shape(pos-radii, pos+radii, block, replacement, flags);
-    
-    add_to_history('ellipsoid',player())
-);
-
-sphere(pos, args, flags) -> (
-    [block, radius, replacement] = args;
-
-    if(radius == 1, 
-        set_block(pos, block, replacement, flags, {}),
-
-        _is_inside_shape(block, outer(pos), outer(radius)) -> _sq_distance(pos, pos(block)) <= radius*radius;
-        _fill_shape(pos-radius, pos+radius, block, replacement, flags);
-    );
-    
-    add_to_history('sphere',player())
-);
-
-cylinder(pos, args, flags) -> (
-    [block, radius, height, axis, replacement] = args;
-
-    offset = _define_flat_distance_squared(axis, radius, height);
-
-    if(flags~'h', print('No support for hollow shapes yet, sorry! Come back later.'));
-
-    if(radius == 1, 
-        set_block(pos, block, replacement, flags, {}),
-
-         _is_inside_shape(block, outer(pos), outer(radius)) -> _flat_sq_distance(pos, pos(block)) <= radius*radius;
-        _fill_shape(pos-offset, pos+offset, block, replacement, flags);
-    );
-
-    add_to_history('cylinder',player())
-);
-
-
-cone(pos, args, flags) -> (
-    [block, radius, height, signed_axis, replacement] = args;
-
-    axis = slice(signed_axis, 1);
-    offset = _define_flat_distance_squared(axis, radius, height);
-    axis_index = ['x', 'y', 'z']~axis;
-
-    // define direction
-    if( slice(signed_axis, 0, 1) == '-',
-        _inside_cone_fun(y, r, outer(height), outer(radius)) -> y <= height/2 - height/radius * r,
-        _inside_cone_fun(y, r, outer(height), outer(radius)) -> y >= -height/2 + height/radius * r,
-    );
-
-
-    if(radius == 1, 
-        set_block(pos, block, replacement, flags, {}),
-
-        _is_inside_shape(block, outer(pos), outer(radius), outer(axis_index)) -> (
-            r = sqrt( _flat_sq_distance(pos, pos(block)) );
-            r <= radius && _inside_cone_fun((pos-pos(block)):axis_index, r)
-        );
-        _fill_shape(pos-offset, pos+offset, block, replacement, flags);
-    );
-    
-    add_to_history('cone',player())
-);
-
-_define_flat_distance_squared(axis, radius, size) -> (
-    if(
-        axis=='x', 
-            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:1*p:1 + p:2*p:2);
-            offset = [radius, (size-1)/2, radius],
-        axis=='y', 
-            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:2*p:2);
-            offset = [radius, (size-1)/2, radius],
-        axis=='z',  
-            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:1*p:1);
-            offset = [radius, radius, (size-1)/2]
-    );
-);
-
-flood(pos, args, flags) -> (
-
-    start = pos;
-    [block, radius, axis] = args;
-    if(block(start)==block, return());
-
-    // test if inside sphere
-    _flood_tester(pos, outer(start), outer(radius)) -> (
-        _sq_distance(pos, start) <= radius*radius
-    );
-
-    _flood_generic(block, axis, start, flags);
-);
-
-line(pos, args, flags) -> (
-    [block, length, replacement] = args;
-
-    player = player();
-    if(length, 
-        final_pos = map(pos(player)+player~'look'*length+[0, player~'eye_height', 0], floor(_)),
-        final_pos = pos
-    );
-
-    m = player ~ 'pos' + [0, player~'eye_height', 0] - final_pos; // line slopes
-
-    max_size = max(map(m, abs(_)));
-    t = l(range(max_size))/max_size;
-    for(t, 
-        b = m * _ + final_pos;
-        set_block(b, block, replacement, flags, {})
-    );
-
-    add_to_history('line',player)
-);
-
-paste_brush(pos, args, flags) -> (
-    paste(pos, flags);
-);
-
-
-prism_polygon(pos, args, flags) -> (
-    [block, radius, height, n_points, axis, rotation, replacement] = args;
-
-    center = map(pos, floor(_));
-    flags = _parse_flags(flags);
-
-    // get points in inner and pouter radius + interlace them
-    points = _get_circle_points(radius, n_points, rotation);
-    points:length(points) = points:0; // add first point at the end to close curve
-    
-    // get points and draw the connecting lines
-    perimeter = _connect_with_lines(points, center, axis);
-    interior = _flood_fill_shape(perimeter, center, axis);
-
-    offset = _get_prism_offset(height, axis);
-    if(flags~'h', 
-        for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-        for(interior, 
-            set_block(_+offset, block, replacement, flags, {}); 
-            set_block(_-offset, block, replacement, flags, {});
-        ),
-        for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-    );
-
-    add_to_history('prism_polygon',player())
-);
-
-prism_star(pos, args, flags) -> (
-    [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement] = args;
-
-    center = map(pos, floor(_));
-    flags = _parse_flags(flags);
-
-    // get points in inner and pouter radius + interlace them
-    inner_points = _get_circle_points(inner_radius, n_points, phase);
-    outer_points = _get_circle_points(outer_radius, n_points, phase + 360/n_points/2);
-    interlaced_list = _interlace_lists(inner_points, outer_points);
-    interlaced_list += inner_points:0; // add first point at the end to close curve
-    
-    // get points and draw the connecting lines
-    perimeter = _connect_with_lines(interlaced_list, center, axis);
-    interior = _flood_fill_shape(perimeter, center, axis);
-
-    offset = _get_prism_offset(height, axis);
-    if(flags~'h', 
-        for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-        for(interior, 
-            set_block(_+offset, block, replacement, flags, {}); 
-            set_block(_-offset, block, replacement, flags, {});
-        ),
-        for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-    );
-
-    add_to_history('prism_star',player())
-);
-
-_get_circle_points(R, n, phase) -> (
-    // retunrs <n> equidistant points on a circle
-    angle_step = 360/n;
-    get_step(i, outer(R), outer(angle_step), outer(phase)) -> R * [ cos(i*angle_step + phase), sin(i*angle_step + phase)];
-    map(range(n), get_step(_) );
-);
-
-_connect_with_lines(points, center, axis) -> (
-    // takes in a list of points in 2D and an axis, projects them to 3D and connects them with lines
-    // returns the lines as a continous list of pints, the perimeter
-    if(
-        axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
-        axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
-        axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
-    );
-
-    perimeter = [];
-    loop(length(points)-1,
-        p1 = center + _2D_to_3D(points:_:0, points:_:1, 0) ;
-        p2 = center + _2D_to_3D(points:(_+1):0, points:(_+1):1, 0) ;
-        _draw_line(p1, p2, perimeter);
-    );
-    perimeter
-);
-
-_draw_line(p1, p2, perimeter) -> (
-    m = p2-p1;
-    max_size = max(map(m, abs(_)));
-    t = l(range(max_size))/max_size;
-    for(t, 
-        b = m * _ + p1;
-        perimeter += map(b, floor(_));
-    );
-);
-
-_interlace_lists(l1, l2) -> (
-    // asumes l1 and l2 of same length
-    out = [];
-    for(l1, 
-        out:length(out) = _;
-        out:length(out) =  l2:_i;
-    );
-    return(out);
-);
-
-_get_prism_offset(height, axis) -> (
-    // returns offset half column given axis
-    halfheight = (height-1)/2;
-    if(
-        axis=='x', [halfheight, 0, 0],
-        axis=='y', [0, halfheight, 0],
-        axis=='z', [0, 0, halfheight],
-    )
-);
-
-_flood_fill_shape(perimeter, center, axis) ->(
-    // returns blocks corresponding to the interior of the shape defined by <perimeter>
-    // should work in 3D too giving a close surphase and passing null as <axis>
-    if(
-        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
-        axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
-        axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
-        axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
-    );
-
-
-    interior = {center->null};
-    map(perimeter,interior:_ = null);
-    queue = [center];
-
-    while(length(queue)>0, 10000,
-
-        current_pos = queue:0;
-        delete(queue, 0);
-        
-        for(flood_neighbours(current_pos),
-            current_neighbour = _;
-            // check neighbours, add the non visited ones to the visited set
-            if(!has(interior, current_neighbour),
-                interior:current_neighbour = null;
-                queue:length(queue) = current_neighbour;
-            );
-        );
-    );
-    interior;   
-);
-
-feature(pos, args, flags) -> (
-    [what] = args;
-    plop(pos, what)
-);
-
