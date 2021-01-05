@@ -109,7 +109,7 @@ __config()->{
                 typed_list = split(typed);
                 checked_list = [];
                 for(typed_list,
-                    if((global_flags~_ == null || checked_list~_ != null) && _i != 0,
+                    if((global_flags~_ == null || checked_list~_ != null) && (_i != 0 || _ != '-'),
                         return([]);
                     );
                     put(checked_list,length(checked_list),_);
