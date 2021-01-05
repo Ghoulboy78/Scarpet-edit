@@ -107,10 +107,12 @@ __config()->{
             'suggester' -> _(args) -> (
                 typed = if(args:'flag', args:'flag', typed = '-');
                 typed_list = split(typed);
+                checked_list = [];
                 for(typed_list,
-                    if(global_flags~_ == null && _i != 0,
+                    if((global_flags~_ == null || checked_list~_ != null) && _i != 0,
                         return([]);
                     );
+                    put(checked_list,length(checked_list),_);
                 );
                 filtered_flags = filter(global_flags,!(typed_list~_));
                 map(filtered_flags,typed+_);
