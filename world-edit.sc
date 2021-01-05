@@ -151,7 +151,7 @@ _help(page) ->
     help_entries = [
         [null, null, 'help_welcome', 'help_welcome_tooltip', null],
         [if(length(global_selection) > 1,_translate('help_your_selection')), '', if(length(global_selection) > 1,
-                            _()->_translate('help_selection_bounds', global_selection:0, global_selection:1)
+                            _()->_translate('help_selection_bounds', _get_marker_position(global_selection:'from'), _get_marker_position(global_selection:'to'))
                             ,'help_make_selection'), null, '?wand '],
         [_translate('help_selected_wand'), 'wand ', _()->_translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
         [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', _translate('language')), 'help_app_lang_tooltip', '?lang '],
@@ -530,7 +530,7 @@ global_lang_keys = global_default_lang = {
     'help_welcome' ->             'c Welcome to the World-Edit Scarpet app\'s help!',
     'help_welcome_tooltip' ->     'y Hooray!',
     'help_your_selection' ->      'c Your selection',
-    'help_selection_bounds' ->    'l %s to %s',
+    'help_selection_bounds' ->    'l From %s to %s',
     'help_make_selection' ->      'c Use your wand to select with a start and final position',
     'help_selected_wand' ->       'c Selected wand', //Could probably be used in more places
     'help_selected_wand_item' ->  'l %s',
