@@ -194,7 +194,7 @@ base_commands_map = [
        _(block, radius, height, n_points, axis) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], null), false],
     ['shape prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>', 
        _(block, radius, height, n_points, axis, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees',
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees>',
        _(block, radius, height, n_points, axis, rotation) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, null], null), false],
     ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> f <flags>',
        _(block, radius, height, n_points, axis, rotation, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, null], flags), false],
@@ -298,7 +298,7 @@ __config()->{
             'type'->'term',
             'suggester'->_(args)->(
                 valid_structure={''};//adding default empty or it will break
-                for(get_valid_structures(),
+                for(list_files('','nbt'),
                     valid_structure+=_
                 );
                 keys(valid_structure)
@@ -689,9 +689,6 @@ _parse_flags(flags) ->(
    );
    flag_set;
 );
-
-get_valid_structures()->
-    filter(list_files('','nbt'),type(_)=='nbt'&&parse_nbt(_):'Metadata'!=null);//todo implement more rigorous litematica check for valid structure
 
 volume_blocks(pos1,pos2)->(
     retlist=[];
@@ -1290,7 +1287,7 @@ add_to_history(function,player)->(
         'type'->function,
         'affected_positions'->global_affected_blocks
     };
-    print(global_affected_blocks);
+
     _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
@@ -1325,7 +1322,6 @@ undo(moves)->(
 
         delete(global_history,(length(global_history)-1))
     );
-    print(global_affected_blocks);
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
     _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
@@ -1438,7 +1434,7 @@ structure(name, include_entities, action, force, pos)->(//load
 
         action=='list',
         _print(p,'structure_list');
-        strucs=get_valid_structures();
+        strucs=list_files('','nbt');
         print(str(strucs)-'['-']')
     )
 );
