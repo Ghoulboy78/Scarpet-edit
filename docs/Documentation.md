@@ -65,6 +65,26 @@ Left clicking again will reselect the whole box.
     name.
  - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
 
+#### Brushes
+
+`brushes` let you attach some actions or commands to specific items to use them at a distance. When registering an action with `/world-edit brush <action> <arguments>`, the held item type will be converted into a brush and righ clicking with it will perform the registered action at the highlited block. To view the currently registered brushes use `/world-edit brush list`. To remove a brush from said list or get more info on the registered action for that brush, hold the corresponding item type and use `/world-edit brush clear` or `/world-edit brush info`, respectively.
+
+The available actions for brushes are:
+- `cube <block> <size> [replacement]` -> creates a cube out of `block` and with side length `size`, replacing only blocks that match `replacement` (block or tag), if given.
+- `cuboid <block> <x> <y> <z> [replacement]` -> creates a cuboid out of `block` and with side lengths `x`, `y` and `z`, replacing only blocks that match `replacement` (block or tag), if given.
+- `sphere <block> <radius> [replacement]` -> creates a sphere out of `block` and with `radius`, replacing only blocks that match `replacement` (block or tag), if given.
+- `ellipsoid <block> <x_radius> <y_radius> <z_radius> [replacement]` -> creates an ellipsoid with different raddi on each axis, replacing only blocks that match `replacement` (block or tag), if given.
+- `cylinder <block> <radius> <height> [axis] [replacement]` -> creates a cylinder out of `block` and with `radius` and `height` along `axis` (if given; else, defaults to `y` for a vertical cylinder), replacing only blocks that match `replacement` (block or tag), if given.
+- `cone <block> <radius> <height> [signed_axis] [replacement]` -> creates a cone out of `block` and with `radius` and `height` along `signed_axis` (if given; else, defaults to `+y` for a vertical cone pointing up), replacing only blocks that match `replacement` (block or tag), if given.
+- `prism_polygon <block> <radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a polygon inscribed in a circle of `radius` with `vertices` ammount of sides. Said polygon is the base for a prism of height `height` along `axis`. Optionally, it can be rotated from it's base orientation.
+- `prism_star <block> <outer_radius> <inner_radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a star whouse points touch a circle of radius `outer_radius` with `vertices` ammount of points. Said star is the base for a prism of height `height` along `axis`. Optionally, it can be rotated from it's base orientation.
+- `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed and it only uses the clicked block to get the direction of the line.
+- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
+- `paste` -> pastes the current clipboard, using the targeted block as origin.
+- `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
+
+All brush functions can be appended with flags, same as fill commands, adding `f -<flags>` at the end of the regular commands.
+
 #### Flags
 
 All the above commands which can set (not save) blocks, can also take flags. eg: `/fill <block> f <flags>`. Flags syntax
