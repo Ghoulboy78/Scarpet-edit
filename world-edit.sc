@@ -622,10 +622,22 @@ _change_lang(lang)->(
         global_lang_id=lang;
         global_lang_keys=read_file('langs/'+lang,'json');
         _print(player(),'langs_changed',_translate('language'));
-        if(length(global_lang_keys) < length(global_default_lang), //Not 100% accurate, but simpler and cheaper
-            missing = length(global_default_lang)-length(global_lang_keys);
-            _print(player(),'langs_completeness',_translate('language'),round(100 - missing/length(global_lang_keys)*100),missing)
-        )
+        task(_()->( //Checking translation completeness - async in case langs get long enough in the future, or a better check is done
+            missing_translations_list=[];       // Currently this doesn't check for keys present in the translation but not in the default, etc
+            for(global_default_lang,           // although that is workarounded in the percentage calculation
+                if(!has(global_lang_keys,_),
+                    missing_translations_list+=_;
+                )
+            );
+            missing = length(missing_translations_list);
+            if(missing,
+                logger('warn',
+                    '[World-Edit Scarpet] Current translation for '+_translate('language')+' is incomplete. Missing keys: \n'
+                        +join('\n- ',missing_translations_list));
+                logger('warn', '[World-Edit Scarpet] Until fixed, default language (english) keys will be used');
+                _print(player(),'langs_completeness',_translate('language'),round(100 - missing/(length(global_lang_keys)+missing)*100),missing);
+            );
+        ));
     ,
         _print(player(), 'langs_not_found',lang);
     )
@@ -639,7 +651,6 @@ _translate_internal(key, replace_list) -> (
         string = global_lang_keys:key
     ,
         string = global_default_lang:key;
-        logger('warn', '[World-Edit Scarpet App] Language '+global_lang_id+' doesn\'t contain '+key);
     );
     if(key == null,
         null,
