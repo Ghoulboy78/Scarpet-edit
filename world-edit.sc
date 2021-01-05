@@ -106,14 +106,11 @@ __config()->{
             'type' -> 'term',
             'suggester' -> _(args) -> (
                 typed = if(args:'flag', args:'flag', typed = '-');
-                if(typed~'^-' == null, return());
-                ret = [];
-                for(global_flags_list,
-                    if(length(_) == length(typed)+1 && _~typed != null, ret += _)
-                );
-                ret
+                if(typed == '-', return(map(global_flags,'-'+_)));
+                typed_list = split(typed);
+                filtered_flags = filter(global_flags,!(typed_list~_));
+                map(filtered_flags,typed+_);
             ),
-            //'options' -> global_flags_list
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
@@ -470,7 +467,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = 'waehubp';
+global_flags = ['w','a','e','h','u','b','p'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -481,20 +478,6 @@ global_flags = 'waehubp';
 //b     set biome
 //p     only replace air
 
-
-_permutation(str) -> (
-    if(type(str) == 'string', str = split('',str));
-    if(length(str) == 0, return([]));
-    ret = {};
-    for(str,
-        ret += (e = _);
-        substr = copy(str);
-        delete(substr,_i);
-        for(_permutation(substr), ret += e + _);
-    );
-    keys(ret)
-);
-global_flags_list = map(_permutation(global_flags), '-'+_);
 
 _parse_flags(flags) ->(
    symbols = split(flags);
