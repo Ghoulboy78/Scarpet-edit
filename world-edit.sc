@@ -106,7 +106,6 @@ __config()->{
             'type' -> 'term',
             'suggester' -> _(args) -> (
                 typed = if(args:'flag', args:'flag', typed = '-');
-                if(typed == '-', return(map(global_flags,'-'+_)));
                 typed_list = split(typed);
                 filtered_flags = filter(global_flags,!(typed_list~_));
                 map(filtered_flags,typed+_);
