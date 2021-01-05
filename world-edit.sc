@@ -105,7 +105,7 @@ __config()->{
         'flag' -> {
             'type' -> 'term',
             'suggester' -> _(args) -> (
-                typed = if(args:'flag', args:'flag', typed = '-');
+                typed = if(args:'flag', args:'flag', '-');
                 typed_list = split(typed);
                 checked_list = [];
                 for(typed_list,
