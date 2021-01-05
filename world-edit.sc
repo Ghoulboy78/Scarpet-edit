@@ -627,7 +627,7 @@ _change_lang(lang)->(
             _print(player(),'langs_completeness',_translate('language'),round(100 - missing/length(global_lang_keys)*100),missing)
         )
     ,
-        _print(player(), 'langs_not_found',lang); // TODO Translate this
+        _print(player(), 'langs_not_found',lang);
     )
 );
 
