@@ -2,11 +2,6 @@
 
 import('math','_round');
 
-global_lang_ids = {//defining up here for command to work
-    'en_us'->'US English',
-    'it_it'->'Italiano'
-};
-
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
@@ -22,7 +17,7 @@ base_commands_map = [
     ['help', _()->_help(1), false],
     ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
     ['lang', ['_change_lang',null], false],
-    ['lang <lang>', '_change_lang', [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
+    ['lang <lang>', '_change_lang', [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',_get_lang_list()), null]],
     ['set <block>', ['set_in_selection',null,null], false],
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
     ['set <block> f <flag>', _(block,flags)->set_in_selection(block,null,flags), false], //TO-DO Help for flags
@@ -117,7 +112,7 @@ __config()->{
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'lang'->{'type'->'term','options'->keys(global_lang_ids)},
+        'lang'->{'type'->'term','suggester'->_(ignored)->_get_lang_list()},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
     }
 };
@@ -159,7 +154,7 @@ _help(page) ->
                             _()->_translate('help_selection_bounds', global_selection:0, global_selection:1)
                             ,'help_make_selection'), null, '?wand '],
         [_translate('help_selected_wand'), 'wand ', _()->_translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
-        [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', global_lang), 'help_app_lang_tooltip', '?lang '],
+        [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', _translate('language')), 'help_app_lang_tooltip', '?lang '],
         [_translate('help_list_title'), 'help', null, null]
     ];
     
@@ -523,119 +518,116 @@ _parse_config(config) -> (
 
 //Translations
 
-global_lang='en_us';//default en_us
-global_langs = {};
-global_default_lang=[
-    'language_code =    en_us',
-    'language =         english',
+global_lang_id='en_us';//default en_us (and fill it below)
+global_lang_keys = global_default_lang = {
+    'language_code' ->    'en_us',
+    'language' ->         'English',
 
 
-    'help_header_prefix =      c ----------------- [ ',
-    'help_header_title =       d World-Edit Help',
-    'help_header_suffix =      c  ] -----------------',
-    'help_welcome =            c Welcome to the World-Edit Scarpet app\'s help!',
-    'help_welcome_tooltip =    y Hooray!',
-    'help_your_selection =     c Your selection',
-    'help_selection_bounds =   l %s to %s',
-    'help_make_selection =     c Use your wand to select with a start and final position',
-    'help_selected_wand =      c Selected wand', //Could probably be used in more places
-    'help_selected_wand_item = l %s',
-    'help_sel_wand_tooltip =   g Use the wand command to change',
-    'help_app_lang =           c App Language ', //Could probably be used in more places, todo decide whether to hardcode this
-    'help_app_lang_selected =  l %s',
-    'help_app_lang_tooltip =   g Use the lang command to change it',
-    'help_list_title =         y Command list (without prefix):',
-    'help_pagination_prefix =  c --------------- ',
-    'help_pagination_page =    y Page %d ',
-    'help_pagination_suffix =  c  ---------------',
-    'help_pagination_first =   g Go to first page',
-    'help_pagination_prev =    g Go to previous page (%d)',
-    'help_pagination_next =    g Go to next page (%d)',
-    'help_pagination_last =    g Go to last page (%d)',
-    'help_cmd_help =           l Shows this help menu, or a specified page',
-    'help_cmd_lang =           l Changes current app\'s language to [lang]',
-    'help_cmd_lang_tooltip =   g Available languages are %s',
-    'help_cmd_set =            l Set selection to block, filterable',
-    'help_cmd_set_tooltip =    g You can use a tag in the replacement argument',
-    'help_cmd_undo =           l Undoes last n moves, one by default',
-    'help_cmd_undo_all =       l Undoes the entire action history',
-    'help_cmd_undo_history =   l Shows the history of undone actions',
-    'help_cmd_redo =           l Redoes last n undoes, one by default',
-    'help_cmd_redo_tooltip =   g Also shows up in undo history',
-    'help_cmd_redo_all =       l Redoes the entire undo history',
-    'help_cmd_wand =           l Sets held item as wand or gives it if hand is empty',
-    'help_cmd_wand_2 =         l Changes the current wand item',
-    'help_cmd_rotate =         l Rotates [deg] about [pos]',
-    'help_cmd_rotate_tooltip = g Axis must be x, y or z',
-    'help_cmd_stack =          l Stacks selection n times in dir',
-    'help_cmd_stack_tooltip =  g If not provided, direction is player\s view direction by default',
-    'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
-    'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
-    'help_cmd_move =           l Moves selection to <pos>',
+    'help_header_prefix' ->       'c ----------------- [ ',
+    'help_header_title' ->        'd World-Edit Help',
+    'help_header_suffix' ->       'c  ] -----------------',
+    'help_welcome' ->             'c Welcome to the World-Edit Scarpet app\'s help!',
+    'help_welcome_tooltip' ->     'y Hooray!',
+    'help_your_selection' ->      'c Your selection',
+    'help_selection_bounds' ->    'l %s to %s',
+    'help_make_selection' ->      'c Use your wand to select with a start and final position',
+    'help_selected_wand' ->       'c Selected wand', //Could probably be used in more places
+    'help_selected_wand_item' ->  'l %s',
+    'help_sel_wand_tooltip' ->    'g Use the wand command to change',
+    'help_app_lang' ->            'c App Language ', //Could probably be used in more places, todo decide whether to hardcode this
+    'help_app_lang_selected' ->   'l %s',
+    'help_app_lang_tooltip' ->    'g Use the lang command to change it',
+    'help_list_title' ->          'y Command list (without prefix):',
+    'help_pagination_prefix' ->   'c --------------- ',
+    'help_pagination_page' ->     'y Page %d ',
+    'help_pagination_suffix' ->   'c  ---------------',
+    'help_pagination_first' ->    'g Go to first page',
+    'help_pagination_prev' ->     'g Go to previous page (%d)',
+    'help_pagination_next' ->     'g Go to next page (%d)',
+    'help_pagination_last' ->     'g Go to last page (%d)',
+    'help_cmd_help' ->            'l Shows this help menu, or a specified page',
+    'help_cmd_lang' ->            'l Changes current app\'s language to [lang]',
+    'help_cmd_lang_tooltip'->     'g Available languages are %s',
+    'help_cmd_set' ->             'l Set selection to block, filterable',
+    'help_cmd_set_tooltip' ->     'g You can use a tag in the replacement argument',
+    'help_cmd_undo' ->            'l Undoes last n moves, one by default',
+    'help_cmd_undo_all' ->        'l Undoes the entire action history',
+    'help_cmd_undo_history' ->    'l Shows the history of undone actions',
+    'help_cmd_redo' ->            'l Redoes last n undoes, one by default',
+    'help_cmd_redo_tooltip' ->    'g Also shows up in undo history',
+    'help_cmd_redo_all' ->        'l Redoes the entire undo history',
+    'help_cmd_wand' ->            'l Sets held item as wand or gives it if hand is empty',
+    'help_cmd_wand_2' ->          'l Changes the current wand item',
+    'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
+    'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z',
+    'help_cmd_stack' ->           'l Stacks selection n times in dir',
+    'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\s view direction by default',
+    'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
+    'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
+    'help_cmd_move' ->            'l Moves selection to <pos>',
 
-    'filled =           gi Filled %d blocks',                                    // blocks number
-    'no_undo_history =  w No undo history to show for player %s',                // player
-    'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
-    'entry_undo_1 =     w %d: type: %s',                                         //index, command type
-    'entry_undo_2       w     affected positions: %s',                           //blocks number
-    'no_undo =          r No actions to undo for player %s',                     // player
-    'more_moves_undo =  w Your number is too high, undoing all moves for %s',    // player
-    'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
-    'no_redo =          r No actions to redo for player %s',                     // player
-    'more_moves_redo =  w Your number is too high, redoing all moves for %s',    // player
-    'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+    'filled' ->                   'gi Filled %d blocks',                                    // blocks number
+    'no_undo_history' ->          'w No undo history to show for player %s',                // player
+    'many_undo' ->                'w Undo history for player %s is very long, showing only the last ten items', // player
+    'entry_undo_1' ->             'w %d: type: %s',                                         //index, command type
+    'entry_undo_2 ' ->            'w     affected positions: %s',                           //blocks number
+    'no_undo' ->                  'r No actions to undo for player %s',                     // player
+    'more_moves_undo' ->          'w Your number is too high, undoing all moves for %s',    // player
+    'success_undo' ->             'gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+    'no_redo' ->                  'r No actions to redo for player %s',                     // player
+    'more_moves_redo' ->          'w Your number is too high, redoing all moves for %s',    // player
+    'success_redo' ->             'gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
 
-    'clear_clipboard =                wi Cleared player %s\'s clipboard',
-    'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
-    'copy_force =                     ri Overwriting previous clipboard selection with new one',
-    'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
-    'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
+    'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
+    'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
+    'copy_force' ->               'ri Overwriting previous clipboard selection with new one',
+    'copy_success' ->             'gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+    'paste_no_clipboard' ->       'ri Cannot paste, clipboard for player %s is empty',//player
 
-    'translation_completeness =       gi Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
-    'current_lang =                   gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
-    'changed_lang =                   gi Language changed to %s',                               //language we changed to
+    'langs_changed' ->            'gi Language changed to %s.',                             //language we changed to
+    'langs_completeness' ->       'gi Note: %s translation is only %s%% translated: %s missing strings',//language, percent of present translations, no. of missing translations
+    'langs_availables' ->         'y Available languages are:',
+    'langs_add_more_tip' ->       'y Add more languages to the %s folder to use them! Get them from our repo!', //The folder
+    'langs_not_found' ->          'r Language file for %s not found',
 
-    'move_selection_no_player_error = r To move selection in the direction of the player, you need to have a player',
-    'no_selection_error =             r Missing selection for operation for player %s', //player
-    'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
-    'invalid_wand =                   r Wand has to be a tool or weapon',
-];
+    'move_selection_no_player_error' -> 'r To move selection in the direction of the player, you need to have a player',
+    'no_selection_error' ->             'r Missing selection for operation for player %s', //player
+    'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
+    'invalid_wand' ->                   'r Wand has to be a tool or weapon',
+};
+task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
-global_missing_translations={};
 
-for(global_lang_ids,
-    global_langs:_ = read_file(_, 'text');
-
-    if(global_langs:_ == null,
-        write_file(_, 'text', global_langs:_ = global_default_lang),//doing if statement here so dont have to iterate unnecessarily
-
-        lang_config=_parse_config(global_langs:_);//checking if the lang file has all the translations. This is also applied to en_us, cos it may be outdated
-        default_config=_parse_config(global_default_lang);
-        missing_translations_list=[];
-        for(default_config,//couldn't add the missing lines to config file, cos I cant guarantee that map keys r ordered same exact way as list items
-            if(!has(lang_config,_),
-                missing_translations_list+=_;
-                put(lang_config,_,default_config:_)
-            )
-        );
-        put(global_missing_translations,_,missing_translations_list)//So the map will be saved with lang's full name and missing translations
-    );
-    global_langs:_ = lang_config;
+_get_lang_list() -> (
+  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that don't have spaces
 );
 
-//telling user about missing translations when they try to change lang
-
 _change_lang(lang)->(
-    if(lang!=global_lang && lang!=null,
-        if(global_missing_translations:lang,
-            _print(player(),'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
-            logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos its log file and lang keys r in english anyways
-            for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:global_lang:_))
+    languages = _get_lang_list();
+    if(lang == null,
+        _print(player(),'langs_availables');
+        for(languages,
+            print(format('g - ','c '+_));
         );
-        global_lang=lang;
-        _print(player(),'changed_lang',lang),
-        _print(player(),'current_lang',global_lang)
+        if(player()~'permission_level' == 4, //Don't print to people that can't access it
+            _print(player(),'langs_add_more_tip',system_info('app_name')+'.data/langs/');
+        );
+    , lang == 'en_us', // Use builtin
+        global_lang_id=lang;
+        global_lang_keys=global_default_lang;
+        _print(player(),'langs_changed',_translate('language'));
+    , languages ~ lang,
+        global_lang_id=lang;
+        global_lang_keys=read_file('langs/'+lang,'json');
+        _print(player(),'langs_changed',_translate('language'));
+        if(length(global_lang_keys) < length(global_default_lang), //Not 100% accurate, but simpler and cheaper
+            missing = length(global_default_lang)-length(global_lang_keys);
+            _print(player(),'langs_completeness',_translate('language'),round(100 - missing/length(global_lang_keys)*100),missing)
+        )
+    ,
+        _print(player(), 'langs_not_found',lang); // TODO Translate this
     )
 );
 
@@ -643,12 +635,15 @@ _translate(key, ... replace_list) ->
     _translate_internal(key, replace_list);
 
 _translate_internal(key, replace_list) -> (
-    lang_id = global_lang;
-    if(lang_id == null || !has(global_langs, lang_id),
-        lang_id = global_lang_ids:0);
+    if(has(global_lang_keys, key || key == null),
+        string = global_lang_keys:key
+    ,
+        string = global_default_lang:key;
+        logger('warn', '[World-Edit Scarpet App] Language '+global_lang_id+' doesn\'t contain '+key);
+    );
     if(key == null,
         null,
-        str(global_langs:lang_id:key, replace_list)
+        str(string, replace_list)
     )
 );
 
