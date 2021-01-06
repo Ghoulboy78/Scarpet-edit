@@ -224,14 +224,16 @@ base_commands_map = [
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
 
-    ['structure list',['structure',null,null,'list',null,null],false],//todo help for this
-    ['structure load <structure>',['structure',null,'load',null,null],false],
-    ['structure load <structure> <pos>',_(s,p)->structure(s,null,'load',null,p),false],
-    ['structure delete <structure>',['structure',null,'delete',null,null],false],
-    ['structure save <name>',['structure',false,'save',false,null],false],
-    ['structure save <name> force',['structure',false,'save',true,null],false],
-    ['structure save <name> entities',['structure',true,'save',false,null],false],
-    ['structure save <name> entities force',['structure',true,'save',true,null],false],
+    ['structure list',['structure',null,null,'list',null,null,null],false],//todo help for this
+    ['structure load <structure>',['structure',null,'load',null,null,null],false],
+    ['structure load <structure> f <flag>',_(s,f)->structure(s, null,'load',null,null,flags),false],
+    ['structure load <structure> <pos>',_(s,p)->structure(s,null,'load',null,p,null),false],
+    ['structure load <structure> <pos> f <flag>',_(s,p,f)->structure(s,null,'load',null,p,f),false],
+    ['structure delete <structure>',['structure',null,'delete',null,null,null],false],
+    ['structure save <name>',['structure',false,'save',false,null,null],false],
+    ['structure save <name> force',['structure',false,'save',true,null,null],false],
+    ['structure save <name> entities',['structure',true,'save',false,null,null],false],
+    ['structure save <name> entities force',['structure',true,'save',true,null,null],false],
 ];
 
 // Proccess commands map for Carpet
@@ -1360,7 +1362,7 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
-structure(name, include_entities, action, force, pos)->(//load
+structure(name, include_entities, action, force, pos, flags)->(
     p=player();
     if(action=='save',
         if(read_file('structures/'+name,'nbt'),
@@ -1426,6 +1428,9 @@ structure(name, include_entities, action, force, pos)->(//load
         if(!(file=read_file('structures/'+name,'nbt')),
            _error(p,'structure_load_fail',name)
         );
+
+        flags=_parse_flags(flags);
+
         pos=if(pos,pos,p~'pos');
         file=parse_nbt(file);
         palette=file:'palette';
@@ -1434,7 +1439,7 @@ structure(name, include_entities, action, force, pos)->(//load
 
         for(blocks,
             state=palette:(_:'state');
-            set_block(_:'pos'+pos,state:'Name',null,null,{'state'->state:'Properties','nbt'->_:'nbt'});
+            set_block(_:'pos'+pos,state:'Name',null,flags,{'state'->state:'Properties','nbt'->_:'nbt'});
         );
         add_to_history('action_structure_paste',p)//todo translation keys for actions
         ,

@@ -44,7 +44,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
          
 3. If you need to set special blockstates or nbt values, you can do that with the `extra` argument of `set_block`. You
    can input a map with a key of `'state'` with the value of the map of blockstates, or a key of `'nbt'`, mapped to a map
-   of the nbt. NB: You can input a simply map into the nbt, the `encode_nbt` function is called in `set_block`.
+   of the nbt. NB: You can simply input a map as the nbt, the `encode_nbt` function is called in `set_block`.
    
 4. If it's the first time you are adding commands, you need to know how the commands preprocessor work. You have detailed
    instructions for it in [Command System](#command-system).
