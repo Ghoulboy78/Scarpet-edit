@@ -286,7 +286,6 @@ __config()->{
                     );
                     put(checked_list,length(checked_list),_);
                 );
-                print(args);
                 filtered_flags = filter(global_flags,!(typed_list~_));
                 map(filtered_flags,typed+_);
             ),
