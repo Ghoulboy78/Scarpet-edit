@@ -223,6 +223,7 @@ base_commands_map = [
    
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
+
     ['structure list',['structure',null,null,'list',null,null],false],//todo help for this
     ['structure load <structure>',['structure',null,'load',null,null],false],
     ['structure load <structure> <pos>',_(s,p)->structure(s,null,'load',null,p),false],
@@ -817,6 +818,24 @@ global_default_lang=[
     'brush_extra_info =               ig For detailed info on a brush use /world-edit brush info',
     'brush_new_reach =                w Brush reach was set to %d blocks',                              //block reach number
     'brush_reach =                    w Brush reach is currently %d blocks',                            //block reach number
+
+    'action_cube =                    cube',
+    'action_cuboid =                  cuboid',
+    'action_ellipsoid =               ellipsoid',
+    'action_sphere =                  sphere',
+    'action_cylinder =                cylinder',
+    'action_cone =                    cone',
+    'action_line =                    line',
+    'action_prism_polygon =           prism_polygon',
+    'action_prism_star =              prism_star',
+    'action_structure_paste =         structure_paste',
+    'action_set =                     set',
+    'action_flood =                   flood',
+    'action_rotate =                  rotate',
+    'action_move =                    move',
+    'action_stack =                   stack',
+    'action_expand =                  expand',
+    'action_paste =                   paste',
 ];
 
 global_default_config=_parse_config(global_default_lang);
@@ -850,7 +869,7 @@ _change_lang(lang)->(
         p=player();
         if(global_missing_translations:lang,
             _print(p,'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
-            logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos its log file and lang keys r in english anyways
+            logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos log file and lang keys r in english anyways
             for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:'en_us':_))
         );
         global_lang=lang;
@@ -937,7 +956,7 @@ cube(pos, args, flags) -> (
     _is_inside_shape(block) -> true;
     _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
 
-    add_to_history('cube',player())
+    add_to_history('action_cube',player())
 );
 
 cuboid(pos, args, flags) -> (
@@ -948,7 +967,7 @@ cuboid(pos, args, flags) -> (
     _is_inside_shape(block) -> true;
     _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
 
-    add_to_history('cuboid',player())
+    add_to_history('action_cuboid',player())
 );
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
@@ -982,7 +1001,7 @@ ellipsoid(pos, args, flags) -> (
     _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
     _fill_shape(pos-radii, pos+radii, block, replacement, flags);
 
-    add_to_history('ellipsoid',player())
+    add_to_history('action_ellipsoid',player())
 );
 
 sphere(pos, args, flags) -> (
@@ -995,7 +1014,7 @@ sphere(pos, args, flags) -> (
         _fill_shape(pos-radius, pos+radius, block, replacement, flags);
     );
 
-    add_to_history('sphere',player())
+    add_to_history('action_sphere',player())
 );
 
 cylinder(pos, args, flags) -> (
@@ -1010,7 +1029,7 @@ cylinder(pos, args, flags) -> (
         _fill_shape(pos-offset, pos+offset, block, replacement, flags);
     );
 
-    add_to_history('cylinder',player())
+    add_to_history('action_cylinder',player())
 );
 
 
@@ -1038,7 +1057,7 @@ cone(pos, args, flags) -> (
         _fill_shape(pos-offset, pos+offset, block, replacement, flags);
     );
 
-    add_to_history('cone',player())
+    add_to_history('action_cone',player())
 );
 
 _define_flat_distance_squared(axis, radius, size) -> (
@@ -1087,7 +1106,7 @@ line(pos, args, flags) -> (
         set_block(b, block, replacement, flags, {})
     );
 
-    add_to_history('line',player)
+    add_to_history('action_line',player)
 );
 
 paste_brush(pos, args, flags) -> (
@@ -1119,7 +1138,7 @@ prism_polygon(pos, args, flags) -> (
         for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
     );
 
-    add_to_history('prism_polygon',player())
+    add_to_history('action_prism_polygon',player())
 );
 
 prism_star(pos, args, flags) -> (
@@ -1148,7 +1167,7 @@ prism_star(pos, args, flags) -> (
         for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
     );
 
-    add_to_history('prism_star',player())
+    add_to_history('action_prism_star',player())
 );
 
 _get_circle_points(R, n, phase) -> (
@@ -1295,7 +1314,7 @@ print_history()->(
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, 'entry_undo_1', (history~command)+1, command:'type');//printing twice so it goes on 2 separate lines
+        _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'));//printing twice so it goes on 2 separate lines
         _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
@@ -1416,7 +1435,7 @@ structure(name, include_entities, action, force, pos)->(//load
             state=palette:(_:'state');
             set_block(_:'pos'+pos,state:'Name',null,null,{'state'->state:'Properties','nbt'->_:'nbt'});
         );
-        add_to_history('structure_paste',p)//todo translation keys for actions
+        add_to_history('action_structure_paste',p)//todo translation keys for actions
         ,
 
         action=='delete',
@@ -1437,7 +1456,7 @@ set_in_selection(block,replacement,flags)->
     player=player();
     [pos1,pos2]=_get_current_selection(player);
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
-    add_to_history('fill', player)
+    add_to_history('action_set', player)
 );
 
 
@@ -1494,7 +1513,7 @@ _flood_generic(block, axis, start, flags) ->
         );
     );
 
-    add_to_history('flood', player())
+    add_to_history('action_flood', player())
 );
 
 rotate(centre, degrees, axis)->(
@@ -1539,7 +1558,7 @@ rotate(centre, degrees, axis)->(
         set_block(_,rotation_map:_,null,null,{})
     );
 
-    add_to_history('rotate', player)
+    add_to_history('action_rotate', player)
 );
 
 move(new_pos,flags)->(
@@ -1571,7 +1590,7 @@ move(new_pos,flags)->(
         if(move,modify(_,'remove'))
     );
 
-    add_to_history('move', player)
+    add_to_history('action_move', player)
 );
 
 stack(count,direction,flags) -> (
@@ -1591,7 +1610,7 @@ stack(count,direction,flags) -> (
         );
     );
 
-    add_to_history('stack', player);
+    add_to_history('action_stack', player);
 );
 
 
@@ -1609,7 +1628,7 @@ expand(centre, magnitude)->(
     for(expand_map,
         set_block(_,expand_map:_,null,null,{})
     );
-    add_to_history('expand',player)
+    add_to_history('action_expand',player)
 );
 
 _copy(centre, force)->(
@@ -1650,5 +1669,5 @@ paste(pos, flags)->(
             set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
         )
     );
-    add_to_history('paste',player)
+    add_to_history('action_paste',player)
 );
