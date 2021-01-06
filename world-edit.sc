@@ -224,16 +224,16 @@ base_commands_map = [
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
 
-    ['structure list',['structure',null,null,'list',null,null,null],false],//todo help for this
-    ['structure load <structure>',['structure',null,'load',null,null,null],false],
-    ['structure load <structure> f <flag>',_(s,f)->structure(s, null,'load',null,null,flags),false],
-    ['structure load <structure> <pos>',_(s,p)->structure(s,null,'load',null,p,null),false],
-    ['structure load <structure> <pos> f <flag>',_(s,p,f)->structure(s,null,'load',null,p,f),false],
-    ['structure delete <structure>',['structure',null,'delete',null,null,null],false],
-    ['structure save <name>',['structure',false,'save',false,null,null],false],
-    ['structure save <name> force',['structure',false,'save',true,null,null],false],
-    ['structure save <name> entities',['structure',true,'save',false,null,null],false],
-    ['structure save <name> entities force',['structure',true,'save',true,null,null],false],
+    ['structure list',['structure',null,'list',null],false],//todo help for this
+    ['structure load <structure>',['structure','load',null],false],
+    ['structure load <structure> f <flag>',_(s,f)->structure(s, 'load', {'flags'->f}),false],
+    ['structure load <structure> <pos>',_(s,p)->structure(s,'load',{'pos'->p}),false],
+    ['structure load <structure> <pos> f <flag>',_(s,p,f)->structure(s,'load',{'pos'->p,'flags'->f})],
+    ['structure delete <structure>',['structure','delete',null],false],
+    ['structure save <name>',['structure','save',null],false],
+    ['structure save <name> force',['structure','save',{'force'->true}],false],
+    ['structure save <name> entities',['structure','save',{'include_entities'->true}],false],
+    ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],false],
 ];
 
 // Proccess commands map for Carpet
@@ -1362,11 +1362,11 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
-structure(name, include_entities, action, force, pos, flags)->(
+structure(name, action, args)->(
     p=player();
     if(action=='save',
         if(read_file('structures/'+name,'nbt'),
-            if(force,
+            if(args:'force',
                 _print(p,'structure_overwrite',name);
                 delete_file('structures/'+name,'nbt'),
                 _error(p,'existing_structure',name)
@@ -1382,7 +1382,7 @@ structure(name, include_entities, action, force, pos, flags)->(
         //mc nbt data structure (cos schematic have weird format which is unreplicable in scarpet)
         min_pos=map(pos1,min(_,pos2:_i));
         avg_pos=(pos1+pos2)/2;
-        entities=if(include_entities,entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);
+        entities=if(args:'include_entities',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);
 
         palette_map={};
 
@@ -1429,9 +1429,9 @@ structure(name, include_entities, action, force, pos, flags)->(
            _error(p,'structure_load_fail',name)
         );
 
-        flags=_parse_flags(flags);
+        flags=_parse_flags(args:'flags');
 
-        pos=if(pos,pos,p~'pos');
+        pos=if(args:'pos',args:'pos',p~'pos');
         file=parse_nbt(file);
         palette=file:'palette';
         blocks=file:'blocks';
