@@ -286,6 +286,7 @@ __config()->{
                     );
                     put(checked_list,length(checked_list),_);
                 );
+                print(args);
                 filtered_flags = filter(global_flags,!(typed_list~_));
                 map(filtered_flags,typed+_);
             ),
@@ -297,7 +298,7 @@ __config()->{
         'name'->{'type'->'string','suggest'->[]},
         'structure'->{//todo figure out why this dont work
             'type'->'term',
-            'suggester' -> _(args) -> print(list_files('','nbt')),
+            'suggester' -> _(args) -> map(list_files('structures','nbt'),_-'structures/'),
         },
         'radius'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'height'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
@@ -715,64 +716,64 @@ global_default_lang=[
     'language =         US English',
 
 
-    'help_header_prefix =      c ----------------- [ ',
-    'help_header_title =       d World-Edit Help',
-    'help_header_suffix =      c  ] -----------------',
-    'help_welcome =            c Welcome to the World-Edit Scarpet app\'s help!',
-    'help_welcome_tooltip =    y Hooray!',
-    'help_your_selection =     c Your selection',
-    'help_selection_bounds =   l %s to %s',
-    'help_make_selection =     c Use your wand to select with a start and final position',
-    'help_selected_wand =      c Selected wand', //Could probably be used in more places
-    'help_selected_wand_item = l %s',
-    'help_sel_wand_tooltip =   g Use the wand command to change',
-    'help_app_lang =           c App Language ', //Could probably be used in more places, todo decide whether to hardcode this
-    'help_app_lang_selected =  l %s',
-    'help_app_lang_tooltip =   g Use the lang command to change it',
-    'help_list_title =         y Command list (without prefix):',
-    'help_pagination_prefix =  c --------------- ',
-    'help_pagination_page =    y Page %d ',
-    'help_pagination_suffix =  c  ---------------',
-    'help_pagination_first =   g Go to first page',
-    'help_pagination_prev =    g Go to previous page (%d)',
-    'help_pagination_next =    g Go to next page (%d)',
-    'help_pagination_last =    g Go to last page (%d)',
-    'help_cmd_help =           l Shows this help menu, or a specified page',
-    'help_cmd_lang =           l Changes current app\'s language to [lang]',
-    'help_cmd_lang_tooltip =   g Available languages are %s',
-    'help_cmd_set =            l Set selection to block, filterable',
-    'help_cmd_set_tooltip =    g You can use a tag in the replacement argument',
-    'help_cmd_undo =           l Undoes last n moves, one by default',
-    'help_cmd_undo_all =       l Undoes the entire action history',
-    'help_cmd_undo_history =   l Shows the history of undone actions',
-    'help_cmd_redo =           l Redoes last n undoes, one by default',
-    'help_cmd_redo_tooltip =   g Also shows up in undo history',
-    'help_cmd_redo_all =       l Redoes the entire undo history',
-    'help_cmd_wand =           l Sets held item as wand or gives it if hand is empty',
-    'help_cmd_wand_2 =         l Changes the current wand item',
-    'help_cmd_rotate =         l Rotates [deg] about [pos]',
-    'help_cmd_rotate_tooltip = g Axis must be x, y or z',
-    'help_cmd_stack =          l Stacks selection n times in dir',
-    'help_cmd_stack_tooltip =  g If not provided, direction is player\s view direction by default',
-    'help_cmd_expand =         l Expands sel [magn] from pos', //This is not understandable
-    'help_cmd_expand_tooltip = g Expands the selection [magnitude] from [pos]',
-    'help_cmd_move =           l Moves selection to <pos>',
-    'help_cmd_brush_clear =    l Unregisters current item as brush',
-    'help_cmd_brush_list =     l Lists all currently regiestered brushes and their actions',
-    'help_cmd_brush_info =     l Gives detailed info of currently held brush',
-    'help_cmd_brush_generic =  l Hold item to turn into brush',
-    'help_cmd_brush_cube =     l Register brush to create cube of side length [size] out of [block]',
-    'help_cmd_brush_cuboid =   l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
-    'help_cmd_brush_sphere =   l Register brush to create sphere of radius [size] out of [block]',
-    'help_cmd_brush_ellipsoid =l Register brush to create ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
-    'help_cmd_brush_cylinder = l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
-    'help_cmd_brush_cone =     l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
-    'help_cmd_brush_polygon =  l Register brush to create polygon prism with [vertices] ammount of sides',
-    'help_cmd_brush_star =  l Register brush to create star prism with [vertices] ammount of points',
-    'help_cmd_brush_line =     l Register brush to create line from player to where you click of [length], if given',
-    'help_cmd_brush_flood =    l Register brush to perfrm flood fill out of [block] starting on right clicked block',
-    'help_cmd_brush_paste =    l Register brush to paste current clipboard with origin on targeted block',
-    'help_cmd_brush_feature =  l Register brush to plop feature',
+    'help_header_prefix =       c ----------------- [ ',
+    'help_header_title =        d World-Edit Help',
+    'help_header_suffix =       c  ] -----------------',
+    'help_welcome =             c Welcome to the World-Edit Scarpet app\'s help!',
+    'help_welcome_tooltip =     y Hooray!',
+    'help_your_selection =      c Your selection',
+    'help_selection_bounds =    l %s to %s',
+    'help_make_selection =      c Use your wand to select with a start and final position',
+    'help_selected_wand =       c Selected wand', //Could probably be used in more places
+    'help_selected_wand_item =  l %s',
+    'help_sel_wand_tooltip =    g Use the wand command to change',
+    'help_app_lang =            c App Language ', //Could probably be used in more places, todo decide whether to hardcode this
+    'help_app_lang_selected =   l %s',
+    'help_app_lang_tooltip =    g Use the lang command to change it',
+    'help_list_title =          y Command list (without prefix):',
+    'help_pagination_prefix =   c --------------- ',
+    'help_pagination_page =     y Page %d ',
+    'help_pagination_suffix =   c  ---------------',
+    'help_pagination_first =    g Go to first page',
+    'help_pagination_prev =     g Go to previous page (%d)',
+    'help_pagination_next =     g Go to next page (%d)',
+    'help_pagination_last =     g Go to last page (%d)',
+    'help_cmd_help =            l Shows this help menu, or a specified page',
+    'help_cmd_lang =            l Changes current app\'s language to [lang]',
+    'help_cmd_lang_tooltip =    g Available languages are %s',
+    'help_cmd_set =             l Set selection to block, filterable',
+    'help_cmd_set_tooltip =     g You can use a tag in the replacement argument',
+    'help_cmd_undo =            l Undoes last n moves, one by default',
+    'help_cmd_undo_all =        l Undoes the entire action history',
+    'help_cmd_undo_history =    l Shows the history of undone actions',
+    'help_cmd_redo =            l Redoes last n undoes, one by default',
+    'help_cmd_redo_tooltip =    g Also shows up in undo history',
+    'help_cmd_redo_all =        l Redoes the entire undo history',
+    'help_cmd_wand =            l Sets held item as wand or gives it if hand is empty',
+    'help_cmd_wand_2 =          l Changes the current wand item',
+    'help_cmd_rotate =          l Rotates [deg] about [pos]',
+    'help_cmd_rotate_tooltip =  g Axis must be x, y or z',
+    'help_cmd_stack =           l Stacks selection n times in dir',
+    'help_cmd_stack_tooltip =   g If not provided, direction is player\s view direction by default',
+    'help_cmd_expand =          l Expands sel [magn] from pos', //This is not understandable
+    'help_cmd_expand_tooltip =  g Expands the selection [magnitude] from [pos]',
+    'help_cmd_move =            l Moves selection to <pos>',
+    'help_cmd_brush_clear =     l Unregisters current item as brush',
+    'help_cmd_brush_list =      l Lists all currently regiestered brushes and their actions',
+    'help_cmd_brush_info =      l Gives detailed info of currently held brush',
+    'help_cmd_brush_generic =   l Hold item to turn into brush',
+    'help_cmd_brush_cube =      l Register brush to create cube of side length [size] out of [block]',
+    'help_cmd_brush_cuboid =    l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
+    'help_cmd_brush_sphere =    l Register brush to create sphere of radius [size] out of [block]',
+    'help_cmd_brush_ellipsoid = l Register brush to create ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
+    'help_cmd_brush_cylinder =  l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
+    'help_cmd_brush_cone =      l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
+    'help_cmd_brush_polygon =   l Register brush to create polygon prism with [vertices] ammount of sides',
+    'help_cmd_brush_star =      l Register brush to create star prism with [vertices] ammount of points',
+    'help_cmd_brush_line =      l Register brush to create line from player to where you click of [length], if given',
+    'help_cmd_brush_flood =     l Register brush to perfrm flood fill out of [block] starting on right clicked block',
+    'help_cmd_brush_paste =     l Register brush to paste current clipboard with origin on targeted block',
+    'help_cmd_brush_feature =   l Register brush to plop feature',
 
     'filled =           gi Filled %d blocks',                                    // blocks number
     'no_undo_history =  w No undo history to show for player %s',                // player
@@ -787,55 +788,56 @@ global_default_lang=[
     'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
 
-    'clear_clipboard =                wi Cleared player %s\'s clipboard',
-    'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
-    'copy_force =                     ri Overwriting previous clipboard selection with new one',
-    'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
-    'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
+    'clear_clipboard =                  wi Cleared player %s\'s clipboard',
+    'copy_clipboard_not_empty =         ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
+    'copy_force =                       ri Overwriting previous clipboard selection with new one',
+    'copy_success =                     gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+    'paste_no_clipboard =               ri Cannot paste, clipboard for player %s is empty',//player
 
-    'translation_completeness =       ri Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
-    'current_lang =                   gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
-    'changed_lang =                   gi Language changed to %s',                               //language we changed to
+    'translation_completeness =         ri Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
+    'current_lang =                     gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
+    'changed_lang =                     gi Language changed to %s',                               //language we changed to
 
-    'move_selection_no_player_error = r To move selection in the direction of the player, you need to have a player',
-    'no_selection_error =             r Missing selection for operation for player %s', //player
-    'new_wand =                       wi %s is now the app\'s wand, use it with care.', //wand item
-    'invalid_wand =                   r Wand has to be a tool or weapon',
+    'move_selection_no_player_error =   r To move selection in the direction of the player, you need to have a player',
+    'no_selection_error =               r Missing selection for operation for player %s', //player
+    'new_wand =                         wi %s is now the app\'s wand, use it with care.', //wand item
+    'invalid_wand =                     r Wand has to be a tool or weapon',
 
-    'structure_list =                 w List of structures:',
-    'saved_structure =                w Saved structure as %s.nbt',                                 //structure name
-    'existing_structure =             r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
-    'structure_overwrite =            ri Overwriting %s.nbt with a new structure',                  //structure name
-    'structure_delete_success =       gi Successfully deleted %s.nbt',                              //structure name
-    'structure_delete_fail =          ri Failed to delete %s.nbt, no such file exists',             //structure name
-    'structure_load_fail =            ri Failed to load %s.nbt, no such file exists',               //structure name
+    'structure_list =                   w List of structures:',
+    'saved_structure =                  w Saved structure as %s.nbt',                                 //structure name
+    'existing_structure =               r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
+    'structure_overwrite =              ri Overwriting %s.nbt with a new structure',                  //structure name
+    'structure_delete_success =         gi Successfully deleted %s.nbt',                              //structure name
+    'structure_delete_fail =            ri Failed to delete %s.nbt, no such file exists',             //structure name
+    'structure_load_fail =              ri Failed to load %s.nbt, no such file exists',               //structure name
 
-    'new_brush =                      wi %s is now a brush with action %s',                             //item name, action name
-    'brush_info =                     w %s has action %s bound to it with parameters %s and flags %s',  //item name, acton name, params, flags
-    'brush_replaced =                 w Replacing previous action for brush in %s',                     //new action name
-    'brush_list_header =              bc === Current brushes are ===',
-    'brush_empty_list =               gi No brushes registerd so far',
-    'brush_extra_info =               ig For detailed info on a brush use /world-edit brush info',
-    'brush_new_reach =                w Brush reach was set to %d blocks',                              //block reach number
-    'brush_reach =                    w Brush reach is currently %d blocks',                            //block reach number
+    'new_brush =                        wi %s is now a brush with action %s',                             //item name, action name
+    'brush_info =                       w %s has action %s bound to it with parameters %s and flags %s',  //item name, acton name, params, flags
+    'brush_replaced =                   w Replacing previous action for brush in %s',                     //new action name
+    'brush_list_header =                bc === Current brushes are ===',
+    'brush_empty_list =                 gi No brushes registerd so far',
+    'brush_extra_info =                 ig For detailed info on a brush use /world-edit brush info',
+    'brush_new_reach =                  w Brush reach was set to %d blocks',                              //block reach number
+    'brush_reach =                      w Brush reach is currently %d blocks',                            //block reach number
 
-    'action_cube =                    cube',
-    'action_cuboid =                  cuboid',
-    'action_ellipsoid =               ellipsoid',
-    'action_sphere =                  sphere',
-    'action_cylinder =                cylinder',
-    'action_cone =                    cone',
-    'action_line =                    line',
-    'action_prism_polygon =           prism_polygon',
-    'action_prism_star =              prism_star',
-    'action_structure_paste =         structure_paste',
-    'action_set =                     set',
-    'action_flood =                   flood',
-    'action_rotate =                  rotate',
-    'action_move =                    move',
-    'action_stack =                   stack',
-    'action_expand =                  expand',
-    'action_paste =                   paste',
+    //Block-setting actions
+    'action_cube =                  cube',
+    'action_cuboid =                cuboid',
+    'action_ellipsoid =             ellipsoid',
+    'action_sphere =                sphere',
+    'action_cylinder =              cylinder',
+    'action_cone =                  cone',
+    'action_line =                  line',
+    'action_prism_polygon =         prism_polygon',
+    'action_prism_star =            prism_star',
+    'action_structure_paste =       structure_paste',
+    'action_set =                   set',
+    'action_flood =                 flood',
+    'action_rotate =                rotate',
+    'action_move =                  move',
+    'action_stack =                 stack',
+    'action_expand =                expand',
+    'action_paste =                 paste',
 ];
 
 global_default_config=_parse_config(global_default_lang);
@@ -1362,10 +1364,10 @@ redo(moves)->(
 structure(name, include_entities, action, force, pos)->(//load
     p=player();
     if(action=='save',
-        if(read_file(name,'nbt'),
+        if(read_file('structures/'+name,'nbt'),
             if(force,
                 _print(p,'structure_overwrite',name);
-                delete_file(name,'nbt'),
+                delete_file('structures/'+name,'nbt'),
                 _error(p,'existing_structure',name)
             )
         );
@@ -1419,10 +1421,10 @@ structure(name, include_entities, action, force, pos)->(//load
         };
 
         _print(p,'saved_structure',name);
-        write_file(name,'nbt',encode_nbt(data)),
+        write_file('structures/'+name,'nbt',encode_nbt(data)),
 
         action=='load',
-        if(!(file=read_file(name,'nbt')),
+        if(!(file=read_file('structures/'+name,'nbt')),
            _error(p,'structure_load_fail',name)
         );
         pos=if(pos,pos,p~'pos');
@@ -1439,14 +1441,14 @@ structure(name, include_entities, action, force, pos)->(//load
         ,
 
         action=='delete',
-        if(delete_file(name,'nbt'),
+        if(delete_file('structures/'+name,'nbt'),
             _print(p,'structure_delete_success',name),
             _error(p,'structure_delete_fail',name)
         ),
 
         action=='list',
         _print(p,'structure_list');
-        strucs=list_files('','nbt');
+        strucs=list_files('structures','nbt');
         print(str(strucs)-'['-']')
     )
 );
