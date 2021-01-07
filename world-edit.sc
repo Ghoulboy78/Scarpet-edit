@@ -1421,8 +1421,8 @@ structure(name, action, args)->(
             'DataVersion'->system_info('game_data_version')
         };
 
-        _print(p,'saved_structure',name);
         write_file('structures/'+name,'nbt',encode_nbt(data)),
+        _print(p,'saved_structure',name);
 
         action=='load',
         if(!(file=read_file('structures/'+name,'nbt')),
