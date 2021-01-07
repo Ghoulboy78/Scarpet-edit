@@ -1388,7 +1388,7 @@ structure(name, action, args)->(
 
         states=[];
         key_map(block)->(
-            map={'Name'->str('minecraft:%s',block)};
+            map={'Name'->if((str(block)-'minecraft:')~':',str(block),str('minecraft:%s',block))};
             if(block_state(block),put(map,'Properties',block_state(block)));
             map
         );
