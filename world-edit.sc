@@ -234,6 +234,8 @@ base_commands_map = [
     ['structure save <name> force',['structure','save',{'force'->true}],false],
     ['structure save <name> entities',['structure','save',{'include_entities'->true}],false],
     ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],false],
+    ['structure copy <name>',['structure','copy',null],false],
+    ['structure copy <name> force',['structure','copy',{'force'->true}],false],
 ];
 
 // Proccess commands map for Carpet
@@ -1421,8 +1423,35 @@ structure(name, action, args)->(
             'DataVersion'->system_info('game_data_version')
         };
 
-        write_file('structures/'+name,'nbt',encode_nbt(data)),
-        _print(p,'saved_structure',name);
+        write_file('structures/'+name,'nbt',encode_nbt(data));
+        _print(p,'saved_structure',name),
+
+        action=='copy',
+        if(!(file=read_file('structures/'+name,'nbt')),
+            _error(p,'structure_load_fail',name)
+        );
+
+        if(global_clipboard,
+            if(args:'force',
+                _print(player,'copy_force');
+                global_clipboard=[],
+                _error(player,'copy_clipboard_not_empty')
+            )
+        );
+
+        file=parse_nbt(file);
+        palette=file:'palette';
+        blocks=file:'blocks';
+        entities=file:'entities';
+
+        global_clipboard+=entities;//always gonna add entities, cos we dont know if we added them in the first place
+
+        for(blocks,
+            state=palette:(_:'state');
+            global_clipboard+=[_:'pos',state:'Name',state,null]
+        );
+
+        _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0)),
 
         action=='load',
         if(!(file=read_file('structures/'+name,'nbt')),
@@ -1435,7 +1464,7 @@ structure(name, action, args)->(
         file=parse_nbt(file);
         palette=file:'palette';
         blocks=file:'blocks';
-        entities=file:'entities';
+        entities=file:'entities';//todo load these as well
 
         for(blocks,
             state=palette:(_:'state');
@@ -1651,10 +1680,10 @@ _copy(centre, force)->(
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
-    global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have entities, incase u wanna paste with them
+    global_clipboard+=entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
-        global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want
+        global_clipboard+=[centre-pos(_),block(_),block_state(_),biome(_)]//all the important stuff, can add more if the flags require it
     );
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
@@ -1669,10 +1698,10 @@ paste(pos, flags)->(
 
     entities=global_clipboard:0;
     for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
-        [pos_vector, old_block, old_biome]=global_clipboard:_;
+        [pos_vector, old_block, old_states, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
         if(!(flags~'a'&&air(old_block)),
-            set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
+            set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome})
         )
     );
     add_to_history('action_paste',player)
