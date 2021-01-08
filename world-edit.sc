@@ -653,7 +653,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p','d'];
+global_flags = ['w','a','e','h','u','b','p','d','s'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -664,6 +664,7 @@ global_flags = ['w','a','e','h','u','b','p','d'];
 //b     set biome
 //p     only replace air
 //d     "dry" out the pasted structure (remove water and waterlogged)
+//s     keep block states of replaced block, if new block matches
 
 
 _parse_flags(flags) ->(
@@ -1225,7 +1226,7 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     success=null;
     existing = block(pos);
 
-    state = if(flags,{},null);
+    state = if(flags~'s', block_state(replacement), if(flags,{},null));
     if(flags~'d', if(block=='water', block=='air', put(state,'waterlogged','false')));
     if(flags~'w' && (existing == 'water' && block_state(existing,'level')=='0') || block_state(existing,'waterlogged')=='true', 
         if(block=='air', block=='water', put(state,'waterlogged','true')); // "waterlog" air blocks
