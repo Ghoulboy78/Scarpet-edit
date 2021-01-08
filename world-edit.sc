@@ -653,7 +653,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p'];
+global_flags = ['w','a','e','h','u','b','p','d'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -663,6 +663,7 @@ global_flags = ['w','a','e','h','u','b','p'];
 //u     set blocks without updates
 //b     set biome
 //p     only replace air
+//d     "dry" out the pasted structure (remove water and waterlogged)
 
 
 _parse_flags(flags) ->(
@@ -1220,12 +1221,15 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
-set_block(pos,block, replacement, flags, extra)->(//use this function to set blocks
+set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
     success=null;
     existing = block(pos);
 
     state = if(flags,{},null);
-    if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
+    if(flags~'d', if(block=='water', block=='air', put(state,'waterlogged','false')));
+    if(flags~'w' && (existing == 'water' && block_state(existing,'level')=='0') || block_state(existing,'waterlogged')=='true', 
+        if(block=='air', block=='water', put(state,'waterlogged','true')); // "waterlog" air blocks
+    );
 
     if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
