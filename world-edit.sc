@@ -653,7 +653,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p','d','s'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -665,6 +665,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s'];
 //p     only replace air
 //d     "dry" out the pasted structure (remove water and waterlogged)
 //s     keep block states of replaced block, if new block matches
+//g     when replacing air or water, some greenery gets repalced too
 
 
 _parse_flags(flags) ->(
@@ -1222,14 +1223,21 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
+global_water_greenery = {'seagrass'->null, 'tall_seagrass'->null, 'kelp'->null};
+global_air_greenery = {'grass'->null, 'tall_grass'->null, 'fern'->null, 'large_fern'->null};
+
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
     success=null;
     existing = block(pos);
 
-    state = if(flags~'s', block_state(replacement), if(flags,{},null));
+    state = if(flags~'s', block_state(existing), if(flags,{},null));
     if(flags~'d', if(block=='water', block=='air', put(state,'waterlogged','false')));
-    if(flags~'w' && (existing == 'water' && block_state(existing,'level')=='0') || block_state(existing,'waterlogged')=='true', 
-        if(block=='air', block=='water', put(state,'waterlogged','true')); // "waterlog" air blocks
+    if(flags~'w' && (existing == 'water' && block_state(existing, 'level')=='0') || block_state(existing, 'waterlogged')=='true', 
+        if(block=='air', block=='water', put(state, 'waterlogged','true')); // "waterlog" air blocks
+    );
+    if(flags~'g', 
+        if(replacement=='water' && has(global_water_greenery,existing), replacement=existing);
+        if(replacement=='air' && has(global_air_greenery,existing), replacement=existing);
     );
 
     if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
