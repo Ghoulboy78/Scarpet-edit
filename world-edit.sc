@@ -1239,7 +1239,7 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     );
     if(flags~'d', 
         if(
-            block=='water', block=='air',
+            block=='water', block='air',
             block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
         );
     );
@@ -1248,10 +1248,11 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
         block_state(existing, 'waterlogged')=='true'
         ), 
         if(
-            block=='air', block=='water', // "waterlog" air blocks
+            block=='air', block='water', // "waterlog" air blocks
             block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
         ); 
     );
+    print(block);
     if(flags~'g', 
         if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
         if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
