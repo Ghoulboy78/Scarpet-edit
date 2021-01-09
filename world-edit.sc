@@ -494,8 +494,8 @@ __on_tick() ->
 );
 
 
-__on_player_swings_hand(player, hand) ->
-//__on_player_clicks_block(player, block, face) -> 
+//__on_player_swings_hand(player, hand) ->
+__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -1527,7 +1527,7 @@ _copy(centre, force)->(
         global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want
     );
 
-    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
+    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
 );
 
 paste(pos, flags)->(
@@ -1538,7 +1538,7 @@ paste(pos, flags)->(
     flags=_parse_flags(flags);
 
     entities=global_clipboard:0;
-    for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
+    for(range(1,length(global_clipboard)),//cos gotta skip the entity one
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
         if(!(flags~'a'&&air(old_block)),
