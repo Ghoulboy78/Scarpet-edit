@@ -1230,7 +1230,13 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     success=null;
     existing = block(pos);
 
-    state = if(flags~'s', block_state(existing), if(flags,{},null));
+    state = if(flags~'s',
+        bs_e=block_state(existing);
+        bs_b=block_state(block);
+        if(all(keys(bs_e), has(bs_b, _)), 
+            bs_e, if(flags,{},null)
+        );
+    );
     if(flags~'d', 
         if(
             block=='water', block=='air',
