@@ -776,7 +776,7 @@ global_default_lang=[
 
     'clear_clipboard =                wi Cleared player %s\'s clipboard',
     'copy_clipboard_not_empty =       ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
-    'copy_force =                     ri Overwriting previous clipboard selection with new one',
+    'copy_force =                     di Overwriting previous clipboard selection with new one',
     'copy_success =                   gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
     'paste_no_clipboard =             ri Cannot paste, clipboard for player %s is empty',//player
 
@@ -1231,9 +1231,20 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     existing = block(pos);
 
     state = if(flags~'s', block_state(existing), if(flags,{},null));
-    if(flags~'d', if(block=='water', block=='air', put(state,'waterlogged','false')));
-    if(flags~'w' && (existing == 'water' && block_state(existing, 'level')=='0') || block_state(existing, 'waterlogged')=='true', 
-        if(block=='air', block=='water', put(state, 'waterlogged','true')); // "waterlog" air blocks
+    if(flags~'d', 
+        if(
+            block=='water', block=='air',
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+        );
+    );
+    if(flags~'w' && (
+        (existing == 'water' && block_state(existing, 'level')=='0') ||
+        block_state(existing, 'waterlogged')=='true'
+        ), 
+        if(
+            block=='air', block=='water', // "waterlog" air blocks
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+        ); 
     );
     if(flags~'g', 
         if(replacement=='water' && has(global_water_greenery,existing), replacement=existing);
@@ -1267,7 +1278,6 @@ add_to_history(function,player)->(
         'type'->function,
         'affected_positions'->global_affected_blocks
     };
-    print(global_affected_blocks);
     _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
@@ -1302,7 +1312,6 @@ undo(moves)->(
 
         delete(global_history,(length(global_history)-1))
     );
-    print(global_affected_blocks);
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
     _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
