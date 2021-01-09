@@ -77,7 +77,7 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    
 #### Messages
 
-If you want to print a message as an output to the player, the easiest way is using the `_print(player, message_id, ...extra_args))`
+If you want to print a message as an output to the player, the easiest way is using the `_print(player, message_id, ...extra_args)`
 function. This is important to be able to translate the message into other languages. Don't worry if you can't translate your strings
 to other languages, but make sure that you follow these steps so that someone else can translate it. Input the string in the format: 
 `'message_id' ->  'Your message',` into the map under the `//Translations` comment, under all the other output messages. 
