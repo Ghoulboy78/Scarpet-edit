@@ -1223,8 +1223,8 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
-global_water_greenery = {'seagrass'->null, 'tall_seagrass'->null, 'kelp'->null};
-global_air_greenery = {'grass'->null, 'tall_grass'->null, 'fern'->null, 'large_fern'->null};
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
     success=null;
@@ -1247,9 +1247,11 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
         ); 
     );
     if(flags~'g', 
-        if(replacement=='water' && has(global_water_greenery,existing), replacement=existing);
-        if(replacement=='air' && has(global_air_greenery,existing), replacement=existing);
+        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
     );
+    if(existing!='air', print([st = str(existing), type(st)]));
+    //print([re=replacement:0, type(re)]);
 
     if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
