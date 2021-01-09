@@ -23,8 +23,8 @@ It will pop up a grid, and it will follow your mouse (hovering 5 blocks in midai
 Left clicking again will reselect the whole box.
 
 ### Commands:
- - `/world-edit fill <block>` -> Fills selected area with given block
- - `/world-edit fill <block> <replacement>` -> Same as above, but also replacing blocks
+ - `/world-edit set <block>` -> Sets all the blocks in the selected area to the given block
+ - `/world-edit set <block> <blocktoreplace>` -> Same as above, but only replacing that particular block
  - `/world-edit undo` -> Undoes last move performed by player. This can be redone with `/world-edit redo`
  - `/world-edit undo all` -> Undoes entire undo history
  - `/world-edit undo <moves>` -> Undoes specific number of moves
