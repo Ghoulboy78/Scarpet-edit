@@ -88,14 +88,14 @@ While the `_print()` function is useful in most of the cases, there are some sit
 the message to the player. For those cases, there are two auxiliary functions for languages that can be useful in those situations:
 
 - `_translate(message_id, ...extra_args)` Will give you the translated string directly, without even applying the `format()` to it,
-so you have full freedom to what you use if for
+so you have full freedom over what you use it for
 - `_error(player, message_id, ...extra_args` Will send the player the message and then immediately exit the function as errored.
 
 A message added with this method will appear in the default US English translation. If you want to translate to other languages,
 you just need to create a JSON file with your language's id (e.g. `it_it.json`), and add it into the `world-edit.data/langs` folder.
 When the file is in there, you'll be able to load it by using `/world-edit lang [lang id]` ingame. The app will warn to the console 
 if you try to load an uncomplete language ingame, including all missing keys so it's easier to translate. While those are not available,
-it will use the default english values for those.
+it will use the default US English values for those.
 
 ### Command System
 
