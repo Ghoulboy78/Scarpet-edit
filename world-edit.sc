@@ -1533,7 +1533,7 @@ _copy(origin, force)->(
         if(force,
             _print(player,'copy_force');
             global_clipboard=[],
-            _error(player,'copy_clipboard_not_empty')
+            _error(player,'copy_clipboard_not_empty', player)
         )
     );
 
