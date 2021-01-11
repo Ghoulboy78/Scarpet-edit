@@ -494,8 +494,8 @@ __on_tick() ->
 );
 
 
-__on_player_swings_hand(player, hand) ->
-//__on_player_clicks_block(player, block, face) -> 
+//__on_player_swings_hand(player, hand) ->
+__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -1252,7 +1252,6 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
             block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
         ); 
     );
-    print(block);
     if(flags~'g', 
         if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
         if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
@@ -1523,9 +1522,9 @@ expand(centre, magnitude)->(
     add_to_history('expand',player)
 );
 
-_copy(centre, force)->(
+_copy(origin, force)->(
     player = player();
-    if(!centre,centre=pos(player));
+    if(!origin,origin=pos(player));
     [pos1,pos2]=_get_current_selection(player);
     if(global_clipboard,
         if(force,
@@ -1540,8 +1539,9 @@ _copy(centre, force)->(
     global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have
 
     volume(pos1,pos2,
-        global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want
+        global_clipboard+=[pos(_)-origin,block(_),biome(_)]//all the important stuff, can add flags later if we want
     );
+    for(global_clipboard, if(_i>0, print([_:1, _:0])));
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
 );
@@ -1549,7 +1549,6 @@ _copy(centre, force)->(
 paste(pos, flags)->(
     player=player();
     if(!pos,pos=pos(player));
-    [pos1,pos2]=_get_current_selection(player);
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
@@ -1557,6 +1556,9 @@ paste(pos, flags)->(
     for(range(1,length(global_clipboard)),//cos gotta skip the entity one
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
+
+        print([old_block, new_pos]);
+
         if(!(flags~'a'&&air(old_block)),
             set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
         )
