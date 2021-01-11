@@ -1541,7 +1541,6 @@ _copy(origin, force)->(
     volume(pos1,pos2,
         global_clipboard+=[pos(_)-origin,block(_),biome(_)]//all the important stuff, can add flags later if we want
     );
-    for(global_clipboard, if(_i>0, print([_:1, _:0])));
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
 );
@@ -1556,8 +1555,6 @@ paste(pos, flags)->(
     for(range(1,length(global_clipboard)),//cos gotta skip the entity one
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
-
-        print([old_block, new_pos]);
 
         if(!(flags~'a'&&air(old_block)),
             set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
