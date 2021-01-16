@@ -38,9 +38,12 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
         
       1. When running your function, just use `set_block(pos,block,replacement` to set the block in the world.
    
-      2. Secondly, you have to save your command to the player history, so they can undo it. This is an O(n) operation, so
-         don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this, just
-         run the function `add_to_history(your_function_name, player)` and it will all be handled behind the scenes.
+      2. Secondly, you have to save your command to the player history, so they can undo it. This is an O(n) operation, 
+         so don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this,
+         just run the function `add_to_history('action_'+your_function_name, player)` and add that to the lang as a translation
+         key, mapped to the en_us translation, which will be displayed to the player when they run `/undo history`. This
+         is so people can translate the function name when converting to their language. The rest of the undo business 
+         will be handled behind the scenes as long as you follow these steps.
          
 3. If you need to set special blockstates or nbt values, you can do that with the `extra` argument of `set_block`. You
    can input a map with a key of `'state'` with the value of the map of blockstates, or a key of `'nbt'`, mapped to a map
