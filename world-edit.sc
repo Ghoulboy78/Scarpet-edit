@@ -234,6 +234,8 @@ base_commands_map = [
     ['structure save <name> force',['structure','save',{'force'->true}],false],
     ['structure save <name> entities',['structure','save',{'include_entities'->true}],false],
     ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],false],
+    ['structure save <name> clipboard',['structure','clipboard','save_clipboard',{'clipboard'->true}],false],
+    ['structure save <name> clipboard force',['structure','clipboard','save_clipboard',{'clipboard'->true,'force'->true}],false],
     ['structure copy <name>',['structure','copy',null],false],
     ['structure copy <name> force',['structure','copy',{'force'->true}],false],
 ];
@@ -299,7 +301,7 @@ __config()->{
         'lang'->{'type'->'term','options'->global_lang_ids},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
         'name'->{'type'->'string','suggest'->[]},
-        'structure'->{//todo figure out why this dont work
+        'structure'->{
             'type'->'term',
             'suggester' -> _(args) -> map(list_files('structures','nbt'),_-'structures/'),
         },
@@ -795,7 +797,7 @@ global_default_lang=[
     'copy_clipboard_not_empty =         ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
     'copy_force =                       ri Overwriting previous clipboard selection with new one',
     'copy_success =                     gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
-    'paste_no_clipboard =               ri Cannot paste, clipboard for player %s is empty',//player
+    'paste_no_clipboard =               ri Cannot complete action, clipboard for player %s is empty',//player
 
     'translation_completeness =         ri Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
     'current_lang =                     gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
@@ -1426,6 +1428,74 @@ structure(name, action, args)->(
         write_file('structures/'+name,'nbt',encode_nbt(data));
         _print(p,'saved_structure',name),
 
+        action=='save_clipboard',
+
+        if(read_file('structures/'+name,'nbt'),
+            if(args:'force',
+                _print(p,'structure_overwrite',name);
+                delete_file('structures/'+name,'nbt'),
+                _error(p,'existing_structure',name)
+            )
+        );
+
+        if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
+
+        clipboard=global_clipboard;
+        delete(clipboard,0);//cos first arg is entities
+
+        entities=global_clipboard:0;
+
+        pos1=clipboard:0:0;
+        pos2=get(clipboard,-1):0;
+
+
+        pos_diff=map(pos1-pos2,abs(_)+1);
+        
+        min_pos=map(pos1,min(_,pos2:_i));
+        avg_pos=(pos1+pos2)/2;
+
+        entities=entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));
+
+        palette_map={};
+
+        states=[];
+        key_map(block)->(
+            map={'Name'->if((str(block:0)-'minecraft:')~':',str(block:0),str('minecraft:%s',block:0))};
+            if(block:2,put(map,'Properties',block:2));
+            map
+        );
+
+        for(clipboard,
+            palette_map:key_map(_)+=1;
+
+            state_map={
+                'pos'->(_:0-min_pos),
+                'state'->(keys(palette_map)~key_map(_))
+            };
+            if((nbt=parse_nbt(_:3))!='null',
+                delete(nbt,'x');
+                delete(nbt,'y');
+                delete(nbt,'z');
+                put(state_map,'nbt',nbt)
+            );
+            states+=state_map
+        );
+
+        data={
+            'blocks'->states,
+            'entities'->entities,
+            'palette'->keys(palette_map),
+            'size'->{
+                'x'->pos_diff:0,
+                'y'->pos_diff:1,
+                'z'->pos_diff:2
+            },
+            'DataVersion'->system_info('game_data_version')
+        };
+
+        write_file('structures/'+name,'nbt',encode_nbt(data));
+        _print(p,'saved_structure',name),
+
         action=='copy',
         if(!(file=read_file('structures/'+name,'nbt')),
             _error(p,'structure_load_fail',name)
@@ -1444,7 +1514,7 @@ structure(name, action, args)->(
         blocks=file:'blocks';
         entities=file:'entities';
 
-        global_clipboard+=entities;//always gonna add entities, cos we dont know if we added them in the first place
+        global_clipboard+=entities;
 
         for(blocks,
             state=palette:(_:'state');
@@ -1683,7 +1753,7 @@ _copy(centre, force)->(
     global_clipboard+=entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
-        global_clipboard+=[centre-pos(_),block(_),block_state(_),biome(_)]//all the important stuff, can add more if the flags require it
+        global_clipboard+=[centre-pos(_),block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
     );
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
@@ -1698,10 +1768,10 @@ paste(pos, flags)->(
 
     entities=global_clipboard:0;
     for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
-        [pos_vector, old_block, old_states, old_biome]=global_clipboard:_;
+        [pos_vector, old_block, old_states, old_nbt, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
         if(!(flags~'a'&&air(old_block)),
-            set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome})
+            set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
         )
     );
     add_to_history('action_paste',player)

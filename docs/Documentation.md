@@ -61,8 +61,11 @@ Left clicking again will reselect the whole box.
  - `/world-edit structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
     position if not specified.
  - `/world-edit structure save <name> entities?|force?` -> Saves current selection to a `.nbt` file compatible with vanilla 
-    structure blocks. `entities` will make it save entities, and `force` will override an existing strucute with the same
+    structure blocks. `entities` will make it save entities, and `force` will override an existing structure with the same
     name.
+ - `/world-edit structure save <name> clipboard force?` -> Saves current clipboard to a `.nbt` file compatible with vanilla 
+    structure blocks.`force` will override an existing structure with the same name. Gives an error if no clipboard is present.
+    Will also copy entities.
  - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
 
 #### Brushes
