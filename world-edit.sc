@@ -1450,7 +1450,7 @@ structure(name, action, args)->(
 
 
         pos_diff=map(pos1-pos2,abs(_)+1);
-        
+
         min_pos=map(pos1,min(_,pos2:_i));
         avg_pos=(pos1+pos2)/2;
 
@@ -1540,7 +1540,7 @@ structure(name, action, args)->(
             state=palette:(_:'state');
             set_block(_:'pos'+pos,state:'Name',null,flags,{'state'->state:'Properties','nbt'->_:'nbt'});
         );
-        add_to_history('action_structure_paste',p)//todo translation keys for actions
+        add_to_history('action_structure_paste',p)
         ,
 
         action=='delete',
