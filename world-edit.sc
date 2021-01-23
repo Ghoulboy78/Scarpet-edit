@@ -1286,7 +1286,8 @@ add_to_history(function,player)->(
         'type'->function,
         'affected_positions'->global_affected_blocks
     };
-
+    
+    _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
 );
