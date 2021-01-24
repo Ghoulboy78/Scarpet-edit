@@ -85,17 +85,25 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    
 #### Messages
 
-If you want to print a message as an output to the player, then use the `_print(player, message_id, extra_args))`
-function. This is important to be able to translate the message into other languages. Don't worry if you cannot do this,
-but make sure that you follow these steps so that someone else can translate it. Input the string in the format: 
-`message_id=  Your message` into the list which is under the `//Translations` comment, under all the other output messages. 
+If you want to print a message as an output to the player, the easiest way is using the `_print(player, message_id, ...extra_args)`
+function. This is important to be able to translate the message into other languages. Don't worry if you can't translate your strings
+to other languages, but make sure that you follow these steps so that someone else can translate it. Input the string in the format: 
+`'message_id' ->  'Your message',` into the map under the `//Translations` comment, under all the other output messages. 
+Try to group your messages if all relate to the same function/command, so they are easier to find when translating or using them.
 If the message requires variables to be put in (like a number, or player, etc), just use `%s` in the message to stand for
-that value, it will be taken care of by the rest of the app. Also, if the message is for a fatal error which should stop
-the function running, use the `_error()` function with exactly the same arguments as `_print()` and it will exit after
-telling the user what's wrong.
+that value, it will be taken care of by the rest of the app.
+While the `_print()` function is useful in most of the cases, there are some situations where you can't work by directly printing
+the message to the player. For those cases, there are two auxiliary functions for languages that can be useful in those situations:
 
-*NB: This message will appear in US english translation. If you want to translate for other languages, you need to add
-the US english version **and** your own language's option.*
+- `_translate(message_id, ...extra_args)` Will give you the translated string directly, without even applying the `format()` to it,
+so you have full freedom over what you use it for
+- `_error(player, message_id, ...extra_args` Will send the player the message and then immediately exit the function as errored.
+
+A message added with this method will appear in the default US English translation. If you want to translate to other languages,
+you just need to create a JSON file with your language's id (e.g. `it_it.json`), and add it into the `world-edit.data/langs` folder.
+When the file is in there, you'll be able to load it by using `/world-edit lang [lang id]` ingame. The app will warn to the console 
+if you try to load an uncomplete language ingame, including all missing keys so it's easier to translate. While those are not available,
+it will use the default US English values for those.
 
 ### Command System
 
