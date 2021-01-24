@@ -511,7 +511,6 @@ __on_tick() ->
 
 
 __on_player_swings_hand(player, hand) ->
-//__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -669,7 +668,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -679,6 +678,9 @@ global_flags = ['w','a','e','h','u','b','p'];
 //u     set blocks without updates
 //b     set biome
 //p     only replace air
+//d     "dry" out the pasted structure (remove water and waterlogged)
+//s     keep block states of replaced block, if new block matches
+//g     when replacing air or water, some greenery gets repalced too
 
 
 _parse_flags(flags) ->(
@@ -1271,14 +1273,42 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
-set_block(pos,block, replacement, flags, extra)->(//use this function to set blocks
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
+
+set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
     success=null;
     existing = block(pos);
 
-    nbt = if(extra:'nbt',extra:'nbt',{});//putting here incase future nbt manipulation flags are added
+    // undo expects positions, not blocks
+    if(type(pos)!='list', pos=pos(pos));
 
-    state = if(extra:'state',extra:'state',{});
-    if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
+    state = if(flags~'s',
+        bs_e=block_state(existing);
+        bs_b=block_state(block);
+        if(all(keys(bs_e), has(bs_b, _)), 
+            bs_e, {}
+        );
+    , {});
+    if(flags~'d', 
+        if(
+            block=='water', block='air',
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+        );
+    );
+    if(flags~'w' && (
+        (existing == 'water' && block_state(existing, 'level')=='0') ||
+        block_state(existing, 'waterlogged')=='true'
+        ), 
+        if(
+            block=='air', block='water', // "waterlog" air blocks
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+        ); 
+    );
+    if(flags~'g', 
+        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
+    );
 
     if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state,encode_nbt(nbt))),set(existing,block,state,encode_nbt(nbt))); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
@@ -1736,15 +1766,15 @@ expand(centre, magnitude)->(
     add_to_history('action_expand',player)
 );
 
-_copy(centre, force)->(
+_copy(origin, force)->(
     player = player();
-    if(!centre,centre=pos(player));
+    if(!origin,origin=pos(player));
     [pos1,pos2]=_get_current_selection(player);
     if(global_clipboard,
         if(force,
             _print(player,'copy_force');
             global_clipboard=[],
-            _error(player,'copy_clipboard_not_empty')
+            _error(player,'copy_clipboard_not_empty', player)
         )
     );
 
@@ -1756,13 +1786,12 @@ _copy(centre, force)->(
         global_clipboard+=[centre-pos(_),block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
     );
 
-    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
+    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
 );
 
 paste(pos, flags)->(
     player=player();
     if(!pos,pos=pos(player));
-    [pos1,pos2]=_get_current_selection(player);
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
