@@ -2,13 +2,11 @@
 
 import('math','_round');
 
-global_lang_ids = ['en_us','it_it'];//defining up here for command to work
-
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
 //# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
-//# 
+//#
 //# Suggestion is derived from command_for_carpet, everything before the first `<`.
 //# Command prefix (/world-edit ) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
@@ -19,7 +17,7 @@ base_commands_map = [
     ['help', _()->_help(1), false],
     ['help <page>', '_help', [0, 'help_cmd_help', null, null]],
     ['lang', ['_change_lang',null], false],
-    ['lang <lang>', '_change_lang', [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',global_lang_ids), null]],
+    ['lang <lang>', '_change_lang', [0, 'help_cmd_lang', _()->_translate('help_cmd_lang_tooltip',_get_lang_list()), null]],
     ['set <block>', ['set_in_selection',null,null], false],
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
     ['set <block> f <flag>', _(block,flag)->set_in_selection(block,null,flag), false], //TO-DO Help for flags
@@ -62,7 +60,6 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
-    
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
@@ -70,22 +67,22 @@ base_commands_map = [
     ['brush reach <length>', _(length)-> brush('reach', null, length), [0, 'help_cmd_brush_reach', null, null]],
     ['brush cube <block> <size>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
     ['brush cube <block> <size> f <flag>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
-    ['brush cube <block> <size> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), 
+    ['brush cube <block> <size> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement),
         [2, 'help_cmd_brush_cube', 'help_cmd_brush_generic', null]],
     ['brush cube <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
     ['brush cuboid <block> <x_size> <y_size> <z_size>', _(block, x_int, y_int, z_int) -> brush('cuboid', null, block, [x_int, y_int, z_int], null), false],
     ['brush cuboid <block> <x_size> <y_size> <z_size> f <flag>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
-    ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement), 
+    ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
     ['brush sphere <block> <radius>', _(block, radius) -> brush('sphere', null, block, radius, null), false],
     ['brush sphere <block> <radius> f <flag>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
-    ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement), 
+    ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement),
         [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
     ['brush sphere <block> <radius> <replacement> f <flag>', _(block, radius, replacement, flags) -> brush('sphere', flags, block, radius, replacement), false],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> brush('ellipsoid', null, block, [xr, yr, zr], null), false],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flag>', _(block, xr, yr, zr, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], null), false],
-    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> brush('ellipsoid', null, block, [xr, yr, zr], replacement), 
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> brush('ellipsoid', null, block, [xr, yr, zr], replacement),
         [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flag>', _(block, xr, yr, zr, replacement, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], replacement), false],
     ['brush cylinder <block> <radius> <height>', _(block, radius, height) -> brush('cylinder', null, block, radius, height, 'y', null), false],
@@ -99,7 +96,7 @@ base_commands_map = [
     ['brush cone <block> <radius> <height> f <flag>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
     ['brush cone <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
     ['brush cone <block> <radius> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
-    ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement), 
+    ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['brush cone <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
@@ -111,7 +108,7 @@ base_commands_map = [
     ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
     ['brush line <block> <length> f <flag>', _(block, length, flags) -> brush('line', flags, block, length,  null), false],
-    ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement), 
+    ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement),
         [2, 'help_cmd_brush_line', 'help_cmd_brush_generic', null]],
     ['brush line <block> <length> <replacement> f <flag>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
     ['brush paste ', _() -> brush('paste_brush', null), [-1, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
@@ -133,11 +130,11 @@ base_commands_map = [
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
     ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, replacement), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices>',
         _(block, outer_radius, inner_radius, height, n_points) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
@@ -154,22 +151,22 @@ base_commands_map = [
 
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
     ['shape cube <block> <size> f <flag>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
-    ['shape cube <block> <size> <replacement>', _(block, size_int, replacement) -> cube(player()~'pos', [block, size_int, replacement], null), 
+    ['shape cube <block> <size> <replacement>', _(block, size_int, replacement) -> cube(player()~'pos', [block, size_int, replacement], null),
         [2, 'help_cmd_shape_cube', null, null]],
     ['shape cube <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> cube(player()~'pos', [block, size_int, replacement], flags), false],
     ['shape cuboid <block> <x_size> <y_size> <z_size>', _(block, x_int, y_int, z_int) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], null), false],
     ['shape cuboid <block> <x_size> <y_size> <z_size> f <flag>', _(block, x_int, y_int, z_int, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], flags), false],
-    ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], null), 
+    ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], null),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(block, x_int, y_int, z_int, replacement, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], flags), false],
     ['shape sphere <block> <radius>', _(block, radius) -> sphere(player()~'pos', [block, radius, null], null), false],
     ['shape sphere <block> <radius> f <flag>', _(block, radius, flags) -> sphere(player()~'pos', [block, radius, null], flags), false],
-    ['shape sphere <block> <radius> <replacement>', _(block, radius, replacement) -> sphere(player()~'pos', [block, radius, replacement], null), 
+    ['shape sphere <block> <radius> <replacement>', _(block, radius, replacement) -> sphere(player()~'pos', [block, radius, replacement], null),
         [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
     ['shape sphere <block> <radius> <replacement> f <flag>', _(block, radius, replacement, flags) -> sphere(player()~'pos', [block, radius, replacement], flags), false],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], null), false],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flag>', _(block, xr, yr, zr, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], flags), false],
-    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], null), 
+    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], null),
         [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flag>', _(block, xr, yr, zr, replacement, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], flags), false],
     ['shape cylinder <block> <radius> <height>', _(block, radius, height) -> cylinder(player()~'pos', [block, radius, height, 'y', null], null), false],
@@ -190,7 +187,7 @@ base_commands_map = [
         _(block, radius, height, n_points) -> prism_polygon(player()~'pos', [block, radius, height, n_points, 'y', 0, null], null), false],
     ['shape prism_polygon <block> <radius> <height> <vertices> f <flag>',
        _(block, radius, height, n_points, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, 'y', 0, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis>',
        _(block, radius, height, n_points, axis) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], null), false],
     ['shape prism_polygon <block> <radius> <height> <vertices> <axis> f <flag>',
        _(block, radius, height, n_points, axis, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], flags), false],
@@ -203,11 +200,11 @@ base_commands_map = [
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
     ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices>',
         _(block, outer_radius, inner_radius, height, n_points) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], null), false],
     ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, 0, null], null), false],
     ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, 0, null], flags), false],
@@ -220,7 +217,7 @@ base_commands_map = [
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
     ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], flags), false],
-   
+
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
 
@@ -298,7 +295,7 @@ __config()->{
         },
         'amount'->{'type'->'int'},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
-        'lang'->{'type'->'term','options'->global_lang_ids},
+        'lang'->{'type'->'term','suggester'->_(ignored)->_get_lang_list()},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
         'name'->{'type'->'string','suggest'->[]},
         'structure'->{
@@ -311,7 +308,7 @@ __config()->{
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
         'feature'->{
-            'type'->'term', 
+            'type'->'term',
             'options'-> get_features_list()
         },
     }
@@ -344,20 +341,20 @@ _help(page) ->
     command = '/'+system_info('app_name')+' ';
     // Header
     print(format(_translate('help_header_prefix'), _translate('help_header_title'), _translate('help_header_suffix')));
-    
+
     // Help entries are generated on top, in the commands map. Check docs there
     // Hardcoded help entries (info)
     // Syntax: [pre-arrow, pre-arrow command to suggest, post-arrow text, post-arrow tooltip (lang string/lambda), post-arrow action]
     help_entries = [
         [null, null, 'help_welcome', 'help_welcome_tooltip', null],
         [if(length(global_selection) > 1,_translate('help_your_selection')), '', if(length(global_selection) > 1,
-                            _()->_translate('help_selection_bounds', global_selection:0, global_selection:1)
+                            _()->_translate('help_selection_bounds', _get_marker_position(global_selection:'from'), _get_marker_position(global_selection:'to'))
                             ,'help_make_selection'), null, '?wand '],
         [_translate('help_selected_wand'), 'wand ', _()->_translate('help_selected_wand_item',title(replace(global_wand, '_', ' '))), 'help_sel_wand_tooltip', '?wand '],
-        [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', global_lang), 'help_app_lang_tooltip', '?lang '],
+        [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', _translate('language')), 'help_app_lang_tooltip', '?lang '],
         [_translate('help_list_title'), 'help', null, null]
     ];
-    
+
     for(global_help_commands,
         help_entries += _;
     );
@@ -374,8 +371,8 @@ _help(page) ->
         );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
-        print(format(entry:0, '?'+command+entry:1, arrow, 
-            if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)), 
+        print(format(entry:0, '?'+command+entry:1, arrow,
+            if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)),
             '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)),description_action)
         );
 
@@ -383,7 +380,7 @@ _help(page) ->
         remaining_to_display += -1;
         description_action = arrow = null;
     );
-    
+
     // Footer
     footer = format('');
     if (page < 10, // In case we reach this, make it still be centered
@@ -493,10 +490,10 @@ __on_tick() ->
         global_highlighted_marker = null;
         reach = if( (held = p~'holds':0)==global_wand, global_reach, has(global_brushes, held), global_brush_reach);
         new_cursor = if ( reach && p~'gamemode'!='spectator',
-            if (marker = _trace_marker(p, global_reach), 
+            if (marker = _trace_marker(p, global_reach),
                 global_highlighted_marker = marker;
                 _get_marker_position(marker)
-            , 
+            ,
                 _get_player_look_at_block(p, reach) )
         );
         if (global_cursor && new_cursor != global_cursor,
@@ -716,187 +713,193 @@ _parse_config(config) -> (
 
 //Translations
 
-global_lang='en_us';//default en_us
-global_langs = {};
-global_default_lang=[
-    'language_code =    en_us',
-    'language =         US English',
+global_lang_id='en_us';//default en_us (and fill it below)
+global_lang_keys = global_default_lang = {
+    'language_code' ->    'en_us',
+    'language' ->         'English',
+
+    'help_header_prefix' ->       'c ----------------- [ ',
+    'help_header_title' ->        'd World-Edit Help',
+    'help_header_suffix' ->       'c  ] -----------------',
+    'help_welcome' ->             'c Welcome to the World-Edit Scarpet app\'s help!',
+    'help_welcome_tooltip' ->     'y Hooray!',
+    'help_your_selection' ->      'c Your selection',
+    'help_selection_bounds' ->    'l From %s to %s',
+    'help_make_selection' ->      'c Use your wand to select with a start and final position',
+    'help_selected_wand' ->       'c Selected wand', //Could probably be used in more places
+    'help_selected_wand_item' ->  'l %s',
+    'help_sel_wand_tooltip' ->    'g Use the wand command to change',
+    'help_app_lang' ->            'c App Language ', //Could probably be used in more places, todo decide whether to hardcode this
+    'help_app_lang_selected' ->   'l %s',
+    'help_app_lang_tooltip' ->    'g Use the lang command to change it',
+    'help_list_title' ->          'y Command list (without prefix):',
+    'help_pagination_prefix' ->   'c --------------- ',
+    'help_pagination_page' ->     'y Page %d ',
+    'help_pagination_suffix' ->   'c  ---------------',
+    'help_pagination_first' ->    'g Go to first page',
+    'help_pagination_prev' ->     'g Go to previous page (%d)',
+    'help_pagination_next' ->     'g Go to next page (%d)',
+    'help_pagination_last' ->     'g Go to last page (%d)',
+    'help_cmd_help' ->            'l Shows this help menu, or a specified page',
+    'help_cmd_lang' ->            'l Changes current app\'s language to [lang]',
+    'help_cmd_lang_tooltip'->     'g Available languages are %s',
+    'help_cmd_set' ->             'l Set selection to block, filterable',
+    'help_cmd_set_tooltip' ->     'g You can use a tag in the replacement argument',
+    'help_cmd_undo' ->            'l Undoes last n moves, one by default',
+    'help_cmd_undo_all' ->        'l Undoes the entire action history',
+    'help_cmd_undo_history' ->    'l Shows the history of undone actions',
+    'help_cmd_redo' ->            'l Redoes last n undoes, one by default',
+    'help_cmd_redo_tooltip' ->    'g Also shows up in undo history',
+    'help_cmd_redo_all' ->        'l Redoes the entire undo history',
+    'help_cmd_wand' ->            'l Sets held item as wand or gives it if hand is empty',
+    'help_cmd_wand_2' ->          'l Changes the current wand item',
+    'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
+    'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z',
+    'help_cmd_stack' ->           'l Stacks selection n times in dir',
+    'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\s view direction by default',
+    'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
+    'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
+    'help_cmd_move' ->            'l Moves selection to <pos>',
+    'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
+    'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
+    'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
+    'help_cmd_brush_generic' ->   'l Hold item to turn into brush',
+    'help_cmd_brush_cube' ->      'l Register brush to create cube of side length [size] out of [block]',
+    'help_cmd_brush_cuboid' ->    'l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
+    'help_cmd_brush_sphere' ->    'l Register brush to create sphere of radius [size] out of [block]',
+    'help_cmd_brush_ellipsoid' -> 'l Register brush to create ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
+    'help_cmd_brush_cylinder' ->  'l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
+    'help_cmd_brush_cone' ->      'l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
+    'help_cmd_brush_polygon' ->   'l Register brush to create polygon prism with [vertices] ammount of sides',
+    'help_cmd_brush_star' ->      'l Register brush to create star prism with [vertices] ammount of points',
+    'help_cmd_brush_line' ->      'l Register brush to create line from player to where you click of [length], if given',
+    'help_cmd_brush_flood' ->     'l Register brush to perfrm flood fill out of [block] starting on right clicked block',
+    'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
+    'help_cmd_brush_feature' ->   'l Register brush to plop feature',
+
+    'filled' ->                   'gi Filled %d blocks',                                    // blocks number
+    'no_undo_history' ->          'w No undo history to show for player %s',                // player
+    'many_undo' ->                'w Undo history for player %s is very long, showing only the last ten items', // player
+    'entry_undo_1' ->             'w %d: type: %s',                                         //index, command type
+    'entry_undo_2 ' ->            'w     affected positions: %s',                           //blocks number
+    'no_undo' ->                  'r No actions to undo for player %s',                     // player
+    'more_moves_undo' ->          'w Your number is too high, undoing all moves for %s',    // player
+    'success_undo' ->             'gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+    'no_redo' ->                  'r No actions to redo for player %s',                     // player
+    'more_moves_redo' ->          'w Your number is too high, redoing all moves for %s',    // player
+    'success_redo' ->             'gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
 
 
-    'help_header_prefix =       c ----------------- [ ',
-    'help_header_title =        d World-Edit Help',
-    'help_header_suffix =       c  ] -----------------',
-    'help_welcome =             c Welcome to the World-Edit Scarpet app\'s help!',
-    'help_welcome_tooltip =     y Hooray!',
-    'help_your_selection =      c Your selection',
-    'help_selection_bounds =    l %s to %s',
-    'help_make_selection =      c Use your wand to select with a start and final position',
-    'help_selected_wand =       c Selected wand', //Could probably be used in more places
-    'help_selected_wand_item =  l %s',
-    'help_sel_wand_tooltip =    g Use the wand command to change',
-    'help_app_lang =            c App Language ', //Could probably be used in more places, todo decide whether to hardcode this
-    'help_app_lang_selected =   l %s',
-    'help_app_lang_tooltip =    g Use the lang command to change it',
-    'help_list_title =          y Command list (without prefix):',
-    'help_pagination_prefix =   c --------------- ',
-    'help_pagination_page =     y Page %d ',
-    'help_pagination_suffix =   c  ---------------',
-    'help_pagination_first =    g Go to first page',
-    'help_pagination_prev =     g Go to previous page (%d)',
-    'help_pagination_next =     g Go to next page (%d)',
-    'help_pagination_last =     g Go to last page (%d)',
-    'help_cmd_help =            l Shows this help menu, or a specified page',
-    'help_cmd_lang =            l Changes current app\'s language to [lang]',
-    'help_cmd_lang_tooltip =    g Available languages are %s',
-    'help_cmd_set =             l Set selection to block, filterable',
-    'help_cmd_set_tooltip =     g You can use a tag in the replacement argument',
-    'help_cmd_undo =            l Undoes last n moves, one by default',
-    'help_cmd_undo_all =        l Undoes the entire action history',
-    'help_cmd_undo_history =    l Shows the history of undone actions',
-    'help_cmd_redo =            l Redoes last n undoes, one by default',
-    'help_cmd_redo_tooltip =    g Also shows up in undo history',
-    'help_cmd_redo_all =        l Redoes the entire undo history',
-    'help_cmd_wand =            l Sets held item as wand or gives it if hand is empty',
-    'help_cmd_wand_2 =          l Changes the current wand item',
-    'help_cmd_rotate =          l Rotates [deg] about [pos]',
-    'help_cmd_rotate_tooltip =  g Axis must be x, y or z',
-    'help_cmd_stack =           l Stacks selection n times in dir',
-    'help_cmd_stack_tooltip =   g If not provided, direction is player\s view direction by default',
-    'help_cmd_expand =          l Expands sel [magn] from pos', //This is not understandable
-    'help_cmd_expand_tooltip =  g Expands the selection [magnitude] from [pos]',
-    'help_cmd_move =            l Moves selection to <pos>',
-    'help_cmd_brush_clear =     l Unregisters current item as brush',
-    'help_cmd_brush_list =      l Lists all currently regiestered brushes and their actions',
-    'help_cmd_brush_info =      l Gives detailed info of currently held brush',
-    'help_cmd_brush_generic =   l Hold item to turn into brush',
-    'help_cmd_brush_cube =      l Register brush to create cube of side length [size] out of [block]',
-    'help_cmd_brush_cuboid =    l Register brush to create cuboid of dimensions [x] [y] and [z] out of [block]',
-    'help_cmd_brush_sphere =    l Register brush to create sphere of radius [size] out of [block]',
-    'help_cmd_brush_ellipsoid = l Register brush to create ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
-    'help_cmd_brush_cylinder =  l Register brush to create cylinder with [radius] and [height] along [axis] out of [block]',
-    'help_cmd_brush_cone =      l Register brush to create cylinder with [radius] and [height] along [axis] in the direciton given by the sign',
-    'help_cmd_brush_polygon =   l Register brush to create polygon prism with [vertices] ammount of sides',
-    'help_cmd_brush_star =      l Register brush to create star prism with [vertices] ammount of points',
-    'help_cmd_brush_line =      l Register brush to create line from player to where you click of [length], if given',
-    'help_cmd_brush_flood =     l Register brush to perfrm flood fill out of [block] starting on right clicked block',
-    'help_cmd_brush_paste =     l Register brush to paste current clipboard with origin on targeted block',
-    'help_cmd_brush_feature =   l Register brush to plop feature',
+    'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
+    'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
+    'copy_force' ->               'ri Overwriting previous clipboard selection with new one',
+    'copy_success' ->             'gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+    'paste_no_clipboard' ->       'ri Cannot complete action, clipboard for player %s is empty',//player
 
-    'filled =           gi Filled %d blocks',                                    // blocks number
-    'no_undo_history =  w No undo history to show for player %s',                // player
-    'many_undo =        w Undo history for player %s is very long, showing only the last ten items', // player
-    'entry_undo_1 =     w %d: type: %s',                                         //index, command type
-    'entry_undo_2 =     w     affected positions: %d',                           //blocks number
-    'no_undo =          r No actions to undo for player %s',                     // player
-    'more_moves_undo =  w Your number is too high, undoing all moves for %s',    // player
-    'success_undo =     gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
-    'no_redo =          r No actions to redo for player %s',                     // player
-    'more_moves_redo =  w Your number is too high, redoing all moves for %s',    // player
-    'success_redo =     gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+    'langs_changed' ->            'gi Language changed to %s.',                             //language we changed to
+    'langs_completeness' ->       'gi Note: %s translation is only %s%% translated: %s missing strings',//language, percent of present translations, no. of missing translations
+    'langs_availables' ->         'y Available languages are:',
+    'langs_add_more_tip' ->       'y Add more languages to the %s folder to use them! Get them from our repo!', //The folder
+    'langs_not_found' ->          'r Language file for %s not found',
 
+    'move_selection_no_player_error' -> 'r To move selection in the direction of the player, you need to have a player',
+    'no_selection_error' ->             'r Missing selection for operation for player %s', //player
+    'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
+    'invalid_wand' ->                   'r Wand has to be a tool or weapon',
 
-    'clear_clipboard =                  wi Cleared player %s\'s clipboard',
-    'copy_clipboard_not_empty =         ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
-    'copy_force =                       ri Overwriting previous clipboard selection with new one',
-    'copy_success =                     gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
-    'paste_no_clipboard =               ri Cannot complete action, clipboard for player %s is empty',//player
+    'new_brush' ->                      'wi %s is now a brush with action %s',
+    'brush_info' ->                     'w %s has action %s bound to it with parameters %s and flags %s',
+    'brush_replaced' ->                 'w Replacing previous action for brush in %s',
+    'brush_list_header' ->              'bc === Current brushes are ===',
+    'brush_empty_list' ->               'gi No brushes registerd so far',
+    'brush_extra_info' ->               'ig For detailed info on a brush use /world-edit brush info',
+    'brush_new_reach' ->                'w Brush reach was set to %d blocks',
+    'brush_reach' ->                    'w Brush reach is currently %d blocks',
 
-    'translation_completeness =         ri Incomplete translations for %s, %s%s translated, %s missing',       //language, percent of present translations, '%' cos it doesnt support that, even if I use \, no. of missing translations
-    'current_lang =                     gi Current language: %s',                                 //lang id. todo decide whether to hardcode this
-    'changed_lang =                     gi Language changed to %s',                               //language we changed to
-
-    'move_selection_no_player_error =   r To move selection in the direction of the player, you need to have a player',
-    'no_selection_error =               r Missing selection for operation for player %s', //player
-    'new_wand =                         wi %s is now the app\'s wand, use it with care.', //wand item
-    'invalid_wand =                     r Wand has to be a tool or weapon',
-
-    'structure_list =                   w List of structures:',
-    'saved_structure =                  w Saved structure as %s.nbt',                                 //structure name
-    'existing_structure =               r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
-    'structure_overwrite =              ri Overwriting %s.nbt with a new structure',                  //structure name
-    'structure_delete_success =         gi Successfully deleted %s.nbt',                              //structure name
-    'structure_delete_fail =            ri Failed to delete %s.nbt, no such file exists',             //structure name
-    'structure_load_fail =              ri Failed to load %s.nbt, no such file exists',               //structure name
-
-    'new_brush =                        wi %s is now a brush with action %s',                             //item name, action name
-    'brush_info =                       w %s has action %s bound to it with parameters %s and flags %s',  //item name, acton name, params, flags
-    'brush_replaced =                   w Replacing previous action for brush in %s',                     //new action name
-    'brush_list_header =                bc === Current brushes are ===',
-    'brush_empty_list =                 gi No brushes registerd so far',
-    'brush_extra_info =                 ig For detailed info on a brush use /world-edit brush info',
-    'brush_new_reach =                  w Brush reach was set to %d blocks',                              //block reach number
-    'brush_reach =                      w Brush reach is currently %d blocks',                            //block reach number
-
+    'structure_list' ->                'w List of structures:',
+    'saved_structure' ->               'w Saved structure as %s.nbt',                                 //structure name
+    'existing_structure' ->            'r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
+    'structure_overwrite' ->           'ri Overwriting %s.nbt with a new structure',                  //structure name
+    'structure_delete_success' ->      'gi Successfully deleted %s.nbt',                              //structure name
+    'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
+    'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
     //Block-setting actions
-    'action_cube =                  cube',
-    'action_cuboid =                cuboid',
-    'action_ellipsoid =             ellipsoid',
-    'action_sphere =                sphere',
-    'action_cylinder =              cylinder',
-    'action_cone =                  cone',
-    'action_line =                  line',
-    'action_prism_polygon =         prism_polygon',
-    'action_prism_star =            prism_star',
-    'action_structure_paste =       structure_paste',
-    'action_set =                   set',
-    'action_flood =                 flood',
-    'action_rotate =                rotate',
-    'action_move =                  move',
-    'action_stack =                 stack',
-    'action_expand =                expand',
-    'action_paste =                 paste',
-];
+    'action_cube'->                'cube',
+    'action_cuboid' ->             'cuboid',
+    'action_ellipsoid' ->          'ellipsoid',
+    'action_sphere' ->             'sphere',
+    'action_cylinder' ->           'cylinder',
+    'action_cone' ->               'cone',
+    'action_line' ->               'line',
+    'action_prism_polygon' ->      'prism_polygon',
+    'action_prism_star' ->         'prism_star',
+    'action_structure_paste' ->    'structure_paste',
+    'action_set' ->                'set',
+    'action_flood' ->              'flood',
+    'action_rotate' ->             'rotate',
+    'action_move' ->               'move',
+    'action_stack' ->              'stack',
+    'action_expand' ->             'expand',
+    'action_paste' ->              'paste',
+};
+task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
-global_default_config=_parse_config(global_default_lang);
 
-global_missing_translations={};
-
-for(global_lang_ids,
-    global_langs:_ = read_file(_, 'text');
-
-    if(global_langs:_ == null,
-        write_file(_, 'text', global_langs:_ = global_default_lang),//doing if statement here so dont have to iterate unnecessarily
-
-        lang_config=_parse_config(global_langs:_);//checking if the lang file has all the translations. This is also applied to en_us, cos it may be outdated
-
-        missing_translations_list=[];
-        for(global_default_config,//couldn't add the missing lines to config file, cos I cant guarantee that map keys r ordered same exact way as list items
-            if(!has(lang_config,_),
-                missing_translations_list+=_;
-                put(lang_config,_,global_default_config:_)
-            )
-        );
-        put(global_missing_translations,_,missing_translations_list)//So the map will be saved with lang's full name and missing translations
-    );
-    global_langs:_ = lang_config;
+_get_lang_list() -> (
+  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that don't have spaces
 );
 
-//telling user about missing translations when they try to change lang
-
 _change_lang(lang)->(
-    if(lang!=global_lang && lang!=null,
-        p=player();
-        if(global_missing_translations:lang,
-            _print(p,'translation_completeness',lang, _round(100- length(global_missing_translations:lang) / length(global_default_lang)*100,0.01),'%',length(global_missing_translations:lang));
-            logger('warn','[World-Edit scarpet] You currently have the following missing translations for '+lang+':');//only in english cos log file and lang keys r in english anyways
-            for(global_missing_translations:lang,logger('warn','[World-Edit scarpet]     '+_+', current en_us translation: '+global_langs:'en_us':_))
+    languages = _get_lang_list();
+    if(lang == null,
+        _print(player(),'langs_availables');
+        for(languages,
+            print(format('g - ','c '+_));
         );
-        global_lang=lang;
-        _print(p,'changed_lang',str('%s (%s)',_translate('language'),lang)),
-        _print(p,'current_lang',global_lang)
+        if(player()~'permission_level' == 4, //Don't print to people that can't access it
+            _print(player(),'langs_add_more_tip',system_info('app_name')+'.data/langs/');
+        );
+    , lang == 'en_us', // Use builtin
+        global_lang_id=lang;
+        global_lang_keys=global_default_lang;
+        _print(player(),'langs_changed',_translate('language'));
+    , languages ~ lang,
+        global_lang_id=lang;
+        global_lang_keys=read_file('langs/'+lang,'json');
+        _print(player(),'langs_changed',_translate('language'));
+        task(_()->( //Checking translation completeness - async in case langs get long enough in the future, or a better check is done
+            missing_translations_list=[];       // Currently this doesn't check for keys present in the translation but not in the default, etc
+            for(global_default_lang,           // although that is workarounded in the percentage calculation
+                if(!has(global_lang_keys,_),
+                    missing_translations_list+=_;
+                )
+            );
+            missing = length(missing_translations_list);
+            if(missing,
+                logger('warn',
+                    '[World-Edit Scarpet] Current translation for '+_translate('language')+' is incomplete. Missing keys: \n'
+                        +join('\n- ',missing_translations_list));
+                logger('warn', '[World-Edit Scarpet] Until fixed, default language (english) keys will be used');
+                _print(player(),'langs_completeness',_translate('language'),round(100 - missing/(length(global_lang_keys)+missing)*100),missing);
+            );
+        ));
+    ,
+        _print(player(), 'langs_not_found',lang);
     )
 );
 
-_translate(key, ... replace_list) -> 
+_translate(key, ... replace_list) ->
     _translate_internal(key, replace_list);
 
 _translate_internal(key, replace_list) -> (
-    lang_id = global_lang;
-    if(lang_id == null || !has(global_langs, lang_id),
-        lang_id = global_lang_ids:0);
+    if(has(global_lang_keys, key || key == null),
+        string = global_lang_keys:key
+    ,
+        string = global_default_lang:key;
+    );
     if(key == null,
         null,
-        str(global_langs:lang_id:key, replace_list)
+        str(string, replace_list)
     )
 );
 
@@ -1286,11 +1289,11 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     state = if(flags~'s',
         bs_e=block_state(existing);
         bs_b=block_state(block);
-        if(all(keys(bs_e), has(bs_b, _)), 
+        if(all(keys(bs_e), has(bs_b, _)),
             bs_e, {}
         );
     , {});
-    if(flags~'d', 
+    if(flags~'d',
         if(
             block=='water', block='air',
             block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
@@ -1299,13 +1302,13 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     if(flags~'w' && (
         (existing == 'water' && block_state(existing, 'level')=='0') ||
         block_state(existing, 'waterlogged')=='true'
-        ), 
+        ),
         if(
             block=='air', block='water', // "waterlog" air blocks
             block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
-        ); 
+        );
     );
-    if(flags~'g', 
+    if(flags~'g',
         if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
         if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
     );
@@ -1598,7 +1601,7 @@ set_in_selection(block,replacement,flags)->
 flood_fill(block, axis, flags) ->
 (
     player = player();
-    start = player~'pos'; 
+    start = player~'pos';
     if(block(start)==block, return());
 
     [pos1,pos2]=_get_current_selection(player);
@@ -1612,7 +1615,7 @@ flood_fill(block, axis, flags) ->
 
 );
 
-_flood_generic(block, axis, start, flags) -> 
+_flood_generic(block, axis, start, flags) ->
 (
 
     // Define function to request neighbours perpendiular to axis
@@ -1625,15 +1628,15 @@ _flood_generic(block, axis, start, flags) ->
 
     interior_block = block(start);
     if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
-    
+
     visited = {start->null};
     queue = [start];
-    
+
     while(length(queue)>0, 10000,
 
         current_pos = queue:0;
         delete(queue, 0);
-        
+
         for(flood_neighbours(current_pos),
             current_neighbour = _;
             // check neighbours, add the non visited ones to the visited set
