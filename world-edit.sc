@@ -6,7 +6,7 @@ import('math','_round');
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
 //# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
-//# 
+//#
 //# Suggestion is derived from command_for_carpet, everything before the first `<`.
 //# Command prefix (/world-edit ) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
@@ -60,7 +60,7 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
-    
+
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
@@ -68,22 +68,22 @@ base_commands_map = [
     ['brush reach <length>', _(length)-> brush('reach', null, length), [0, 'help_cmd_brush_reach', null, null]],
     ['brush cube <block> <size>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
     ['brush cube <block> <size> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
-    ['brush cube <block> <size> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement), 
+    ['brush cube <block> <size> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement),
         [2, 'help_cmd_brush_cube', 'help_cmd_brush_generic', null]],
     ['brush cube <block> <size> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
     ['brush cuboid <block> <x_size> <y_size> <z_size>', _(block, x_int, y_int, z_int) -> brush('cuboid', null, block, [x_int, y_int, z_int], null), false],
     ['brush cuboid <block> <x_size> <y_size> <z_size> f <flags>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
-    ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement), 
+    ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
     ['brush sphere <block> <radius>', _(block, radius) -> brush('sphere', null, block, radius, null), false],
     ['brush sphere <block> <radius> f <flags>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
-    ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement), 
+    ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement),
         [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
     ['brush sphere <block> <radius> <replacement> f <flags>', _(block, radius, replacement, flags) -> brush('sphere', flags, block, radius, replacement), false],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> brush('ellipsoid', null, block, [xr, yr, zr], null), false],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flags>', _(block, xr, yr, zr, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], null), false],
-    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> brush('ellipsoid', null, block, [xr, yr, zr], replacement), 
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> brush('ellipsoid', null, block, [xr, yr, zr], replacement),
         [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flags>', _(block, xr, yr, zr, replacement, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], replacement), false],
     ['brush cylinder <block> <radius> <height>', _(block, radius, height) -> brush('cylinder', null, block, radius, height, 'y', null), false],
@@ -97,77 +97,77 @@ base_commands_map = [
     ['brush cone <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
     ['brush cone <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
     ['brush cone <block> <radius> <height> <saxis> f <flags>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
-    ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement), 
+    ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['brush cone <block> <radius> <height> <saxis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
-    ['brush flood <block> <radius> f <flags>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false], 
-    ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis), 
+    ['brush flood <block> <radius> f <flags>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
+    ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis),
         [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
-    ['brush flood <block> <radius> <axis> f <flags>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false], 
+    ['brush flood <block> <radius> <axis> f <flags>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
     ['brush line <block> f <flags>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
     ['brush line <block> <length> f <flags>', _(block, length, flags) -> brush('line', flags, block, length,  null), false],
-    ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement), 
+    ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement),
         [2, 'help_cmd_brush_line', 'help_cmd_brush_generic', null]],
     ['brush line <block> <length> <replacement> f <flags>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
     ['brush paste ', _() -> brush('paste_brush', null), [-1, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
     ['brush paste f <flags>',  _(flags) -> brush('paste_brush', flags), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices>',
         _(block, radius, height, n_points) -> brush('prism_polygon', null, block, radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> f <flags>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices> f <flags>',
        _(block, radius, height, n_points, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis>',
        _(block, radius, height, n_points, axis) -> brush('prism_polygon', null, block, radius, height, n_points, axis, 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>',
        _(block, radius, height, n_points, axis, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation>',
        _(block, radius, height, n_points, axis, rotation) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> f <flags>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> f <flags>',
        _(block, radius, height, n_points, axis, rotation, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement>', 
-       _(block, radius, height, n_points, axis, rotation, replacement) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, replacement), 
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement>',
+       _(block, radius, height, n_points, axis, rotation, replacement) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, replacement),
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>', 
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, replacement), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices>',
         _(block, outer_radius, inner_radius, height, n_points) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flags>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flags>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> f <flags>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement>', 
-       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement>',
+       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement),
        [5, 'help_cmd_brush_star', 'help_cmd_brush_generic', null]],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>', 
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
 
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
     ['shape cube <block> <size> f <flags>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
-    ['shape cube <block> <size> <replacement>', _(block, size_int, replacement) -> cube(player()~'pos', [block, size_int, replacement], null), 
+    ['shape cube <block> <size> <replacement>', _(block, size_int, replacement) -> cube(player()~'pos', [block, size_int, replacement], null),
         [2, 'help_cmd_shape_cube', null, null]],
     ['shape cube <block> <size> <replacement> f <flags>', _(block, size_int, replacement, flags) -> cube(player()~'pos', [block, size_int, replacement], flags), false],
     ['shape cuboid <block> <x_size> <y_size> <z_size>', _(block, x_int, y_int, z_int) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], null), false],
     ['shape cuboid <block> <x_size> <y_size> <z_size> f <flags>', _(block, x_int, y_int, z_int, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], flags), false],
-    ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], null), 
+    ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], null),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], flags), false],
     ['shape sphere <block> <radius>', _(block, radius) -> sphere(player()~'pos', [block, radius, null], null), false],
     ['shape sphere <block> <radius> f <flags>', _(block, radius, flags) -> sphere(player()~'pos', [block, radius, null], flags), false],
-    ['shape sphere <block> <radius> <replacement>', _(block, radius, replacement) -> sphere(player()~'pos', [block, radius, replacement], null), 
+    ['shape sphere <block> <radius> <replacement>', _(block, radius, replacement) -> sphere(player()~'pos', [block, radius, replacement], null),
         [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
     ['shape sphere <block> <radius> <replacement> f <flags>', _(block, radius, replacement, flags) -> sphere(player()~'pos', [block, radius, replacement], flags), false],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], null), false],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flags>', _(block, xr, yr, zr, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], flags), false],
-    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], null), 
+    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], null),
         [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flags>', _(block, xr, yr, zr, replacement, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], flags), false],
     ['shape cylinder <block> <radius> <height>', _(block, radius, height) -> cylinder(player()~'pos', [block, radius, height, 'y', null], null), false],
@@ -181,44 +181,44 @@ base_commands_map = [
     ['shape cone <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> cone(player()~'pos', [block, radius, height, '+y', null], flags), false],
     ['shape cone <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> cone(player()~'pos', [block, radius, height, axis, null], null), false],
     ['shape cone <block> <radius> <height> <saxis> f <flags>', _(block, radius, height, axis, flags) -> cone(player()~'pos', [block, radius, height, axis, null], flags), false],
-    ['shape cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> cone(player()~'pos', [block, radius, height, axis, replacement], null), 
+    ['shape cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> cone(player()~'pos', [block, radius, height, axis, replacement], null),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['shape cone <block> <radius> <height> <saxis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> cone(player()~'pos', [block, radius, height, axis, replacement], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices>',
         _(block, radius, height, n_points) -> prism_polygon(player()~'pos', [block, radius, height, n_points, 'y', 0, null], null), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> f <flags>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> f <flags>',
        _(block, radius, height, n_points, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, 'y', 0, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis>',
        _(block, radius, height, n_points, axis) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], null), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>',
        _(block, radius, height, n_points, axis, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation>',
        _(block, radius, height, n_points, axis, rotation) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, null], null), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> f <flags>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> f <flags>',
        _(block, radius, height, n_points, axis, rotation, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement>', 
-       _(block, radius, height, n_points, axis, rotation, replacement) ->prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], null), 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement>',
+       _(block, radius, height, n_points, axis, rotation, replacement) ->prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], null),
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>', 
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices>',
         _(block, outer_radius, inner_radius, height, n_points) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], null), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flags>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, 0, null], null), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flags>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, null], null), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> f <flags>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, null], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement>', 
-       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) ->prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], null), 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement>',
+       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) ->prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], null),
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>', 
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], flags), false],
-   
+
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
 ];
@@ -290,7 +290,7 @@ __config()->{
         'rotation'->{'type'->'int','suggest'->[0, 90]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
         'feature'->{
-            'type'->'term', 
+            'type'->'term',
             'options'-> get_features_list()
         },
     }
@@ -323,7 +323,7 @@ _help(page) ->
     command = '/'+system_info('app_name')+' ';
     // Header
     print(format(_translate('help_header_prefix'), _translate('help_header_title'), _translate('help_header_suffix')));
-    
+
     // Help entries are generated on top, in the commands map. Check docs there
     // Hardcoded help entries (info)
     // Syntax: [pre-arrow, pre-arrow command to suggest, post-arrow text, post-arrow tooltip (lang string/lambda), post-arrow action]
@@ -336,7 +336,7 @@ _help(page) ->
         [_translate('help_app_lang'), 'lang ', _()->_translate('help_app_lang_selected', _translate('language')), 'help_app_lang_tooltip', '?lang '],
         [_translate('help_list_title'), 'help', null, null]
     ];
-    
+
     for(global_help_commands,
         help_entries += _;
     );
@@ -353,8 +353,8 @@ _help(page) ->
         );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
-        print(format(entry:0, '?'+command+entry:1, arrow, 
-            if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)), 
+        print(format(entry:0, '?'+command+entry:1, arrow,
+            if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)),
             '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)),description_action)
         );
 
@@ -362,7 +362,7 @@ _help(page) ->
         remaining_to_display += -1;
         description_action = arrow = null;
     );
-    
+
     // Footer
     footer = format('');
     if (page < 10, // In case we reach this, make it still be centered
@@ -472,10 +472,10 @@ __on_tick() ->
         global_highlighted_marker = null;
         reach = if( (held = p~'holds':0)==global_wand, global_reach, has(global_brushes, held), global_brush_reach);
         new_cursor = if ( reach && p~'gamemode'!='spectator',
-            if (marker = _trace_marker(p, global_reach), 
+            if (marker = _trace_marker(p, global_reach),
                 global_highlighted_marker = marker;
                 _get_marker_position(marker)
-            , 
+            ,
                 _get_player_look_at_block(p, reach) )
         );
         if (global_cursor && new_cursor != global_cursor,
@@ -490,7 +490,6 @@ __on_tick() ->
 
 
 __on_player_swings_hand(player, hand) ->
-//__on_player_clicks_block(player, block, face) -> 
 (
     if(player~'holds':0==global_wand,
         if (global_quick_select,
@@ -648,7 +647,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -658,6 +657,9 @@ global_flags = ['w','a','e','h','u','b','p'];
 //u     set blocks without updates
 //b     set biome
 //p     only replace air
+//d     "dry" out the pasted structure (remove water and waterlogged)
+//s     keep block states of replaced block, if new block matches
+//g     when replacing air or water, some greenery gets repalced too
 
 
 _parse_flags(flags) ->(
@@ -837,7 +839,7 @@ _change_lang(lang)->(
     )
 );
 
-_translate(key, ... replace_list) -> 
+_translate(key, ... replace_list) ->
     _translate_internal(key, replace_list);
 
 _translate_internal(key, replace_list) -> (
@@ -1225,12 +1227,42 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
-set_block(pos,block, replacement, flags, extra)->(//use this function to set blocks
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
+
+set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
     success=null;
     existing = block(pos);
 
-    state = if(flags,{},null);
-    if(flags~'w' && existing == 'water' && block_state(existing,'level') == '0',put(state,'waterlogged','true'));
+    // undo expects positions, not blocks
+    if(type(pos)!='list', pos=pos(pos));
+
+    state = if(flags~'s',
+        bs_e=block_state(existing);
+        bs_b=block_state(block);
+        if(all(keys(bs_e), has(bs_b, _)),
+            bs_e, {}
+        );
+    , {});
+    if(flags~'d',
+        if(
+            block=='water', block='air',
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+        );
+    );
+    if(flags~'w' && (
+        (existing == 'water' && block_state(existing, 'level')=='0') ||
+        block_state(existing, 'waterlogged')=='true'
+        ),
+        if(
+            block=='air', block='water', // "waterlog" air blocks
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+        );
+    );
+    if(flags~'g',
+        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
+    );
 
     if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
@@ -1259,7 +1291,7 @@ add_to_history(function,player)->(
         'type'->function,
         'affected_positions'->global_affected_blocks
     };
-    print(global_affected_blocks);
+
     _print(player,'filled',length(global_affected_blocks));
     global_affected_blocks=[];
     global_history+=command;
@@ -1294,7 +1326,6 @@ undo(moves)->(
 
         delete(global_history,(length(global_history)-1))
     );
-    print(global_affected_blocks);
     global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
     _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
@@ -1331,7 +1362,7 @@ set_in_selection(block,replacement,flags)->
 flood_fill(block, axis, flags) ->
 (
     player = player();
-    start = player~'pos'; 
+    start = player~'pos';
     if(block(start)==block, return());
 
     [pos1,pos2]=_get_current_selection(player);
@@ -1345,7 +1376,7 @@ flood_fill(block, axis, flags) ->
 
 );
 
-_flood_generic(block, axis, start, flags) -> 
+_flood_generic(block, axis, start, flags) ->
 (
 
     // Define function to request neighbours perpendiular to axis
@@ -1358,15 +1389,15 @@ _flood_generic(block, axis, start, flags) ->
 
     interior_block = block(start);
     if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
-    
+
     visited = {start->null};
     queue = [start];
-    
+
     while(length(queue)>0, 10000,
 
         current_pos = queue:0;
         delete(queue, 0);
-        
+
         for(flood_neighbours(current_pos),
             current_neighbour = _;
             // check neighbours, add the non visited ones to the visited set
@@ -1499,15 +1530,15 @@ expand(centre, magnitude)->(
     add_to_history('expand',player)
 );
 
-_copy(centre, force)->(
+_copy(origin, force)->(
     player = player();
-    if(!centre,centre=pos(player));
+    if(!origin,origin=pos(player));
     [pos1,pos2]=_get_current_selection(player);
     if(global_clipboard,
         if(force,
             _print(player,'copy_force');
             global_clipboard=[],
-            _error(player,'copy_clipboard_not_empty')
+            _error(player,'copy_clipboard_not_empty', player)
         )
     );
 
@@ -1516,23 +1547,23 @@ _copy(centre, force)->(
     global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have
 
     volume(pos1,pos2,
-        global_clipboard+=[centre-pos(_),block(_),biome(_)]//all the important stuff, can add flags later if we want
+        global_clipboard+=[pos(_)-origin,block(_),biome(_)]//all the important stuff, can add flags later if we want
     );
 
-    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0))
+    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
 );
 
 paste(pos, flags)->(
     player=player();
     if(!pos,pos=pos(player));
-    [pos1,pos2]=_get_current_selection(player);
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
     entities=global_clipboard:0;
-    for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
+    for(range(1,length(global_clipboard)),//cos gotta skip the entity one
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
+
         if(!(flags~'a'&&air(old_block)),
             set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
         )

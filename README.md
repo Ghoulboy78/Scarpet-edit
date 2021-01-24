@@ -1,7 +1,7 @@
 # World edit scarpet
 World edit with scarpet.
 
-To install and use, create a file called world_edit.sc, and copy paste code from world_edis.sc
+To install and use, create a file called world-edit.sc, and copy paste code from [world-edit.sc](https://github.com/Ghoulboy78/World-edit-scarpet/blob/master/world-edit.sc). Documentation and help can be found [here](https://github.com/Ghoulboy78/World-edit-scarpet/blob/master/docs/Documentation.md), and there's also an in-game help menu.
 
 For instructions on how to install scarpet scripts: https://github.com/gnembon/fabric-carpet/wiki/Installing-carpet-scripts-in-your-world
 
