@@ -1,7 +1,7 @@
 # World edit scarpet
 World edit with scarpet.
 
-To install and use, go to the [Github Releases section](https://github.com/Ghoulboy78/World-edit-scarpet/releases) and grab the latest release (the first zip file, or the `world-edit.sc` file only if you don't care about translations), and unzip it into either your world's `scripts` folder if you only want it for a world, or in `.minecraft/config/carpet/scripts` (note that languages and structures need to be present per world). Documentation and help can be found [here](https://github.com/Ghoulboy78/World-edit-scarpet/blob/master/docs/Documentation.md), and there's also an in-game help menu.
+To install and use, go to the [Github Releases section](https://github.com/Ghoulboy78/World-edit-scarpet/releases), grab the latest release (the first zip file, or the `world-edit.sc` file only if you don't care about translations), and unzip it either into your world's `scripts` folder if you want it for a single world, or in `.minecraft/config/carpet/scripts` to use it in any world (note that languages and structures need to be present per world, Scarpet limitation). Documentation and help can be found [here](https://github.com/Ghoulboy78/World-edit-scarpet/blob/master/docs/Documentation.md), and there's also an in-game help menu.
 
 For more detailed instructions on how to install scarpet scripts, check: https://github.com/gnembon/fabric-carpet/wiki/Installing-carpet-scripts-in-your-world
 
