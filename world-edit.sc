@@ -1286,6 +1286,8 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
     // undo expects positions, not blocks
     if(type(pos)!='list', pos=pos(pos));
 
+    if(!(nbt=extra:'nbt'),nbt={});
+
     state = if(flags~'s',
         bs_e=block_state(existing);
         bs_b=block_state(block);
