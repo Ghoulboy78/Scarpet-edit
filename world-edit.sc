@@ -231,8 +231,8 @@ base_commands_map = [
     ['structure save <name> force',['structure','save',{'force'->true}],false],
     ['structure save <name> entities',['structure','save',{'include_entities'->true}],false],
     ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],false],
-    ['structure save <name> clipboard',['structure','clipboard','save_clipboard',{'clipboard'->true}],false],
-    ['structure save <name> clipboard force',['structure','clipboard','save_clipboard',{'clipboard'->true,'force'->true}],false],
+    ['structure save <name> clipboard',['structure','save_clipboard',{'clipboard'->true}],false],
+    ['structure save <name> clipboard force',['structure','save_clipboard',{'clipboard'->true,'force'->true}],false],
     ['structure copy <name>',['structure','copy',null],false],
     ['structure copy <name> force',['structure','copy',{'force'->true}],false],
 ];
