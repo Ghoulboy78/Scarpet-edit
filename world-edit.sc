@@ -908,8 +908,7 @@ brush(action, flags, ...args) -> (
 );
 
 shape(action, args, flags)->(
-    call(global_brush_shapes:action:'block_setter',player~'pos',args,flags);
-    add_to_history(global_brush_shapes:action:'action_name', player),
+    call(global_brush_shapes:action,player~'pos',args,flags)
 );
 
 _brush_action(pos, brush) -> (
@@ -919,35 +918,27 @@ _brush_action(pos, brush) -> (
 );
 
 global_brush_shapes={
-    'cube'->{//this can be like a template for new brushes as it's the simplest
-        'action_name'->'action_cube',
-        'block_setter'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
+    'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
                 [block, size, replacement] = args;
-                scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}))
-            )
-    },
-    'cuboid'->{
-        'action_name'->'action_cuboid',
-        'block_setter'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
+                scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}));
+                add_to_history('action_cube',player())
+            ),
+    'cuboid'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
                 [block, size, replacement] = args;
-                scan(pos,size/2, set_block(_, block, replacement, flags, {}))
-            )
-    },
-    'ellipsoid'->{//todo better algorithm for this
-        'action_name'->'action_ellipsoid',
-        'block_setter'->_(pos, args, flags)->(
+                scan(pos,size/2, set_block(_, block, replacement, flags, {}));
+                add_to_history('action_cuboid',player())
+            ),
+    'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
             [block, radii, replacement] = args;
 
             scan(pos, radii,
                 if(_sq_distance((pos(_)-pos) / radii, 0) <= 1,
                     set_block(pos(_),block, replacement, flags, {})
                 )
-            )
-        )
-    }
-    'sphere'->{
-        'action_name'->'action_sphere'
-        'block_setter'->_(pos, args, flags)->(
+            );
+            add_to_history('action_ellipsoid',player())
+        ),
+    'sphere'->_(pos, args, flags)->(
             [block, radius, replacement] = args;
             [cx, cy, cz] = pos;
 
@@ -966,11 +957,9 @@ global_brush_shapes={
                     )
                 )
             );
-        )
-    },
-    'cone'->{
-        'action_name'->'action_cone',
-        'block_setter'->_(pos, args, flags)->(
+            add_to_history('action_sphere',player())
+        ),
+    'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
             hollow = flags~'h';
@@ -978,29 +967,22 @@ global_brush_shapes={
             for(range(height),
                 r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
                 fill_flat(pos, _, r, signed_axis, block, if((pointup&&_==0)||(!pointup && _==height-1),false,hollow),replacement, flags)//Always close bottom off
-            )
-        )
-    },
-    'cylinder'->{
-        'action_name'->'action_cylinder',
-        'block_setter'->_(pos, args, flags)->(
+            );
+            add_to_history('action_cone',player())
+        ),
+    'cylinder'->_(pos, args, flags)->(
             [block, radius, height, axis, replacement] = args;
             flags = _parse_flags(flags);
             hollow=flags~'h';
             for(range(height),
                 fill_flat(pos, _, radius, orientation, block, if(_==0 || _==height-1,false,hollow), replacement, flags)//Always close ends off
-            )
-        )
-    },
-    'paste'->{
-        'action_name'->null,//null action so we don't get double message.
-        'block_setter'->_(pos, args, flags)->(
+            );
+            add_to_history('action_cylinder',player())
+        ),
+    'paste'->_(pos, args, flags)->(
             paste(pos, flags)
-        )
-    },
-    'line'->{
-        'action_name'->'action_line',
-        'block_setter'->_(pos, args, flags)->(
+        ),
+    'line'->_(pos, args, flags)->(
             [block, length, replacement] = args;
             player = player();
             if(length,
@@ -1014,11 +996,9 @@ global_brush_shapes={
                 b = m * _ + final_pos;
                 set_block(b, block, replacement, flags, {})
             );
-        )
-    },
-    'flood'->{
-        'action_name'->null,
-        'block_setter'->_(pos, args, flags)->(
+            add_to_history('action_line',player())
+        ),
+    'flood'->_(pos, args, flags)->(
             start = pos;
             [block, radius, axis] = args;
             if(block(start)==block, return());
@@ -1027,11 +1007,8 @@ global_brush_shapes={
                 _sq_distance(pos, start) <= radius*radius
             );
             _flood_generic(block, axis, start, flags);
-        )
-    },
-    'prism_polygon'->{
-        'action_name'->'action_prism_polygon',
-        'block_setter'->(
+        ),
+    'prism_polygon'->_(pos, args, flags)->(
             [block, radius, height, n_points, axis, rotation, replacement] = args;
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
@@ -1049,12 +1026,10 @@ global_brush_shapes={
                     set_block(_-offset, block, replacement, flags, {});
                 ),
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-            )
-        )
-    },
-    'prism_star'->{
-        'action_name'->'action_prism_star',
-        'block_setter'->(
+            );
+            add_to_history('action_prism_polygon',player())
+        ),
+    'prism_star'->_(pos, args, flags)->(
             [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement] = args;
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
@@ -1074,9 +1049,9 @@ global_brush_shapes={
                     set_block(_-offset, block, replacement, flags, {});
                 ),
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-            )
+            );
+            add_to_history('action_prism_polygon',player())
         )
-    }
 };
 
 fill_flat(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
@@ -1299,7 +1274,6 @@ _block_matches(existing, block_predicate) ->
 );
 
 add_to_history(function,player)->(
-    if(function==null,exit());//To avoid double message with paste brush
     if(length(global_affected_blocks)==0,exit(_print(player, 'filled',0)));//not gonna add empty list to undo ofc...
     command={
         'type'->function,
