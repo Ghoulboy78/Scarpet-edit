@@ -17,8 +17,9 @@ This applies to everyone, including admins. The PR needs at least 2 reviews befo
 
 #### Block manipulating commands
 
-If you're gonna add a new function that manipulates blocks in the world, you should first familiarize yourself with the
-existing code, so you know what to do right off the bat, but here is the tl;dr, in case it was too confusing:
+If you're gonna add a new function that manipulates blocks in the world with a player - utilisable function, you should 
+first familiarize yourself with the existing code, so you know what to do right off the bat, but here is the tl;dr, in 
+case it was too confusing:
 
 1. Define the function below all the other defined functions (i.e, underneath the comment which says `//Command functions`).
    This helps with legibility of your code later on.
@@ -72,9 +73,65 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    a     don't paste air
    ```
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
-   argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to handle
-   undoing, `set_block` does that on its own.
-   
+   argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to 
+   handle undoing, `set_block` does that on its own.
+
+#### Brushes
+
+If you are adding a new brush function, there is a simple syntax to follow to ensure it is compatible with the existing 
+brush function utility. You must add your new function in the following fashion:
+
+Add your function as an entry to the `global_brush_shapes` map variable, with the key being the string name of your function,
+and the value being a lambda function with `(pos, args, flags)` as the arguments. This is where you can manipulate the 
+world in whatever way you see fit, and must call the `add_to_history()` function (cos not all brush functions set blocks).
+You can take whichever arguments you need from the args `args` variable as long as you specify them in the input command.
+You must also add a command which takes the correct inputs and passes them to the `shape()` function in the proper manner.
+You must also add a translation key for the action to the lang file.
+
+If this was too bulky and confusing too understand, here is a full example of  the `cube` function, which simply places
+cubes:
+
+1. First, we add an entry to the `global_brush_shapes` map variable which consists of the string `'cube'` mapped to the 
+   block setting function:
+      ```
+   global_brush_shapes={
+         ... //brush entries
+         'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
+            [block, size, replacement] = args;
+            scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}));
+            add_to_history('action_cube',player())
+         ),
+         ... //more entries
+   }
+      ```
+   Here, we can see the lambda (`_(pos, args, flags)->`) which is called when you right click with the brush or use the
+   `/shape` command.
+
+
+2. We can see that we got three arguments: `[block, size, replacement] = args;`. We can know that we are going to get
+   these arguments when we define the command:
+   ```
+   base_commands_map = [
+      ... //commands
+      ['cube <block> <size> replace <replacement> f <flags>', _(block, size, replacement, flags)->shape('cube',[block, size, replacement], flags)'']
+      ... //more commands
+   ]
+   ```
+   It is important to use that syntax of calling the `shape()` function to work properly.
+
+
+3. We can also see that we ran the `add_to_history` function with `'action_cube'`, not `'cube'`. This is because we need
+   to then add an entry to the translations map (`global_default_lang`). This is so the action name can be translated to
+   other languages when running the `/undo history` command. Add your translation key to
+   the map, mapped to the en_us translation:
+   ```
+   global_default_lang = {
+      ... //other entries
+      'action_cube' -> 'cube',
+      ... //more entries
+   }
+   ```
+
 #### Messages
 
 If you want to print a message as an output to the player, the easiest way is using the `_print(player, message_id, ...extra_args)`
