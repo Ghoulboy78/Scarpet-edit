@@ -1606,9 +1606,7 @@ paste(pos, flags)->(
         [pos_vector, old_block, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
 
-        if(!(flags~'a'&&air(old_block)),
-            set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
-        )
+    	set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
     );
     add_to_history('paste',player)
 );
