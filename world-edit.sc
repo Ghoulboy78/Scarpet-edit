@@ -663,6 +663,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 
 _parse_flags(flags) ->(
+	if(!flags, return({}));
    symbols = split(flags);
    if(symbols:0 != '-', return({}));
    flag_set = {};
