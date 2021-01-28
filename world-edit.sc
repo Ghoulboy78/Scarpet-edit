@@ -60,11 +60,13 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
-    ['walls <block>', ['walls', null, null], false],
-    ['walls <block> <replacement>', ['walls', null], [1, 'help_cmd_walls', 'help_cmd_walls_tooltip', null]],
-    ['walls <block> f <flags>', _(block,flags)->walls(block,null,flags), false],
-    ['walls <block> <replacement> f <flags>', 'walls', false],
-
+    ['walls <block>', ['walls', 'xz', null, null], false],
+    ['walls <block> <sides>', ['walls', null, null], false],
+	['walls <block> <sides> <replacement>', ['walls', null], [1, 'help_cmd_walls', 'help_cmd_walls_tooltip', null]],
+    ['walls <block> f <flags>', _(block,flags)->walls(block,'xz',null,flags), false],
+	['walls <block> <sides> f <flags>', _(block,sides,flags)->walls(block,sides,null,flags), false],
+    ['walls <block> <sides> <replacement> f <flags>', 'walls', false],
+	
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
@@ -264,6 +266,7 @@ __config()->{
         'degrees'->{'type'->'int','suggest'->[]},
         'axis'->{'type'->'term','options'->['x','y','z']},
         'saxis'->{'type'->'term', 'options'->['+x', '-x', '+y', '-y', '+z', '-z']},
+		'sides'->{'type'->'term', 'options'->['x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
         'count'->{'type'->'int','min'->1,'suggest'->[]},
@@ -742,6 +745,10 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
+	'help_cmd_flood' ->			  'l Performs flood fill within selection',
+	'help_cmd_flood_tooltip' ->   'g Use [axis] to perform flat flood in the plane perpendicular to it',
+	'help_cmd_walls' -> 		  'l Set walls of the selection',
+	'help_cmd_walls_tooltip' ->   'l Use [sides] to choose which sides to generate',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -916,24 +923,20 @@ _brush_action(pos, brush) -> (
     call(action, pos, args, flags)
 );
 
-cube(pos, args, flags) -> (
+cube(pos, args, flags) -> _cuboid(pos, args, flags);
+cuboid(pos, args, flags) -> _cuboid(pos, args, flags);
+
+_cuboid(pos, args, flags) -> (
     [block, size, replacement] = args;
 
     half_size = (size-1)/2;
+	min_corner = pos-half_size;
+	max_corner = pos+half_size;
 
-    _is_inside_shape(block) -> true;
-    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
-
-    add_to_history('cube',player())
-);
-
-cuboid(pos, args, flags) -> (
-    [block, size, replacement] = args;
-
-    half_size = (size-1)/2;
-
-    _is_inside_shape(block) -> true;
-    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
+	if(flags~'h', 
+		_walls_generic(min_corner, max_corner, 'xyz', block, replacement, flags),
+		volume(min_corner, max_corner, set_block(_, block, replacement, flags, {}))
+	);
 
     add_to_history('cuboid',player())
 );
@@ -1585,18 +1588,30 @@ paste(pos, flags)->(
     add_to_history('paste',player)
 );
 
-walls(block, replacement, flags) -> (
+walls(block, sides, replacement, flags) -> (
 	player = player();
     [pos1,pos2]=_get_current_selection(player);
-	[ox, oy, oz] = pos2-pos1;
 	flags=_parse_flags(flags);
 	
-	print(replacement);
-	
-	volume(pos1, pos1+[ox, oy, 0], set_block(_, block, replacement, flags, {}));
-	volume(pos1, pos1+[0, oy, oz], set_block(_, block, replacement, flags, {}));
-	volume(pos2, pos2-[ox, oy, 0], set_block(_, block, replacement, flags, {}));
-	volume(pos2, pos2-[0, oy, oz], set_block(_, block, replacement, flags, {}));
+	_walls_generic(pos1, pos2, sides, block, replacement, flags);
 	
     add_to_history('walls',player)
+);
+
+_walls_generic(min_corner, max_corner, sides, block, replacement, flags) -> (
+	
+	[ox, oy, oz] = max_corner-min_corner;
+	
+	if(sides~'z',
+		volume(min_corner, min_corner+[ox, oy, 0], set_block(_, block, replacement, flags, {}));
+		volume(max_corner, max_corner-[ox, oy, 0], set_block(_, block, replacement, flags, {}))
+	);
+	if(sides~'x',
+		volume(min_corner, min_corner+[0, oy, oz], set_block(_, block, replacement, flags, {}));
+		volume(max_corner, max_corner-[0, oy, oz], set_block(_, block, replacement, flags, {}))
+	);
+	if(sides~'y',
+		volume(min_corner, min_corner+[ox, 0, oz], set_block(_, block, replacement, flags, {}));
+		volume(max_corner, max_corner-[ox, 0, oz], set_block(_, block, replacement, flags, {}))
+	)
 );
