@@ -1272,7 +1272,7 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
 		);
 
 		if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
-			postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
+			postblock=if(flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
 			prev_biome=biome(pos);
 			if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
 			success=existing;
