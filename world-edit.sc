@@ -1228,11 +1228,16 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
-global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
+
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-	if( !( flags~'a' && block=='air' ) ,
+
+	if( !( 
+			(flags~'a' && block=='air' ) || 
+			((flags~'a' &&flags~'g') &&has(global_air_greenery, str(block))) 
+		),
 		success=null;
 		existing = block(pos);
 
@@ -1248,7 +1253,7 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
 		, {});
 		if(flags~'d',
 			if(
-				block=='water', block='air',
+				block=='water' || (flags~'g' &&has(global_water_greenery, str(block))) , block='air',
 				block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
 			);
 		);
