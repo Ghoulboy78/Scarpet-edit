@@ -66,6 +66,10 @@ base_commands_map = [
     ['walls <block> f <flags>', _(block,flags)->walls(block,'xz',null,flags), false],
 	['walls <block> <sides> f <flags>', _(block,sides,flags)->walls(block,sides,null,flags), false],
     ['walls <block> <sides> <replacement> f <flags>', 'walls', false],
+	['outline <block>', ['outline', null, null], false],
+    ['outline <block> <replacement>', ['outline', null], [1, 'help_cmd_outline', null, null]],
+    ['outline <block> f <flags>', _(block,flags)->outline(block,null,flags), false],
+    ['outline <block> <replacement> f <flags>', 'outline', false],
 	
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
@@ -749,6 +753,7 @@ global_lang_keys = global_default_lang = {
 	'help_cmd_flood_tooltip' ->   'g Use [axis] to perform flat flood in the plane perpendicular to it',
 	'help_cmd_walls' -> 		  'l Set walls of the selection',
 	'help_cmd_walls_tooltip' ->   'l Use [sides] to choose which sides to generate',
+	'help_cmd_outline' -> 		  'l Outlines the selection with <block>',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -1542,7 +1547,7 @@ expand(centre, magnitude)->(
     );
 
     for(expand_map,
-        set_block(_,expand_map:_,null,{})
+        set_block(_,expand_map:_,null,null, {})
     );
     add_to_history('expand',player)
 );
@@ -1614,4 +1619,26 @@ _walls_generic(min_corner, max_corner, sides, block, replacement, flags) -> (
 		volume(min_corner, min_corner+[ox, 0, oz], set_block(_, block, replacement, flags, {}));
 		volume(max_corner, max_corner-[ox, 0, oz], set_block(_, block, replacement, flags, {}))
 	)
+);
+
+outline(block, replafement, flags) -> (
+	player = player();
+    [pos1,pos2]=_get_current_selection(player);
+	flags=_parse_flags(flags);
+	
+	[ox, oy, oz] = pos2-pos1;
+	offsets = [ [ox, 0, 0], [0, oy, 0], [0, 0, oz] ];
+	_fill_offset(pos, offset, outer(block), outer(replacement), outer(flags))-> (
+		volume(pos, pos+offset, set_block(_, block, replacement, flags, {}))
+	);
+	
+	for(offsets,
+		_fill_offset(pos1, _);
+		_fill_offset(pos2, _*-1);
+		
+		_fill_offset(pos1+_, offsets:(_i+1));
+		_fill_offset(pos1+_, offsets:(_i+2));
+	);
+	
+    add_to_history('outline',player)	
 );
