@@ -60,6 +60,10 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flags>', 'flood_fill', false],
+    ['walls <block>', ['walls', null, null], false],
+    ['walls <block> <replacement>', ['walls', null], [1, 'help_cmd_walls', 'help_cmd_walls_tooltip', null]],
+    ['walls <block> f <flags>', _(block,flags)->walls(block,null,flags), false],
+    ['walls <block> <replacement> f <flags>', 'walls', false],
 
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
@@ -1271,8 +1275,8 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
 			if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
 		);
 
-		if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
 			postblock=if(flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
+		if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
 			prev_biome=biome(pos);
 			if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
 			success=existing;
@@ -1580,3 +1584,18 @@ paste(pos, flags)->(
     add_to_history('paste',player)
 );
 
+walls(block, replacement, flags) -> (
+	player = player();
+    [pos1,pos2]=_get_current_selection(player);
+	[ox, oy, oz] = pos2-pos1;
+	flags=_parse_flags(flags);
+	
+	print(replacement);
+	
+	volume(pos1, pos1+[ox, oy, 0], set_block(_, block, replacement, flags, {}));
+	volume(pos1, pos1+[0, oy, oz], set_block(_, block, replacement, flags, {}));
+	volume(pos2, pos2-[ox, oy, 0], set_block(_, block, replacement, flags, {}));
+	volume(pos2, pos2-[0, oy, oz], set_block(_, block, replacement, flags, {}));
+	
+    add_to_history('walls',player)
+);
