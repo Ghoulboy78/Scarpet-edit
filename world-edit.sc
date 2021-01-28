@@ -1232,47 +1232,50 @@ global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-    success=null;
-    existing = block(pos);
+	if( !( flags~'a' && block=='air' ) ,
+		success=null;
+		existing = block(pos);
 
-    // undo expects positions, not blocks
-    if(type(pos)!='list', pos=pos(pos));
+		// undo expects positions, not blocks
+		if(type(pos)!='list', pos=pos(pos));
 
-    state = if(flags~'s',
-        bs_e=block_state(existing);
-        bs_b=block_state(block);
-        if(all(keys(bs_e), has(bs_b, _)),
-            bs_e, {}
-        );
-    , {});
-    if(flags~'d',
-        if(
-            block=='water', block='air',
-            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
-        );
-    );
-    if(flags~'w' && (
-        (existing == 'water' && block_state(existing, 'level')=='0') ||
-        block_state(existing, 'waterlogged')=='true'
-        ),
-        if(
-            block=='air', block='water', // "waterlog" air blocks
-            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
-        );
-    );
-    if(flags~'g',
-        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
-        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
-    );
+		state = if(flags~'s',
+			bs_e=block_state(existing);
+			bs_b=block_state(block);
+			if(all(keys(bs_e), has(bs_b, _)),
+				bs_e, {}
+			);
+		, {});
+		if(flags~'d',
+			if(
+				block=='water', block='air',
+				block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+			);
+		);
+		if(flags~'w' && (
+			(existing == 'water' && block_state(existing, 'level')=='0') ||
+			block_state(existing, 'waterlogged')=='true'
+			),
+			if(
+				block=='air', block='water', // "waterlog" air blocks
+				block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+			);
+		);
+		if(flags~'g',
+			if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+			if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
+		);
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
-        postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
-        prev_biome=biome(pos);
-        if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
-        success=existing;
-        global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
-    );
-    bool(success)//cos undo uses this
+		if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
+			postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
+			prev_biome=biome(pos);
+			if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
+			success=existing;
+			global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
+		);
+		bool(success), //cos undo uses this
+		false
+	)
 );
 
 _block_matches(existing, block_predicate) ->
