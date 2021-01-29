@@ -1445,7 +1445,7 @@ structure(name, action, args)->(
             states+=state_map
         );
 
-        data={//todo add regular structure saving later, gonna use my own method now cos even after reading litematica code idk how to do
+        data={
             'blocks'->states,
             'entities'->entities,
             'palette'->keys(palette_map),
@@ -1487,6 +1487,13 @@ structure(name, action, args)->(
         avg_pos=(pos1+pos2)/2;
 
         entities=entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));
+        entities_list = [];
+
+        entities_list = map(entities, {
+            'nbt'->_~'nbt',
+            'pos'->pos(_)-min_pos,
+            'blockPos'->map(pos(_)-min_pos, round(_))
+        });
 
         palette_map={};
 
@@ -1515,7 +1522,7 @@ structure(name, action, args)->(
 
         data={
             'blocks'->states,
-            'entities'->entities,
+            'entities'->entities_list,
             'palette'->keys(palette_map),
             'size'->{
                 'x'->pos_diff:0,
@@ -1546,7 +1553,7 @@ structure(name, action, args)->(
         blocks=file:'blocks';
         entities=file:'entities';
 
-        global_clipboard+=entities;
+        global_clipboard+=entities;//todo in code cleanup for copy, not rly functional rn
 
         for(blocks,
             state=palette:(_:'state');
@@ -1566,14 +1573,21 @@ structure(name, action, args)->(
         file=parse_nbt(file);
         palette=file:'palette';
         blocks=file:'blocks';
-        entities=file:'entities';//todo load these as well
+        entities=file:'entities';
+
+        if(flags~'e',
+            for(entities,
+                nbt = parse_nbt(_:'nbt');
+                spawn(nbt:'id', _:'pos' + pos, nbt)
+            )
+        );
 
         for(blocks,
             state=palette:(_:'state');
             set_block(_:'pos'+pos,state:'Name',null,flags,{'state'->state:'Properties','nbt'->_:'nbt'});
         );
-        add_to_history('action_structure_paste',p)
-        ,
+
+        add_to_history('action_structure_paste',p),
 
         action=='delete',
         if(delete_file('structures/'+name,'nbt'),
@@ -1724,7 +1738,7 @@ move(new_pos,flags)->(
         pos=old_pos-min_pos+new_pos;
         delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
         spawn(_~'type',pos,encode_nbt(nbt));
-        if(move,modify(_,'remove'))
+        modify(_,'remove')
     );
 
     add_to_history('action_move', player)
@@ -1782,7 +1796,18 @@ _copy(origin, force)->(
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
-    global_clipboard+=entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));//always gonna have entities, incase u wanna paste with them
+
+    entities = entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));
+
+    for(entities,//if its empty, this just wont run, no errors
+        nbt=parse_nbt(_~'nbt');
+        old_pos=pos(_);
+        pos=old_pos-min_pos;
+        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
+        {'type'->_~'type','pos'->pos,'nbt'->nbt}
+    );
+
+    global_clipboard+entities;//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
         global_clipboard+=[centre-pos(_),block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
@@ -1798,6 +1823,13 @@ paste(pos, flags)->(
     flags=_parse_flags(flags);
 
     entities=global_clipboard:0;
+
+    if(flags~'e',
+        for(entities,
+            spawn(_:'type',_:'pos',_:'nbt')
+        )
+    );
+
     for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
         [pos_vector, old_block, old_states, old_nbt, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
