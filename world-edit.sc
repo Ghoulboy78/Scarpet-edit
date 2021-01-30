@@ -681,13 +681,14 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 
 _parse_flags(flags) ->(
-   symbols = split(flags);
-   if(symbols:0 != '-', return({}));
-   flag_set = {};
-   for(split(flags),
-       if(_~'[A-Z,a-z]',flag_set+=_);
-   );
-   flag_set;
+    if(!flags, return({}));
+    symbols = split(flags);
+    if(symbols:0 != '-', return({}));
+    flag_set = {};
+    for(split(flags),
+        if(_~'[A-Z,a-z]',flag_set+=_);
+    );
+    flag_set;
 );
 
 volume_blocks(pos1,pos2)->(
@@ -1312,7 +1313,7 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
         if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
     );
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
+    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)) && !(flags~'a'&&air(block)),
         postblock=if(flags && flags~'u',without_updates(set(existing,block,state,encode_nbt(nbt))),set(existing,block,state,encode_nbt(nbt))); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
         prev_biome=biome(pos);
         if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
@@ -1833,9 +1834,7 @@ paste(pos, flags)->(
     for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
         [pos_vector, old_block, old_states, old_nbt, old_biome]=global_clipboard:_;
         new_pos=pos+pos_vector;
-        if(!(flags~'a'&&air(old_block)),
-            set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
-        )
+        set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
     );
     add_to_history('action_paste',player)
 );
