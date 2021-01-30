@@ -3,7 +3,7 @@
 ## Contributors:
 
 ### Main contributors
-Ghoulboy, gnembon, Firigion, BisUmTo and replaceitem.
+Ghoulboy, gnembon, Firigion, BisUmTo, replaceitem, altrisi.
 
 If you have questions, these are the people to bother first of all.
 
@@ -79,6 +79,10 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    e     copy/move entities as well
    b     copy/move biomes as well (handled by set_block)
    a     don't paste air
+   h	 create hollow shapes
+   d     "dry" out the pasted structure (remove water and waterlogged)
+   s     keep block states of replaced block, if new block matches
+   g     when replacing air or water, some greenery gets repalced too
    ```
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
    argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to 
