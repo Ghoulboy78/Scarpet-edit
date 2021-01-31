@@ -14,7 +14,9 @@ The main contributors to this project are:
  - altrisi	 (GitHub: altrisi, Discord: altrisi#9772)
 
 ## How to use
-First of all, ensure you are running fabric-carpet 1.4.22 or above, or the area selection will not work.
+
+If you are running an outdated version of fabric-carpet, WorldEdit for scarpet won't work. Currently, the oldest compatible
+version is: carpet 1.4.22
 
 ### Area selection
 
@@ -35,6 +37,29 @@ Left clicking again will reselect the whole box.
  - `/world-edit stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise specfied. By defaults, it stacks one time.
  - `/world-edit expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
  - `/world-edit move <pos>` -> Moves selection to `pos`
+ - `/world-edit copy` -> Copies selection to clipboard. By default, will not override the existing clipboard (can be changed
+    by adding keyword `force`), and will also take the positions relative to position of player.
+ - `/world-edit copy <pos>` -> Copies selection to clipboard, with positions relative to `pos`. This is significant when 
+    pasting blocks, in terms of how it is pasted.
+ - `/world-edit paste` -> Pastes selection relative to player position. Be careful incase you didnt' choose a wise spot
+    when making the selection.
+ - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
+ - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
+    player's position. Can both "fill"
+ what used to be air or replace some other block.
+ - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
+    instance, will fill the horizontal plane.
+ - `/world-edit structure list` -> Lists all available structures. Currently, they are all in the same file as the lang 
+    files, this may change soon. You can add other structure files, and they will load properly 
+ - `/world-edit structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
+    position if not specified.
+ - `/world-edit structure save <name> entities?|force?` -> Saves current selection to a `.nbt` file compatible with vanilla 
+    structure blocks. `entities` will make it save entities, and `force` will override an existing structure with the same
+    name.
+ - `/world-edit structure save <name> clipboard force?` -> Saves current clipboard to a `.nbt` file compatible with vanilla 
+    structure blocks.`force` will override an existing structure with the same name. Gives an error if no clipboard is present.
+    Will also copy entities.
+ - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
  - `/world-edit copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or the curren player position, if not. By default, will not override the existing clipboard (can be changed by adding keyword `force`), and will also take the positions relative to position of player.
  - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase you didnt' choose a wise spot making the selection.
  - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the player's position. Can both "fill" used to be air or replace some other block.

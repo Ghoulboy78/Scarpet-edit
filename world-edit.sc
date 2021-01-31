@@ -36,20 +36,20 @@ base_commands_map = [
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
     ['stack f <flag>', _(flags)->stack(1,null,flags), false], //TODO here too Help for flags
-    ['stack <count> f <flag>', _(count,flags)->stack(count,null,flags), false],
+    ['stack <count> f <flag>', _(stackcount,flags)->stack(1,null,flags), false],
     ['stack <count> <direction> f <flag>', 'stack', false],
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
-    ['move <pos> f <flags>', 'move', false], //TODO flags help
+    ['move <pos> f <flag>', 'move', false], //TODO flags help
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
     ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
     ['copy force',['_copy',null, true],false],
     ['copy <pos>',['_copy', false],false],
     ['copy <pos> force',['_copy', true],false],
     ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
-    ['paste f <flags>',_(flags)->paste(null, flags),false],//todo flags help
+    ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
     ['paste <pos>',['paste', null],false],
-    ['paste <pos> f <flags>','paste',false],//todo last flags help
+    ['paste <pos> f <flag>','paste',false],//todo last flags help
     ['selection clear', 'clear_selection', false], //TODO help for this and below
     ['selection expand', _()->selection_expand(1), false],
     ['selection expand <amount>', 'selection_expand', false],
@@ -58,180 +58,183 @@ base_commands_map = [
     ['selection move <amount> <direction>', 'selection_move',false],
     ['flood <block>', ['flood_fill', null, null], false],
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
-    ['flood <block> f <flags>', _(block,flags)->flood_fill(block,null,flags), false],
-    ['flood <block> <axis> f <flags>', 'flood_fill', false],
-    ['walls <block>', ['walls', 'xz', null, null], false],
-    ['walls <block> <sides>', ['walls', null, null], false],
-	['walls <block> <sides> <replacement>', ['walls', null], [1, 'help_cmd_walls', 'help_cmd_walls_tooltip', null]],
-    ['walls <block> f <flags>', _(block,flags)->walls(block,'xz',null,flags), false],
-	['walls <block> <sides> f <flags>', _(block,sides,flags)->walls(block,sides,null,flags), false],
-    ['walls <block> <sides> <replacement> f <flags>', 'walls', false],
-	['outline <block>', ['outline', null, null], false],
-    ['outline <block> <replacement>', ['outline', null], [1, 'help_cmd_outline', null, null]],
-    ['outline <block> f <flags>', _(block,flags)->outline(block,null,flags), false],
-    ['outline <block> <replacement> f <flags>', 'outline', false],
-	
+    ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
+    ['flood <block> <axis> f <flag>', 'flood_fill', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
-    ['brush info', ['brush', 'info', null], false],
-    ['brush info <brush>', _(brush)-> brush('info', null, brush), [0, 'help_cmd_brush_info', null, null]],
+    ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
     ['brush reach', ['brush', 'reach', null], false],
     ['brush reach <length>', _(length)-> brush('reach', null, length), [0, 'help_cmd_brush_reach', null, null]],
     ['brush cube <block> <size>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
-    ['brush cube <block> <size> f <flags>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
+    ['brush cube <block> <size> f <flag>', _(block, size_int, flags) -> brush('cube', flags, block, size_int, null), false],
     ['brush cube <block> <size> <replacement>', _(block, size_int, replacement) -> brush('cube', null, block, size_int, replacement),
         [2, 'help_cmd_brush_cube', 'help_cmd_brush_generic', null]],
-    ['brush cube <block> <size> <replacement> f <flags>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
+    ['brush cube <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> brush('cube', flags, block, size_int, replacement), false],
     ['brush cuboid <block> <x_size> <y_size> <z_size>', _(block, x_int, y_int, z_int) -> brush('cuboid', null, block, [x_int, y_int, z_int], null), false],
-    ['brush cuboid <block> <x_size> <y_size> <z_size> f <flags>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
+    ['brush cuboid <block> <x_size> <y_size> <z_size> f <flag>', _(block, x_int, y_int, z_int, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], null), false],
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
-    ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
+    ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
     ['brush sphere <block> <radius>', _(block, radius) -> brush('sphere', null, block, radius, null), false],
-    ['brush sphere <block> <radius> f <flags>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
+    ['brush sphere <block> <radius> f <flag>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
     ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement),
         [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
-    ['brush sphere <block> <radius> <replacement> f <flags>', _(block, radius, replacement, flags) -> brush('sphere', flags, block, radius, replacement), false],
+    ['brush sphere <block> <radius> <replacement> f <flag>', _(block, radius, replacement, flags) -> brush('sphere', flags, block, radius, replacement), false],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> brush('ellipsoid', null, block, [xr, yr, zr], null), false],
-    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flags>', _(block, xr, yr, zr, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], null), false],
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flag>', _(block, xr, yr, zr, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], null), false],
     ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> brush('ellipsoid', null, block, [xr, yr, zr], replacement),
         [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
-    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flags>', _(block, xr, yr, zr, replacement, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], replacement), false],
+    ['brush ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flag>', _(block, xr, yr, zr, replacement, flags) -> brush('ellipsoid', flags, block, [xr, yr, zr], replacement), false],
     ['brush cylinder <block> <radius> <height>', _(block, radius, height) -> brush('cylinder', null, block, radius, height, 'y', null), false],
-    ['brush cylinder <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> brush('cylinder', flags, block, radius, height, 'y', null), false],
+    ['brush cylinder <block> <radius> <height> f <flag>', _(block, radius, height, flags) -> brush('cylinder', flags, block, radius, height, 'y', null), false],
     ['brush cylinder <block> <radius> <height> <axis>', _(block, radius, height, axis) -> brush('cylinder', null, block, radius, height, axis, null), false],
-    ['brush cylinder <block> <radius> <height> <axis> f <flags>', _(block, radius, height, axis, flags) -> brush('cylinder', flags, block, radius, height, axis, null), false],
+    ['brush cylinder <block> <radius> <height> <axis> f <flag>', _(block, radius, height, axis, flags) -> brush('cylinder', flags, block, radius, height, axis, null), false],
     ['brush cylinder <block> <radius> <height> <axis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cylinder', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cylinder', 'help_cmd_brush_generic', null]],
-    ['brush cylinder <block> <radius> <height> <axis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> brush('cylinder', flags, block, radius, height, axis, replacement), false],
+    ['brush cylinder <block> <radius> <height> <axis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cylinder', flags, block, radius, height, axis, replacement), false],
     ['brush cone <block> <radius> <height>', _(block, radius, height) -> brush('cone', null, block, radius, height, '+y', null), false],
-    ['brush cone <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
+    ['brush cone <block> <radius> <height> f <flag>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
     ['brush cone <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
-    ['brush cone <block> <radius> <height> <saxis> f <flags>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
+    ['brush cone <block> <radius> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
     ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
-    ['brush cone <block> <radius> <height> <saxis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
+    ['brush cone <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
-    ['brush flood <block> <radius> f <flags>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
-    ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis),
+    ['brush flood <block> <radius> f <flag>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
+    ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis), 
         [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
-    ['brush flood <block> <radius> <axis> f <flags>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false],
+    ['brush flood <block> <radius> <axis> f <flag>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
-    ['brush line <block> f <flags>', _(block, flags) -> brush('line', flags, block, null, null), false],
+    ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
-    ['brush line <block> <length> f <flags>', _(block, length, flags) -> brush('line', flags, block, length,  null), false],
+    ['brush line <block> <length> f <flag>', _(block, length, flags) -> brush('line', flags, block, length,  null), false],
     ['brush line <block> <length> <replacement>', _(block, length, replacement) -> brush('line', null, block, length, replacement),
         [2, 'help_cmd_brush_line', 'help_cmd_brush_generic', null]],
-    ['brush line <block> <length> <replacement> f <flags>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
+    ['brush line <block> <length> <replacement> f <flag>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
     ['brush paste ', _() -> brush('paste_brush', null), [-1, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
-    ['brush paste f <flags>',  _(flags) -> brush('paste_brush', flags), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices>',
+    ['brush paste f <flag>',  _(flags) -> brush('paste_brush', flags), false],
+    ['brush prism_polygon <block> <radius> <height> <vertices>', 
         _(block, radius, height, n_points) -> brush('prism_polygon', null, block, radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> f <flags>',
+    ['brush prism_polygon <block> <radius> <height> <vertices> f <flag>',
        _(block, radius, height, n_points, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis>',
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis>', 
        _(block, radius, height, n_points, axis) -> brush('prism_polygon', null, block, radius, height, n_points, axis, 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>',
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> f <flag>',
        _(block, radius, height, n_points, axis, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation>',
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <degrees>',
        _(block, radius, height, n_points, axis, rotation) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> f <flags>',
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> f <flag>',
        _(block, radius, height, n_points, axis, rotation, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement>',
-       _(block, radius, height, n_points, axis, rotation, replacement) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, replacement),
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> <replacement>',
+       _(block, radius, height, n_points, axis, rotation, replacement) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, replacement), 
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
+    ['brush prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, replacement), false],
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices>',
         _(block, outer_radius, inner_radius, height, n_points) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flags>',
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flags>',
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation>',
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> f <flags>',
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement>',
-       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement),
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement>',
+       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), 
        [5, 'help_cmd_brush_star', 'help_cmd_brush_generic', null]],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
+    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
 
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
-    ['shape cube <block> <size> f <flags>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
+    ['shape cube <block> <size> f <flag>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
     ['shape cube <block> <size> <replacement>', _(block, size_int, replacement) -> cube(player()~'pos', [block, size_int, replacement], null),
         [2, 'help_cmd_shape_cube', null, null]],
-    ['shape cube <block> <size> <replacement> f <flags>', _(block, size_int, replacement, flags) -> cube(player()~'pos', [block, size_int, replacement], flags), false],
+    ['shape cube <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> cube(player()~'pos', [block, size_int, replacement], flags), false],
     ['shape cuboid <block> <x_size> <y_size> <z_size>', _(block, x_int, y_int, z_int) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], null), false],
-    ['shape cuboid <block> <x_size> <y_size> <z_size> f <flags>', _(block, x_int, y_int, z_int, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], flags), false],
+    ['shape cuboid <block> <x_size> <y_size> <z_size> f <flag>', _(block, x_int, y_int, z_int, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], null], flags), false],
     ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], null),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
-    ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flags>', _(block, x_int, y_int, z_int, replacement, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], flags), false],
+    ['shape cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(block, x_int, y_int, z_int, replacement, flags) -> cuboid(player()~'pos', [block, [x_int, y_int, z_int], replacement], flags), false],
     ['shape sphere <block> <radius>', _(block, radius) -> sphere(player()~'pos', [block, radius, null], null), false],
-    ['shape sphere <block> <radius> f <flags>', _(block, radius, flags) -> sphere(player()~'pos', [block, radius, null], flags), false],
+    ['shape sphere <block> <radius> f <flag>', _(block, radius, flags) -> sphere(player()~'pos', [block, radius, null], flags), false],
     ['shape sphere <block> <radius> <replacement>', _(block, radius, replacement) -> sphere(player()~'pos', [block, radius, replacement], null),
         [2, 'help_cmd_brush_sphere', 'help_cmd_brush_generic', null]],
-    ['shape sphere <block> <radius> <replacement> f <flags>', _(block, radius, replacement, flags) -> sphere(player()~'pos', [block, radius, replacement], flags), false],
+    ['shape sphere <block> <radius> <replacement> f <flag>', _(block, radius, replacement, flags) -> sphere(player()~'pos', [block, radius, replacement], flags), false],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius>', _(block, xr, yr, zr) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], null), false],
-    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flags>', _(block, xr, yr, zr, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], flags), false],
+    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> f <flag>', _(block, xr, yr, zr, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], null], flags), false],
     ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement>', _(block, xr, yr, zr, replacement) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], null),
         [2, 'help_cmd_brush_sphereellipsoid', 'help_cmd_brush_generic', null]],
-    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flags>', _(block, xr, yr, zr, replacement, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], flags), false],
+    ['shape ellipsoid <block> <x_radius> <y_radius> <z_radius> <replacement> f <flag>', _(block, xr, yr, zr, replacement, flags) -> ellipsoid( player()~'pos', [block, [xr, yr, zr], replacement], flags), false],
     ['shape cylinder <block> <radius> <height>', _(block, radius, height) -> cylinder(player()~'pos', [block, radius, height, 'y', null], null), false],
-    ['shape cylinder <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> cylinder(player()~'pos', [block, radius, height, 'y', null], flags), false],
+    ['shape cylinder <block> <radius> <height> f <flag>', _(block, radius, height, flags) -> cylinder(player()~'pos', [block, radius, height, 'y', null], flags), false],
     ['shape cylinder <block> <radius> <height> <axis>', _(block, radius, height, axis) -> cylinder(player()~'pos', [block, radius, height, axis, null], null), false],
-    ['shape cylinder <block> <radius> <height> <axis> f <flags>', _(block, radius, height, axis, flags) -> cylinder(player()~'pos', [block, radius, height, axis, null], flags), false],
+    ['shape cylinder <block> <radius> <height> <axis> f <flag>', _(block, radius, height, axis, flags) -> cylinder(player()~'pos', [block, radius, height, axis, null], flags), false],
     ['shape cylinder <block> <radius> <height> <axis> <replacement>', _(block, radius, height, axis, replacement) -> cylinder(player()~'pos', [block, radius, height, axis, replacement], null),
         [2, 'help_cmd_brush_cylinder', 'help_cmd_brush_generic', null]],
-    ['shape cylinder <block> <radius> <height> <axis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> cylinder(player()~'pos', [block, radius, height, axis, replacement], flags), false],
+    ['shape cylinder <block> <radius> <height> <axis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> cylinder(player()~'pos', [block, radius, height, axis, replacement], flags), false],
     ['shape cone <block> <radius> <height>', _(block, radius, height) -> cone(player()~'pos', [block, radius, height, '+y', null], null), false],
-    ['shape cone <block> <radius> <height> f <flags>', _(block, radius, height, flags) -> cone(player()~'pos', [block, radius, height, '+y', null], flags), false],
+    ['shape cone <block> <radius> <height> f <flag>', _(block, radius, height, flags) -> cone(player()~'pos', [block, radius, height, '+y', null], flags), false],
     ['shape cone <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> cone(player()~'pos', [block, radius, height, axis, null], null), false],
-    ['shape cone <block> <radius> <height> <saxis> f <flags>', _(block, radius, height, axis, flags) -> cone(player()~'pos', [block, radius, height, axis, null], flags), false],
-    ['shape cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> cone(player()~'pos', [block, radius, height, axis, replacement], null),
+    ['shape cone <block> <radius> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> cone(player()~'pos', [block, radius, height, axis, null], flags), false],
+    ['shape cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> cone(player()~'pos', [block, radius, height, axis, replacement], null), 
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
-    ['shape cone <block> <radius> <height> <saxis> <replacement> f <flags>', _(block, radius, height, axis, replacement, flags) -> cone(player()~'pos', [block, radius, height, axis, replacement], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices>',
+    ['shape cone <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> cone(player()~'pos', [block, radius, height, axis, replacement], flags), false],
+    ['shape prism_polygon <block> <radius> <height> <vertices>', 
         _(block, radius, height, n_points) -> prism_polygon(player()~'pos', [block, radius, height, n_points, 'y', 0, null], null), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> f <flags>',
+    ['shape prism_polygon <block> <radius> <height> <vertices> f <flag>',
        _(block, radius, height, n_points, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, 'y', 0, null], flags), false],
     ['shape prism_polygon <block> <radius> <height> <vertices> <axis>',
        _(block, radius, height, n_points, axis) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], null), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> f <flags>',
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> f <flag>',
        _(block, radius, height, n_points, axis, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation>',
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees>',
        _(block, radius, height, n_points, axis, rotation) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, null], null), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> f <flags>',
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> f <flag>',
        _(block, radius, height, n_points, axis, rotation, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, null], flags), false],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement>',
-       _(block, radius, height, n_points, axis, rotation, replacement) ->prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], null),
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> <replacement>',
+       _(block, radius, height, n_points, axis, rotation, replacement) ->prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], null), 
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
+    ['shape prism_polygon <block> <radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> prism_polygon(player()~'pos', [block, radius, height, n_points, axis, rotation, replacement], flags), false],
     ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices>',
         _(block, outer_radius, inner_radius, height, n_points) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], null), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flags>',
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], flags), false],
     ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, 0, null], null), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flags>',
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation>',
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, null], null), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> f <flags>',
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, null], flags), false],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement>',
-       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) ->prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], null),
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement>',
+       _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) ->prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], null), 
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <rotation> <replacement> f <flags>',
+    ['shape prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> prism_star(player()~'pos', [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], flags), false],
 
     // we need a better way of changing 'settings'
-    ['settings quick_select <bool>', _(b) -> global_quick_select = b, false]
+    ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
+
+    ['structure list',['structure',null,'list',null],false],//todo help for this
+    ['structure load <structure>',['structure','load',null],false],
+    ['structure load <structure> f <flag>',_(s,f)->structure(s, 'load', {'flags'->f}),false],
+    ['structure load <structure> <pos>',_(s,p)->structure(s,'load',{'pos'->p}),false],
+    ['structure load <structure> <pos> f <flag>',_(s,p,f)->structure(s,'load',{'pos'->p,'flags'->f})],
+    ['structure delete <structure>',['structure','delete',null],false],
+    ['structure save <name>',['structure','save',null],false],
+    ['structure save <name> force',['structure','save',{'force'->true}],false],
+    ['structure save <name> entities',['structure','save',{'include_entities'->true}],false],
+    ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],false],
+    ['structure save <name> clipboard',['structure','save_clipboard',{'clipboard'->true}],false],
+    ['structure save <name> clipboard force',['structure','save_clipboard',{'clipboard'->true,'force'->true}],false],
+    ['structure copy <name>',['structure','copy',null],false],
+    ['structure copy <name> force',['structure','copy',{'force'->true}],false],
 ];
 
 // Proccess commands map for Carpet
@@ -268,13 +271,12 @@ __config()->{
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[1]},//todo decide on whether or not to add max undo limit
-        'degrees'->{'type'->'int','suggest'->[]},
+        'degrees'->{'type'->'int','suggest'->[0,90]},
         'axis'->{'type'->'term','options'->['x','y','z']},
         'saxis'->{'type'->'term', 'options'->['+x', '-x', '+y', '-y', '+z', '-z']},
-		'sides'->{'type'->'term', 'options'->['x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
-        'count'->{'type'->'int','min'->1,'suggest'->[]},
+        'stack'->{'type'->'int','min'->1,'suggest'->[]},
         'flag' -> {
             'type' -> 'term',
             'suggester' -> _(args) -> (
@@ -295,14 +297,20 @@ __config()->{
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'lang'->{'type'->'term','suggester'->_(ignored)->_get_lang_list()},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
+        'name'->{'type'->'string','suggest'->[]},
+        'structure'->{
+            'type'->'term',
+            'suggester' -> _(args) -> map(list_files('structures','nbt'),_-'structures/'),
+        },
         'radius'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'height'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'size'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
-        'rotation'->{'type'->'int','suggest'->[0, 90]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
-        'feature'->{'type'->'term','options'-> get_features_list()},
-		'brush'->{'type'->'term', 'suggester'->_(ignered)->keys(global_brushes)},
+        'feature'->{
+            'type'->'term',
+            'options'-> get_features_list()
+        },
     }
 };
 //player globals
@@ -673,14 +681,20 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 
 _parse_flags(flags) ->(
-	if(!flags, return({}));
-   symbols = split(flags);
-   if(symbols:0 != '-', return({}));
-   flag_set = {};
-   for(split(flags),
-       if(_~'[A-Z,a-z]',flag_set+=_);
-   );
-   flag_set;
+    if(!flags, return({}));
+    symbols = split(flags);
+    if(symbols:0 != '-', return({}));
+    flag_set = {};
+    for(split(flags),
+        if(_~'[A-Z,a-z]',flag_set+=_);
+    );
+    flag_set;
+);
+
+volume_blocks(pos1,pos2)->(
+    retlist=[];
+    volume(pos1,pos2,retlist+=_);
+    retlist
 );
 
 //Config Parser
@@ -704,7 +718,6 @@ global_lang_id='en_us';//default en_us (and fill it below)
 global_lang_keys = global_default_lang = {
     'language_code' ->    'en_us',
     'language' ->         'English',
-
 
     'help_header_prefix' ->       'c ----------------- [ ',
     'help_header_title' ->        'd World-Edit Help',
@@ -748,11 +761,6 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
-	'help_cmd_flood' ->			  'l Performs flood fill within selection',
-	'help_cmd_flood_tooltip' ->   'g Use [axis] to perform flat flood in the plane perpendicular to it',
-	'help_cmd_walls' -> 		  'l Set walls of the selection',
-	'help_cmd_walls_tooltip' ->   'l Use [sides] to choose which sides to generate',
-	'help_cmd_outline' -> 		  'l Outlines the selection with <block>',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -787,7 +795,7 @@ global_lang_keys = global_default_lang = {
     'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
     'copy_force' ->               'ri Overwriting previous clipboard selection with new one',
     'copy_success' ->             'gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
-    'paste_no_clipboard' ->       'ri Cannot paste, clipboard for player %s is empty',//player
+    'paste_no_clipboard' ->       'ri Cannot complete action, clipboard for player %s is empty',//player
 
     'langs_changed' ->            'gi Language changed to %s.',                             //language we changed to
     'langs_completeness' ->       'gi Note: %s translation is only %s%% translated: %s missing strings',//language, percent of present translations, no. of missing translations
@@ -799,28 +807,47 @@ global_lang_keys = global_default_lang = {
     'no_selection_error' ->             'r Missing selection for operation for player %s', //player
     'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand' ->                   'r Wand has to be a tool or weapon',
-	
-	'brush_item_tooltip' ->				'^g Click to get one!',
-    'brush_info_title' ->               'y Brush registered to ',
-	'brush_info_action' ->				'b \ Action: ',
-	'brush_info_params' ->				'b \ Parameters: ',
-	'brush_info_params_tooltip' ->		'^g See help to understand what each parameter is',
-	'brush_info_flags' ->				'b \ Flags: ',
-	'brush_info_no_flags' ->			'w no flags',
+
+    'new_brush' ->                      'wi %s is now a brush with action %s',
+    'brush_info' ->                     'w %s has action %s bound to it with parameters %s and flags %s',
     'brush_replaced' ->                 'w Replacing previous action for brush in %s',
-	'brush_new' ->						'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_empty_list' ->               'gi No brushes registerd so far',
-    'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
+    'brush_extra_info' ->               'ig For detailed info on a brush use /world-edit brush info',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks',
-	'no_brush_error'->					'r %s in not a brush', //item
+
+    'structure_list' ->                'w List of structures:',
+    'saved_structure' ->               'w Saved structure as %s.nbt',                                 //structure name
+    'existing_structure' ->            'r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
+    'structure_overwrite' ->           'ri Overwriting %s.nbt with a new structure',                  //structure name
+    'structure_delete_success' ->      'gi Successfully deleted %s.nbt',                              //structure name
+    'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
+    'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
+    //Block-setting actions
+    'action_cube'->                'cube',
+    'action_cuboid' ->             'cuboid',
+    'action_ellipsoid' ->          'ellipsoid',
+    'action_sphere' ->             'sphere',
+    'action_cylinder' ->           'cylinder',
+    'action_cone' ->               'cone',
+    'action_line' ->               'line',
+    'action_prism_polygon' ->      'prism_polygon',
+    'action_prism_star' ->         'prism_star',
+    'action_structure_paste' ->    'structure_paste',
+    'action_set' ->                'set',
+    'action_flood' ->              'flood',
+    'action_rotate' ->             'rotate',
+    'action_move' ->               'move',
+    'action_stack' ->              'stack',
+    'action_expand' ->             'expand',
+    'action_paste' ->              'paste',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
 
 _get_lang_list() -> (
-  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that doesn't have spaces
+  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that don't have spaces
 );
 
 _change_lang(lang)->(
@@ -903,26 +930,14 @@ brush(action, flags, ...args) -> (
         if(global_brushes,
             _print(player, 'brush_list_header');
             for(pairs(global_brushes),
-                print(player, format(
-					str('lb \ %s: ', item=_:0),
-					_translate('brush_item_tooltip'), 
-					str('!/give %s %s',player, held_item),
-					str('w %s ', _:1:0),
-					'db [i]',
-					str('^g Click for more info on %s brush', item),
-					str('!/world-edit brush info %s', item)
-				));
+                print(player, str('%s: %s', _:0, _:1:0));
             );
             _print(player, 'brush_extra_info'),
             _print(player, 'brush_empty_list')
         ),
         action=='info', //TODO improve info with better descriptions
-		if(args, held_item=args:0);
         if(has(global_brushes, held_item),
-            print(player, format( _translate('brush_info_title'), str('bl %s', held_item), _translate('brush_item_tooltip'), str('!/give %s %s',player, held_item) ));
-			print(player, format( _translate('brush_info_action'), str('w %s', (params=global_brushes:held_item):0) ));
-			print(player, format( _translate('brush_info_params'), str('w %s%s','',params:1), _translate('brush_info_params_tooltip') ));
-			print(player, format( _translate('brush_info_flags'), if(params:2, str('w %s', params:2), _translate('brush_info_no_flags') ) )),
+            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
             _error(player, 'no_brush_error', held_item)
         ),
         action=='reach',
@@ -936,34 +951,36 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_replaced', held_item)
         );
         global_brushes:held_item = [action, args, flags];
-		_print(player, 'brush_new', action, held_item);
 
         if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
     )
 );
-
 
 _brush_action(pos, brush) -> (
     [action, args, flags] = global_brushes:brush;
     call(action, pos, args, flags)
 );
 
-cube(pos, args, flags) -> _cuboid(pos, args, flags);
-cuboid(pos, args, flags) -> _cuboid(pos, args, flags);
-
-_cuboid(pos, args, flags) -> (
+cube(pos, args, flags) -> (
     [block, size, replacement] = args;
 
     half_size = (size-1)/2;
-	min_corner = pos-half_size;
-	max_corner = pos+half_size;
 
-	if(flags~'h', 
-		_walls_generic(min_corner, max_corner, 'xyz', block, replacement, flags),
-		volume(min_corner, max_corner, set_block(_, block, replacement, flags, {}))
-	);
+    _is_inside_shape(block) -> true;
+    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
 
-    add_to_history('cuboid',player())
+    add_to_history('action_cube',player())
+);
+
+cuboid(pos, args, flags) -> (
+    [block, size, replacement] = args;
+
+    half_size = (size-1)/2;
+
+    _is_inside_shape(block) -> true;
+    _fill_shape(pos-half_size, pos+half_size, block, replacement, flags);
+
+    add_to_history('action_cuboid',player())
 );
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
@@ -997,7 +1014,7 @@ ellipsoid(pos, args, flags) -> (
     _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
     _fill_shape(pos-radii, pos+radii, block, replacement, flags);
 
-    add_to_history('ellipsoid',player())
+    add_to_history('action_ellipsoid',player())
 );
 
 sphere(pos, args, flags) -> (
@@ -1010,7 +1027,7 @@ sphere(pos, args, flags) -> (
         _fill_shape(pos-radius, pos+radius, block, replacement, flags);
     );
 
-    add_to_history('sphere',player())
+    add_to_history('action_sphere',player())
 );
 
 cylinder(pos, args, flags) -> (
@@ -1025,7 +1042,7 @@ cylinder(pos, args, flags) -> (
         _fill_shape(pos-offset, pos+offset, block, replacement, flags);
     );
 
-    add_to_history('cylinder',player())
+    add_to_history('action_cylinder',player())
 );
 
 
@@ -1053,7 +1070,7 @@ cone(pos, args, flags) -> (
         _fill_shape(pos-offset, pos+offset, block, replacement, flags);
     );
 
-    add_to_history('cone',player())
+    add_to_history('action_cone',player())
 );
 
 _define_flat_distance_squared(axis, radius, size) -> (
@@ -1102,7 +1119,7 @@ line(pos, args, flags) -> (
         set_block(b, block, replacement, flags, {})
     );
 
-    add_to_history('line',player)
+    add_to_history('action_line',player)
 );
 
 paste_brush(pos, args, flags) -> (
@@ -1134,7 +1151,7 @@ prism_polygon(pos, args, flags) -> (
         for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
     );
 
-    add_to_history('prism_polygon',player())
+    add_to_history('action_prism_polygon',player())
 );
 
 prism_star(pos, args, flags) -> (
@@ -1163,7 +1180,7 @@ prism_star(pos, args, flags) -> (
         for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
     );
 
-    add_to_history('prism_star',player())
+    add_to_history('action_prism_star',player())
 );
 
 _get_circle_points(R, n, phase) -> (
@@ -1260,60 +1277,50 @@ feature(pos, args, flags) -> (
 
 //Command processing functions
 
-global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
-
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
+    success=null;
+    existing = block(pos);
 
-	if( !( 
-			(flags~'a' && block=='air' ) || 
-			((flags~'a' &&flags~'g') &&has(global_air_greenery, str(block))) 
-		),
-		success=null;
-		existing = block(pos);
+    // undo expects positions, not blocks
+    if(type(pos)!='list', pos=pos(pos));
 
-		// undo expects positions, not blocks
-		if(type(pos)!='list', pos=pos(pos));
+    if(!(nbt=extra:'nbt'),nbt={});
 
-		state = if(flags~'s',
-			bs_e=block_state(existing);
-			bs_b=block_state(block);
-			if(all(keys(bs_e), has(bs_b, _)),
-				bs_e, {}
-			);
-		, {});
-		if(flags~'d',
-			if(
-				block=='water' || (flags~'g' &&has(global_water_greenery, str(block))) , block='air',
-				block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
-			);
-		);
-		if(flags~'w' && (
-			(existing == 'water' && block_state(existing, 'level')=='0') ||
-			block_state(existing, 'waterlogged')=='true'
-			),
-			if(
-				block=='air', block='water', // "waterlog" air blocks
-				block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
-			);
-		);
-		if(flags~'g',
-			if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
-			if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
-		);
+    state = if(flags~'s' && all(keys(bs_e=block_state(existing)), has(block_state(block), _)),
+        bs_e,{}
+        );
 
+    if(flags~'d',
+        if(
+            block=='water', block='air',
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+        );
+    );
+    if(flags~'w' && (
+        (existing == 'water' && block_state(existing, 'level')=='0') ||
+        block_state(existing, 'waterlogged')=='true'
+        ),
+        if(
+            block=='air', block='water', // "waterlog" air blocks
+            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+        );
+    );
+    if(flags~'g',
+        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
+    );
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
-        postblock=if(flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); 
+    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)) && !(flags~'a'&&air(block)),
+        postblock=if(flags && flags~'u',without_updates(set(existing,block,state,encode_nbt(nbt))),set(existing,block,state,encode_nbt(nbt))); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
         prev_biome=biome(pos);
         if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
         success=existing;
         global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
     );
-		bool(success), //cos undo uses this
-		false
-	)
+    bool(success)//cos undo uses this
 );
 
 _block_matches(existing, block_predicate) ->
@@ -1347,7 +1354,7 @@ print_history()->(
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, 'entry_undo_1', (history~command)+1, command:'type');//printing twice so it goes on 2 separate lines
+        _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'));//printing twice so it goes on 2 separate lines
         _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
@@ -1392,12 +1399,216 @@ redo(moves)->(
     global_affected_blocks=[];
 );
 
+structure(name, action, args)->(
+    p=player();
+    if(action=='save',
+        if(read_file('structures/'+name,'nbt'),
+            if(args:'force',
+                _print(p,'structure_overwrite',name);
+                delete_file('structures/'+name,'nbt'),
+                _error(p,'existing_structure',name)
+            )
+        );
+
+        [pos1,pos2]=_get_current_selection(player);
+        data={};
+        blocks=volume_blocks(pos1,pos2);
+
+        pos_diff=map(pos1-pos2,abs(_)+1);
+
+        //mc nbt data structure (cos schematic have weird format which is unreplicable in scarpet)
+        min_pos=map(pos1,min(_,pos2:_i));
+        avg_pos=(pos1+pos2)/2;
+        entities=if(args:'include_entities',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);
+
+        palette_map={};
+
+        states=[];
+        key_map(block)->(
+            map={'Name'->if((str(block)-'minecraft:')~':',str(block),str('minecraft:%s',block))};
+            if(block_state(block),put(map,'Properties',block_state(block)));
+            map
+        );
+
+        for(blocks,
+            palette_map:key_map(_)+=1;
+
+            state_map={
+                'pos'->(pos(_)-min_pos),
+                'state'->(keys(palette_map)~key_map(_))
+            };
+            if((nbt=parse_nbt(block_data(_)))!='null',
+                delete(nbt,'x');
+                delete(nbt,'y');
+                delete(nbt,'z');
+                put(state_map,'nbt',nbt)
+            );
+            states+=state_map
+        );
+
+        data={
+            'blocks'->states,
+            'entities'->entities,
+            'palette'->keys(palette_map),
+            'size'->{
+                'x'->pos_diff:0,
+                'y'->pos_diff:1,
+                'z'->pos_diff:2
+            },
+            'DataVersion'->system_info('game_data_version')
+        };
+
+        write_file('structures/'+name,'nbt',encode_nbt(data));
+        _print(p,'saved_structure',name),
+
+        action=='save_clipboard',
+
+        if(read_file('structures/'+name,'nbt'),
+            if(args:'force',
+                _print(p,'structure_overwrite',name);
+                delete_file('structures/'+name,'nbt'),
+                _error(p,'existing_structure',name)
+            )
+        );
+
+        if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
+
+        clipboard=global_clipboard;
+        delete(clipboard,0);//cos first arg is entities
+
+        entities=global_clipboard:0;
+
+        pos1=clipboard:0:0;
+        pos2=get(clipboard,-1):0;
+
+
+        pos_diff=map(pos1-pos2,abs(_)+1);
+
+        min_pos=map(pos1,min(_,pos2:_i));
+        avg_pos=(pos1+pos2)/2;
+
+        entities=entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));
+        entities_list = [];
+
+        entities_list = map(entities, {
+            'nbt'->_~'nbt',
+            'pos'->pos(_)-min_pos,
+            'blockPos'->map(pos(_)-min_pos, round(_))
+        });
+
+        palette_map={};
+
+        states=[];
+        key_map(block)->(
+            map={'Name'->if((str(block:0)-'minecraft:')~':',str(block:0),str('minecraft:%s',block:0))};
+            if(block:2,put(map,'Properties',block:2));
+            map
+        );
+
+        for(clipboard,
+            palette_map:key_map(_)+=1;
+
+            state_map={
+                'pos'->(_:0-min_pos),
+                'state'->(keys(palette_map)~key_map(_))
+            };
+            if((nbt=parse_nbt(_:3))!='null',
+                delete(nbt,'x');
+                delete(nbt,'y');
+                delete(nbt,'z');
+                put(state_map,'nbt',nbt)
+            );
+            states+=state_map
+        );
+
+        data={
+            'blocks'->states,
+            'entities'->entities_list,
+            'palette'->keys(palette_map),
+            'size'->{
+                'x'->pos_diff:0,
+                'y'->pos_diff:1,
+                'z'->pos_diff:2
+            },
+            'DataVersion'->system_info('game_data_version')
+        };
+
+        write_file('structures/'+name,'nbt',encode_nbt(data));
+        _print(p,'saved_structure',name),
+
+        action=='copy',
+        if(!(file=read_file('structures/'+name,'nbt')),
+            _error(p,'structure_load_fail',name)
+        );
+
+        if(global_clipboard,
+            if(args:'force',
+                _print(player,'copy_force');
+                global_clipboard=[],
+                _error(player,'copy_clipboard_not_empty')
+            )
+        );
+
+        file=parse_nbt(file);
+        palette=file:'palette';
+        blocks=file:'blocks';
+        entities=file:'entities';
+
+        global_clipboard+=entities;//todo in code cleanup for copy, not rly functional rn
+
+        for(blocks,
+            state=palette:(_:'state');
+            global_clipboard+=[_:'pos',state:'Name',state,null]
+        );
+
+        _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0)),
+
+        action=='load',
+        if(!(file=read_file('structures/'+name,'nbt')),
+           _error(p,'structure_load_fail',name)
+        );
+
+        flags=_parse_flags(args:'flags');
+
+        pos=if(args:'pos',args:'pos',p~'pos');
+        file=parse_nbt(file);
+        palette=file:'palette';
+        blocks=file:'blocks';
+        entities=file:'entities';
+
+        if(flags~'e',
+            for(entities,
+                nbt = parse_nbt(_:'nbt');
+                spawn(nbt:'id', _:'pos' + pos, nbt)
+            )
+        );
+
+        for(blocks,
+            state=palette:(_:'state');
+            set_block(_:'pos'+pos,state:'Name',null,flags,{'state'->state:'Properties','nbt'->_:'nbt'});
+        );
+
+        add_to_history('action_structure_paste',p),
+
+        action=='delete',
+        if(delete_file('structures/'+name,'nbt'),
+            _print(p,'structure_delete_success',name),
+            _error(p,'structure_delete_fail',name)
+        ),
+
+        action=='list',
+        _print(p,'structure_list');
+        strucs=list_files('structures','nbt');
+        print(str(strucs)-'['-']')
+    )
+);
+
 set_in_selection(block,replacement,flags)->
 (
     player=player();
     [pos1,pos2]=_get_current_selection(player);
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
-    add_to_history('fill', player)
+    add_to_history('action_set', player)
 );
 
 
@@ -1454,7 +1665,7 @@ _flood_generic(block, axis, start, flags) ->
         );
     );
 
-    add_to_history('flood', player())
+    add_to_history('action_flood', player())
 );
 
 rotate(centre, degrees, axis)->(
@@ -1499,7 +1710,7 @@ rotate(centre, degrees, axis)->(
         set_block(_,rotation_map:_,null,null,{})
     );
 
-    add_to_history('rotate', player)
+    add_to_history('action_rotate', player)
 );
 
 move(new_pos,flags)->(
@@ -1528,10 +1739,10 @@ move(new_pos,flags)->(
         pos=old_pos-min_pos+new_pos;
         delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
         spawn(_~'type',pos,encode_nbt(nbt));
-        if(move,modify(_,'remove'))
+        modify(_,'remove')
     );
 
-    add_to_history('move', player)
+    add_to_history('action_move', player)
 );
 
 stack(count,direction,flags) -> (
@@ -1551,7 +1762,7 @@ stack(count,direction,flags) -> (
         );
     );
 
-    add_to_history('stack', player);
+    add_to_history('action_stack', player);
 );
 
 
@@ -1567,9 +1778,9 @@ expand(centre, magnitude)->(
     );
 
     for(expand_map,
-        set_block(_,expand_map:_,null,null, {})
+        set_block(_,expand_map:_,null,null,{})
     );
-    add_to_history('expand',player)
+    add_to_history('action_expand',player)
 );
 
 _copy(origin, force)->(
@@ -1586,10 +1797,21 @@ _copy(origin, force)->(
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
-    global_clipboard+=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//always gonna have
+
+    entities = entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));
+
+    for(entities,//if its empty, this just wont run, no errors
+        nbt=parse_nbt(_~'nbt');
+        old_pos=pos(_);
+        pos=old_pos-min_pos;
+        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
+        {'type'->_~'type','pos'->pos,'nbt'->nbt}
+    );
+
+    global_clipboard+entities;//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
-        global_clipboard+=[pos(_)-origin,block(_),biome(_)]//all the important stuff, can add flags later if we want
+        global_clipboard+=[centre-pos(_),block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
     );
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
@@ -1602,61 +1824,17 @@ paste(pos, flags)->(
     flags=_parse_flags(flags);
 
     entities=global_clipboard:0;
-    for(range(1,length(global_clipboard)),//cos gotta skip the entity one
-        [pos_vector, old_block, old_biome]=global_clipboard:_;
-        new_pos=pos+pos_vector;
 
-    	set_block(new_pos, old_block, null, flags, {'biome'->old_biome})
+    if(flags~'e',
+        for(entities,
+            spawn(_:'type',_:'pos',_:'nbt')
+        )
     );
-    add_to_history('paste',player)
-);
 
-walls(block, sides, replacement, flags) -> (
-	player = player();
-    [pos1,pos2]=_get_current_selection(player);
-	flags=_parse_flags(flags);
-	
-	_walls_generic(pos1, pos2, sides, block, replacement, flags);
-	
-    add_to_history('walls',player)
-);
-
-_walls_generic(min_corner, max_corner, sides, block, replacement, flags) -> (
-	
-	[ox, oy, oz] = max_corner-min_corner;
-	
-	if(sides~'z',
-		volume(min_corner, min_corner+[ox, oy, 0], set_block(_, block, replacement, flags, {}));
-		volume(max_corner, max_corner-[ox, oy, 0], set_block(_, block, replacement, flags, {}))
-	);
-	if(sides~'x',
-		volume(min_corner, min_corner+[0, oy, oz], set_block(_, block, replacement, flags, {}));
-		volume(max_corner, max_corner-[0, oy, oz], set_block(_, block, replacement, flags, {}))
-	);
-	if(sides~'y',
-		volume(min_corner, min_corner+[ox, 0, oz], set_block(_, block, replacement, flags, {}));
-		volume(max_corner, max_corner-[ox, 0, oz], set_block(_, block, replacement, flags, {}))
-	)
-);
-
-outline(block, replafement, flags) -> (
-	player = player();
-    [pos1,pos2]=_get_current_selection(player);
-	flags=_parse_flags(flags);
-	
-	[ox, oy, oz] = pos2-pos1;
-	offsets = [ [ox, 0, 0], [0, oy, 0], [0, 0, oz] ];
-	_fill_offset(pos, offset, outer(block), outer(replacement), outer(flags))-> (
-		volume(pos, pos+offset, set_block(_, block, replacement, flags, {}))
-	);
-	
-	for(offsets,
-		_fill_offset(pos1, _);
-		_fill_offset(pos2, _*-1);
-		
-		_fill_offset(pos1+_, offsets:(_i+1));
-		_fill_offset(pos1+_, offsets:(_i+2));
-	);
-	
-    add_to_history('outline',player)	
+    for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
+        [pos_vector, old_block, old_states, old_nbt, old_biome]=global_clipboard:_;
+        new_pos=pos+pos_vector;
+        set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
+    );
+    add_to_history('action_paste',player)
 );
