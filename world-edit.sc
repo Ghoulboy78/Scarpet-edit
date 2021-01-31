@@ -148,6 +148,22 @@ base_commands_map = [
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
+    ['brush spray <block>', _(block) -> brush('spray', null, block, 12, 100, null), false],
+    ['brush spray <block> <size_degrees>', _(block, size) -> brush('spray', null, block, size, 100, null), false],
+    ['brush spray <block> <size_degrees> <count>', _(block, size, count) -> brush('spray', null, block, size, count, null), false],
+    ['brush spray <block> f <flag>', _(block, flag) -> brush('spray', flag, block, 12, 100, null), false],
+    ['brush spray <block> <size_degrees> f <flag>', _(block, size, flag) -> brush('spray', flag, block, size, 100, null), false],
+    ['brush spray <block> <size_degrees> <count> f <flag>', _(block, size, count, flag) -> brush('spray', flag, block, size, count, null), false],
+    ['brush spray held_item', _() -> brush('spray', null, null, 12, 100, null), false],
+    ['brush spray held_item <size_degrees>', _(size) -> brush('spray', null, null, size, 100, null), false],
+    ['brush spray held_item <size_degrees> <count>', _(size, count) -> brush('spray', null, null, size, count, null), false],
+    ['brush spray held_item f <flag>', _(flag) -> brush('spray', flag, null, 12, 100, null), false],
+    ['brush spray held_item <size_degrees> f <flag>', _(size, flag) -> brush('spray', flag, null, size, 100, null), false],
+    ['brush spray held_item <size_degrees> <count> f <flag>', _(size, count, flag) -> brush('spray', flag, null, size, count, null), false],
+    ['brush spray <block> <size_degrees> <count> <replacement>', _(block, size, count, replacement) -> brush('spray', null, block, size, count, replacement), false],
+    ['brush spray <block> <size_degrees> <count> <replacement> f <flag>', _(block, size, count, replacement, flag) -> brush('spray', flag, block, size, count, replacement), false],
+    ['brush spray held_item <size_degrees> <count> <replacement>', _(size, count, replacement) -> brush('spray', null, null, size, count, replacement), false],
+    ['brush spray held_item <size_degrees> <count> <replacement> f <flag>', _(size, count, replacement, flag) -> brush('spray', flag, null, size, count, replacement), false],
 
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
     ['shape cube <block> <size> f <flag>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
@@ -294,6 +310,7 @@ __config()->{
             ),
         },
         'amount'->{'type'->'int'},
+        'count'->{'type'->'int', 'min'->1},
         'magnitude'->{'type'->'float','suggest'->[1,2,0.5]},
         'lang'->{'type'->'term','suggester'->_(ignored)->_get_lang_list()},
         'page'->{'type'->'int','min'->1,'suggest'->[1,2,3]},
@@ -1274,6 +1291,69 @@ feature(pos, args, flags) -> (
     [what] = args;
     plop(pos, what)
 );
+
+
+// Some algebra stuff needed for the spray paint
+_direction(yaw, pitch) -> [-sin(yaw)*cos(pitch), -sin(pitch), cos(pitch)*cos(yaw)];
+_normalize(vec) -> vec / sqrt(reduce(vec, _a + _*_, 0));
+_dot_prod(v, w) -> reduce(v*w, _a + _, 0);
+_cross_prod(v, w) -> [v:1*w:2 - v:2*w:1, v:2*w:0 - v:0*w:2, v:0*w:1 - v:1*w:0];
+_outer_prod(v, w) -> map(w, v*_);
+_corss_matrix(vec) -> (
+	[x, y, z] = vec;
+	[[0, -z, y], [z, 0, -x], [-y, x, 0]]
+);
+
+
+spray(pos, args, flags)->(
+
+	[block, size, count, replacement] = args;
+
+	player = player();
+	if(block==null, block=query(player, 'holds', 'offhand'):0);
+
+	// get player looking direction
+	yaw = player~'yaw';
+	pitch = player~'pitch';
+	dir = _direction(yaw, pitch);
+
+	// set up stuff to rotat the random points
+	id3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+	u = _normalize(_cross_prod([0, 0, 1], dir));
+	angle = acos(_dot_prod(dir, [0, 0, 1]));
+	rot_matrix = cos(angle) * id3 + sin(angle) * _corss_matrix(u) + (1-cos(angle)) * _outer_prod(u, u);
+
+	loop(count,
+		
+		// get a random point in the spherical cap around [0, 0, 1]
+		z = rand(1-cos(size)) + cos(size);
+		phi = rand(360);
+		x = sqrt(1-z*z) * cos(phi);
+		y = sqrt(1-z*z) * sin(phi);
+		random_dir = [x, y, z];
+
+		// rotate the point to be around the looking direction
+		rotated_dir_matrix = rot_matrix*[random_dir,random_dir,random_dir];//cos matrix multiplication dont work in scarpet, yet...
+        rotated_dir = map(rotated_dir_matrix, reduce(_, _a+_, 0));
+
+        // set start and end points and slope of the ray trace
+		start = player~'pos' + [0, player~'eye_height', 0];
+		end = rotated_dir*global_brush_reach + start;
+
+		slope = end-start;
+	    max_size = max(map(slope, abs(_)));
+	    slope = slope / max_size;
+
+	    // ray trice until it finds a non air block
+		scanned_block = start;
+		while(air(scanned_block),global_brush_reach,
+			scanned_block = slope * _ + start;
+		);
+		set_block(scanned_block, block, replacement, flags, {})
+
+	);
+);
+
 
 //Command processing functions
 
