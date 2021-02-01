@@ -61,6 +61,16 @@
   "copy_force": "ri Sovrascrivendo selezione precedenti con la selezione nuova",
   "copy_success": "gi Copiati con successo %s blocchi e %s entità agli appunti",
   "paste_no_clipboard": "ri Non si può eseguire questa azione, non ci sono appunti per il giocatore %s",
+  
+  "langs_changed": "gi Lingua cambiata a %s",
+  
+  "saved_structure": "w Salvato struttura come %s.nbt",
+  "structure_list": "w Lista di strutture:",
+  "structure_delete_success": "gi Cancellato con successo %s.nbt",
+  "existing_structure": "r Struttura %s.nbt già esistente, usa 'force' per sovrascriverla",
+  "structure_delete_fail": "ti Cancellazione di %s.nbt fallita, non esiste nessun file con questo nome",
+  "structure_overwrite": "ri Soprascrivendo %s.nbt con una nuova struttura",
+  "structure_load_fail": "ti Caricamento di %.nbt fallito, non esiste nessun file con questo nome",
 
   "move_selection_no_player_error": "r Non puoi muovere la selezione nella direzione di un giocatore senza il giocatore",
   "no_selection_error": "r Selezione mancante per l'operazione per il giocatore %s",

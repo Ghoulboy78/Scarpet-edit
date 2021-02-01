@@ -6,3 +6,7 @@
 
 .vscode/
 .project
+
+# Testing
+
+test.*

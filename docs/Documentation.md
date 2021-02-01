@@ -11,9 +11,11 @@ The main contributors to this project are:
  - Firigion     (GitHub: Firigion, Discord: Firigion#7498)
  - replaceitem  (GitHub: replaceitem, Discord: replaceitem#9118)
  - BisUmTo      (GitHub: BisUmTo, Discord: BisUmTo#8383)
+ - altrisi	 (GitHub: altrisi, Discord: altrisi#9772)
 
 ## How to use
-First, ensure you are running fabric-carpet 1.4.22 or above, or the area selection will not work.
+If you are running an outdated version of fabric-carpet, WorldEdit for scarpet won't work. Currently, the oldest compatible
+version is: carpet 1.4.22
 
 ### Area selection
 
@@ -23,24 +25,22 @@ It will pop up a grid, and it will follow your mouse (hovering 5 blocks in midai
 Left clicking again will reselect the whole box.
 
 ### Commands:
- - `/world-edit fill <block>` -> Fills selected area with given block
- - `/world-edit fill <block> <replacement>` -> Same as above, but also replacing blocks
- - `/world-edit undo` -> Undoes last move performed by the player. This can be redone with `/world-edit redo`
- - `/world-edit undo all` -> Undoes entire undo history
- - `/world-edit undo <moves>` -> Undoes specific number of moves
- - `/world-edit undo history` -> Displays entire undo history
- - `/world-edit redo` -> Redoes a move undone by the player. Also shows up in undo history
- - `/world-edit redo all` -> Redoes all undone moves
- - `/world-edit redo <moves>` -> Redoes specific number of moves
- - `/world-edit wand` -> Sets wand to held item, or if your hand is empty, gives you the wand.
- - `/world-edit wand <wand>` -> Sets wand to specified item
+ - `/world-edit fill <block> [replacement]` -> Fills selection with `<block>`. If `[replacement]` is given, it only fills
+    replacing that block or block tag.
+ - `/world-edit undo [moves]` -> Undoes last move performed by player or as many as specified by `[moves]`. This can be
+    redone with `/world-edit redo`.
+ - `/world-edit undo all` -> Undoes entire undo history. Careful!
+ - `/world-edit undo history` -> Displays entire undo history.
+ - `/world-edit redo [moves]` -> Redoes `[moves]` ammount undone by the player, or one if not specified. Also shows up in
+    undo history.
+ - `/world-edit redo all` -> Redoes all undone moves.
+ - `/world-edit wand <wand>` -> Sets wand to held item, or if your hand is empty, gives you the wand. With optional `[wand]`
+    argument, it sets wand to specified item
  - `/world-edit rotate <pos> <degrees> <axis>` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
     `y` or `z`.
- - `/world-edit stack` -> Stacks selection once in direction player is looking in
- - `/world-edit stack <stackcount>` -> Stacks selection specified number of times in direction player is looking in
- - `/world-edit stack <stackcount> <direction>` -> Stacks selection specified number of times in direction specified by
-    player
- - `/world-edit expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by the player, from pos `pos`
+ - `/world-edit stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise
+    specfied. By defaults, it stacks one time.
+ - `/world-edit expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
  - `/world-edit move <pos>` -> Moves selection to `pos`
  - `/world-edit copy` -> Copies selection to clipboard. By default, will not override the existing clipboard (can be changed
     by adding keyword `force`), and will also take the positions relative to position of player.
@@ -49,11 +49,35 @@ Left clicking again will reselect the whole box.
  - `/world-edit paste` -> Pastes selection relative to player position. Be careful in case you didn't choose a wise spot
     when making the selection.
  - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
- - `/world-edit flood <block>` -> Performs a flood fill (fill connected volume) within the selection and starting at the 
-    player's position. Can both "fill" what used to be air or replace some other block.
+ - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
+    player's position. Can both "fill"
+ what used to be air or replace some other block.
  - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
     instance, will fill the horizontal plane.
- - `/world-edit shape ...` -> Generates a shape centered around the player. See brushes for all options and parameters.
+ - `/world-edit structure list` -> Lists all available structures. Currently, they are all in the same file as the lang 
+    files, this may change soon. You can add other structure files, and they will load properly 
+ - `/world-edit structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
+    position if not specified.
+ - `/world-edit structure save <name> entities?|force?` -> Saves current selection to a `.nbt` file compatible with vanilla 
+    structure blocks. `entities` will make it save entities, and `force` will override an existing structure with the same
+    name.
+ - `/world-edit structure save <name> clipboard force?` -> Saves current clipboard to a `.nbt` file compatible with vanilla 
+    structure blocks.`force` will override an existing structure with the same name. Gives an error if no clipboard is 
+    present. Will also copy entities.
+ - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
+ - `/world-edit copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or
+    the curren player position, if not. By default, will not override the existing clipboard (can be changed by adding
+    keyword `force`), and will also take the positions relative to position of player.
+ - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase 
+    you didnt' choose a wise spot making the selection.
+ - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
+    player's position. Can both "fill" used to be air or replace some other block.
+ - `/world-edit flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for
+    instance, will fill the horizontal plane.
+ - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defaults
+    to ony vertical walls (`xz`).
+ - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
+ - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
 
 #### Brushes
 
@@ -114,3 +138,4 @@ Available flags:
  - `-a` -> Pasting a structure will not paste the air blocks within the structure.
  - `-s` -> Preserves block states when setting blocks
  - `-g` -> When replacing air or water, greenery corresponding to each medium will be replaced too
+ - `-h` -> When creating a shape, makes it hollow
