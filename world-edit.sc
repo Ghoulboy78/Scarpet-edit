@@ -62,7 +62,8 @@ base_commands_map = [
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
-    ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
+	['brush info', ['brush', 'info', null], false],
+    ['brush info <brush>', _(brush)-> brush('info', null, brush), [0, 'help_cmd_brush_info', null, null]],
     ['brush reach', ['brush', 'reach', null], false],
     ['brush reach <length>', _(length)-> brush('reach', null, length), [0, 'help_cmd_brush_reach', null, null]],
     ['brush cube <block> <size>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
@@ -324,11 +325,9 @@ __config()->{
         'size'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
-        'feature'->{
-            'type'->'term',
-            'options'-> get_features_list()
-        },
-    }
+        'feature'->{'type'->'term','options'-> get_features_list()},
+		'brush'->{'type'->'term', 'suggester'->_(ignered)->keys(global_brushes)},
+	}
 };
 //player globals
 
@@ -827,14 +826,22 @@ global_lang_keys = global_default_lang = {
     'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand' ->                   'r Wand has to be a tool or weapon',
 
-    'new_brush' ->                      'wi %s is now a brush with action %s',
-    'brush_info' ->                     'w %s has action %s bound to it with parameters %s and flags %s',
+   
+	'brush_item_tooltip' ->				'^g Click to get one!',
+    'brush_info_title' ->               'y Brush registered to ',
+	'brush_info_action' ->				'b \ Action: ',
+	'brush_info_params' ->				'b \ Parameters: ',
+	'brush_info_params_tooltip' ->		'^g See help to understand what each parameter is',
+	'brush_info_flags' ->				'b \ Flags: ',
+	'brush_info_no_flags' ->			'w no flags',
     'brush_replaced' ->                 'w Replacing previous action for brush in %s',
+	'brush_new' ->						'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_empty_list' ->               'gi No brushes registerd so far',
-    'brush_extra_info' ->               'ig For detailed info on a brush use /world-edit brush info',
+    'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
-    'brush_reach' ->                    'w Brush reach is currently %d blocks',
+    'brush_reach' ->                    'w Brush reach is currently %d blocks', // reach
+	'no_brush_error'->					'r %s in not a brush', //item
     'no_longer_brush' -> 				'w %s is no longer a brush',
 
     'structure_list' ->                'w List of structures:',
@@ -868,7 +875,7 @@ task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a templ
 
 
 _get_lang_list() -> (
-  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that don't have spaces
+  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that doesn't have spaces
 );
 
 _change_lang(lang)->(
@@ -964,16 +971,35 @@ brush(action, flags, ...args) -> (
         ),
         action=='list', //TODO imprvove list with interactiveness
         if(global_brushes,
+        	print(player, '');
             _print(player, 'brush_list_header');
             for(pairs(global_brushes),
-                print(player, str('%s: %s', _:0, _:1:0));
+				print(player, format(
+					str('lb \ %s: ', item=_:0),
+					_translate('brush_item_tooltip'), 
+					str('!/give %s %s',player, item),
+					str('w %s ', _:1:0),
+					'db [i]',
+					str('^g Click for more info on %s brush', item),
+					str('!/world-edit brush info %s', item)
+				));
             );
             _print(player, 'brush_extra_info'),
             _print(player, 'brush_empty_list')
         ),
         action=='info', //TODO improve info with better descriptions
+        if(args, held_item=args:0);
         if(has(global_brushes, held_item),
-            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
+        	print(player, '');
+        	print(player, format( _translate('brush_info_title'), str('bl %s', held_item), _translate('brush_item_tooltip'), str('!/give %s %s',player, held_item) ));
+			print(player, format( _translate('brush_info_action'), str('w %s', (params=global_brushes:held_item):0) ));
+			if( (param_names=global_brushes_parameters_map:(params:0)) == null,
+				 print(player, format( _translate('brush_info_params'), str('w %s%s','',params:1), _translate('brush_info_params_tooltip') )),
+				 _print(player, 'brush_info_params');
+				 for(param_names, print(player, str('  %s: %s', _, params:1:_i)))
+			);
+			print(player, format( _translate('brush_info_flags'), if(params:2, str('w %s', params:2), _translate('brush_info_no_flags') ) )),
+			// if it's not a brush
             _error(player, 'no_brush_error', held_item)
         ),
         action=='reach',
@@ -987,6 +1013,7 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_replaced', held_item)
         );
         global_brushes:held_item = [action, args, flags];
+        _print(player, 'brush_new', action, held_item);
 
         if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
     )
