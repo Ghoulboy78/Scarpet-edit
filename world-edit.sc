@@ -160,9 +160,9 @@ base_commands_map = [
     ['brush spray held_item f <flag>', _(flag) -> brush('spray', flag, null, 12, 100, null), false],
     ['brush spray held_item <size_degrees> f <flag>', _(size, flag) -> brush('spray', flag, null, size, 100, null), false],
     ['brush spray held_item <size_degrees> <count> f <flag>', _(size, count, flag) -> brush('spray', flag, null, size, count, null), false],
-    ['brush spray <block> <size_degrees> <count> <replacement>', _(block, size, count, replacement) -> brush('spray', null, block, size, count, replacement), false],
+    ['brush spray <block> <size_degrees> <count> <replacement>', _(block, size, count, replacement) -> brush('spray', null, block, size, count, replacement), [1, 'help_cmd_spray', 'help_cmd_brush_generic', null]],
     ['brush spray <block> <size_degrees> <count> <replacement> f <flag>', _(block, size, count, replacement, flag) -> brush('spray', flag, block, size, count, replacement), false],
-    ['brush spray held_item <size_degrees> <count> <replacement>', _(size, count, replacement) -> brush('spray', null, null, size, count, replacement), false],
+    ['brush spray held_item <size_degrees> <count> <replacement>', _(size, count, replacement) -> brush('spray', null, null, size, count, replacement), [0, 'help_cmd_spray_held', 'help_cmd_brush_generic', null]],
     ['brush spray held_item <size_degrees> <count> <replacement> f <flag>', _(size, count, replacement, flag) -> brush('spray', flag, null, size, count, replacement), false],
 
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
@@ -794,6 +794,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_flood' ->     'l Register brush to perfrm flood fill out of [block] starting on right clicked block',
     'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
     'help_cmd_brush_feature' ->   'l Register brush to plop feature',
+    'help_cmd_spray' -> 	  	  'l Register brush to spray paint with given radius an point count',
+    'help_cmd_spray_held' -> 	  'l Register brush to spray paint out of block held in the offhand',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
@@ -833,6 +835,7 @@ global_lang_keys = global_default_lang = {
     'brush_extra_info' ->               'ig For detailed info on a brush use /world-edit brush info',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks',
+    'no_longer_brush' -> 				'w %s is no longer a brush',
 
     'structure_list' ->                'w List of structures:',
     'saved_structure' ->               'w Saved structure as %s.nbt',                                 //structure name
@@ -859,6 +862,7 @@ global_lang_keys = global_default_lang = {
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
+    'action_spray' -> 			   'spray',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
@@ -931,6 +935,20 @@ _error(player, key, ... replace)->
 
 global_brushes = {};
 global_brush_reach = 100;
+global_brushes_parameters_map = {
+	'cube'-> ['block', 'size', 'replacement'],
+	'cuboid'-> ['block', 'size', 'replacement'],
+	'shpere' -> ['block', 'radius', 'replacement'],
+	'ellipsoid' -> ['block', 'radii', replacement],
+	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replacement'],
+	'cone' -> ['block', 'radius', 'height', 'saxis', 'replacement'],
+	'prism_polygon' -> ['block', 'radius', 'height', 'vertices', 'axis', 'rotation', 'replacement'],
+	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'vertices', 'axis', 'rotation', 'replacement'],
+	'line' -> ['block', 'length', 'replacement'],
+	'flood' -> ['block', 'radius', 'axis'],
+	'feature' -> ['what'],
+	'spray' -> ['block', 'size', 'count', 'replacement'],
+};
 
 brush(action, flags, ...args) -> (
     player = player();
@@ -940,7 +958,8 @@ brush(action, flags, ...args) -> (
     if(
         action=='clear',
         if(has(global_brushes, held_item),
-            delete(global_brushes, held_item),
+            delete(global_brushes, held_item);
+            _print(player, 'no_longer_brush', held_item),
             _error(player, 'no_brush_error', held_item)
         ),
         action=='list', //TODO imprvove list with interactiveness
@@ -1306,6 +1325,11 @@ _corss_matrix(vec) -> (
 
 
 spray(pos, args, flags)->(
+	
+	// because for some reason, the event is called twice
+	if(global_sprayed_tick == tick_time(), return());
+	global_sprayed_tick = tick_time();
+
 
 	[block, size, count, replacement] = args;
 
@@ -1352,6 +1376,7 @@ spray(pos, args, flags)->(
 		set_block(scanned_block, block, replacement, flags, {})
 
 	);
+	add_to_history('action_spray', player);
 );
 
 
