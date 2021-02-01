@@ -60,6 +60,10 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
+    ['drain', ['_drain', 25, null], false],
+    ['drain <radius>', ['_drain', null], [1, 'help_cmd_drain', 'help_cmd_drain_tooltip', null]],
+    ['drain f <flag>', _(flag)->_drain(25, flag), false],
+    ['drain <radius> f <flag>', '_drain', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
@@ -842,6 +846,7 @@ global_lang_keys = global_default_lang = {
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
+    'action_drain' -> 			   'drain',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
@@ -1098,7 +1103,7 @@ flood(pos, args, flags) -> (
         _sq_distance(pos, start) <= radius*radius
     );
 
-    _flood_generic(block, axis, start, flags);
+    _flood_generic(block, axis, start, _parse_flags(flags));
 );
 
 line(pos, args, flags) -> (
@@ -1625,13 +1630,13 @@ flood_fill(block, axis, flags) ->
     _flood_tester(pos, outer(min_pos), outer(max_pos)) -> (
         all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
     );
-    _flood_generic(block, axis, start, flags);
+    _flood_generic(block, axis, start, _parse_flags(flags));
 
 );
 
 _flood_generic(block, axis, start, flags) ->
 (
-
+	print(flags);
     // Define function to request neighbours perpendiular to axis
     if(
         axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
@@ -1641,12 +1646,25 @@ _flood_generic(block, axis, start, flags) ->
     );
 
     interior_block = block(start);
+
+    _is_interior(block, outer(interior_block)) -> block==interior_block;
+    // If flag -g is set, treat greenery as interior
+    if(flags~'g',
+    	if( 
+    		interior_block == 'air',
+    			print('is_air');
+    			_is_interior(block) -> (air(block) || has(global_air_greenery, str(block))),
+    		interior_block == 'water',
+    			_is_interior(block) -> (block=='water' || has(global_water_greenery, str(block))),
+    	)
+    );
+
     if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
 
     visited = {start->null};
     queue = [start];
 
-    while(length(queue)>0, 10000,
+    while(length(queue)>0, 100000,
 
         current_pos = queue:0;
         delete(queue, 0);
@@ -1655,9 +1673,9 @@ _flood_generic(block, axis, start, flags) ->
             current_neighbour = _;
             // check neighbours, add the non visited ones to the visited set
             if(!has(visited, current_neighbour),
-                visited:current_neighbour = null;
+                visited += current_neighbour;
                 // if the block is not too far and is interior, delete it and add to queue to check neighbours later
-                if( block(_)==interior_block && _flood_tester(_),
+                if( _is_interior(block(_)) && _flood_tester(_),
                     queue:length(queue) = current_neighbour;
                     set_block(current_neighbour, block, null, flags, {})
                 );
@@ -1667,6 +1685,39 @@ _flood_generic(block, axis, start, flags) ->
 
     add_to_history('action_flood', player())
 );
+
+_drain(radius, flags) -> (
+	player = player();
+
+	if( (start_bl = block(pos(player))) == 'lava' || start_bl == 'water',
+
+		flags = _parse_flags(flags);
+		start =  pos(start_bl);
+
+		// check if inside selection, if there is a selection
+		if( length(global_selection) < 2,
+			no_selection = true,
+			// else, there is a selection
+			no_selection = false;
+		    [pos1,pos2]=_get_current_selection(player);
+		    min_pos = map(pos1, min(_, pos2:_i));
+		    max_pos = map(pos1, max(_, pos2:_i));
+		    // test if inside selection
+		    _is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
+		        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
+		    );
+		);
+
+	    if(!no_selection &&_is_inside_selection(player~'pos'), 
+	    	_flood_tester(pos)->_is_inside_selection(pos),
+	    	_flood_tester(pos, outer(start), outer(radius)) -> (_sq_distance(pos, start) <= radius*radius)
+	    );
+	    _flood_generic('air', null, start, flags);
+
+	    add_to_history('action_drain', player)
+	);
+);
+
 
 rotate(centre, degrees, axis)->(
     player=player();
