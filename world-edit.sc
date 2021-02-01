@@ -682,6 +682,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 
 _parse_flags(flags) ->(
     if(!flags, return({}));
+    if(type(flags)=='map',return(flags));
     symbols = split(flags);
     if(symbols:0 != '-', return({}));
     flag_set = {};
@@ -781,7 +782,7 @@ global_lang_keys = global_default_lang = {
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
     'many_undo' ->                'w Undo history for player %s is very long, showing only the last ten items', // player
-    'entry_undo_1' ->             'w %d: type: %s',                                         //index, command type
+    'entry_undo_1' ->             'w %d: type: %s (dimension: %s):',                        //index, command type, dimension
     'entry_undo_2 ' ->            'w     affected positions: %s',                           //blocks number
     'no_undo' ->                  'r No actions to undo for player %s',                     // player
     'more_moves_undo' ->          'w Your number is too high, undoing all moves for %s',    // player
@@ -1325,7 +1326,8 @@ add_to_history(function,player)->(
     if(length(global_affected_blocks)==0,exit(_print(player, 'filled',0)));//not gonna add empty list to undo ofc...
     command={
         'type'->function,
-        'affected_positions'->global_affected_blocks
+        'affected_positions'->global_affected_blocks,
+        'dimension'->current_dimension()
     };
 
     _print(player,'filled',length(global_affected_blocks));
@@ -1341,7 +1343,7 @@ print_history()->(
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'));//printing twice so it goes on 2 separate lines
+        _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'), _translate(command:'dimension'));//printing twice so it goes on 2 separate lines
         _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
@@ -1355,14 +1357,14 @@ undo(moves)->(
     if(moves==0,moves=length(global_history));
     for(range(moves),
         command = global_history:(length(global_history)-1);//to get last item of list properly
-
-        for(command:'affected_positions',
-            set_block(_:0,_:1,null,'b',_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
+        in_dimension(command:'dimension',
+            for(command:'affected_positions',
+                set_block(_:0,_:1,null,{'b'},_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
+            )
         );
-
         delete(global_history,(length(global_history)-1))
     );
-    global_undo_history+=global_affected_blocks;//we already know that its not gonna be empty before this, so no need to check now.
+    global_undo_history+={'affected_positions'->global_affected_blocks,'dimension'->current_dimension()};//we already know that its not gonna be empty before this, so no need to check now.
     _print(player, 'success_undo', moves, length(global_affected_blocks));
     global_affected_blocks=[];
 );
@@ -1375,8 +1377,10 @@ redo(moves)->(
     for(range(moves),
         command = global_undo_history:(length(global_undo_history)-1);//to get last item of list properly
 
-        for(command,
-            set_block(_:0,_:1,null,'b',_:2);
+        in_dimension(command:'dimension',
+            for(command:'affected_positions',
+                set_block(_:0,_:1,null,{'b'},_:2);
+            )
         );
 
         delete(global_undo_history,(length(global_undo_history)-1))
