@@ -152,6 +152,10 @@ base_commands_map = [
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
+    ['brush drain', _()->brush('drain', null, 30), false],
+	['brush drain <radius>', _(radius)->brush('drain', null, radius), [0, 'help_cmd_brush_drain', 'help_cmd_brush_generic', null]],
+    ['brush drain f <flag>', _(flag)->brush('drain', flag, 30), false],
+	['brush drain <radius> f <flag>', _(radius, flag)->brush('drain', flag, radius), [0, 'help_cmd_brush_drain', 'help_cmd_brush_generic', null]],
 
     ['shape cube <block> <size>', _(block, size_int) -> cube(player()~'pos', [block, size_int, null], null), false],
     ['shape cube <block> <size> f <flag>', _(block, size_int, flags) -> cube(player()~'pos', [block, size_int, null], flags), false],
@@ -1292,6 +1296,11 @@ feature(pos, args, flags) -> (
     plop(pos, what)
 );
 
+drain(pos, args, flags) -> (
+	[radius] = args;
+	_drain_generic(pos, radius, flags)
+);
+
 //Command processing functions
 
 global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
@@ -1697,13 +1706,14 @@ _flood_generic(block, axis, start, flags) ->
     add_to_history('action_flood', player())
 );
 
-_drain(radius, flags) -> (
-	player = player();
+_drain(radius, flags) -> _drain_generic(player()~'pos', radius, flags);
 
-	if( (start_bl = block(pos(player))) == 'lava' || start_bl == 'water',
+_drain_generic(pos, radius, flags) -> (
+	player = player();
+	if( (start_bl = block(pos)) == 'lava' || start_bl == 'water',
 
 		flags = _parse_flags(flags);
-		start =  pos(start_bl);
+		start =  pos;
 
 		// check if inside selection, if there is a selection
 		if( length(global_selection) < 2,
@@ -1719,9 +1729,9 @@ _drain(radius, flags) -> (
 		    );
 		);
 
-	    if(!no_selection &&_is_inside_selection(player~'pos'), 
+	    if(!no_selection && _is_inside_selection(player~'pos'), 
 	    	_flood_tester(pos)->_is_inside_selection(pos),
-	    	_flood_tester(pos, outer(start), outer(radius)) -> (_sq_distance(pos, start) <= radius*radius)
+	    	_flood_tester(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius
 	    );
 	    _flood_generic('air', null, start, flags);
 
