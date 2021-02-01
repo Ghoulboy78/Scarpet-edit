@@ -327,7 +327,8 @@ global_clipboard = [];
 
 global_debug_rendering = false;
 global_reach = 4.5;
-
+global_default_trace_type = 'blocks';
+global_liquid_trace_type = 'liquids';
 
 //Extra boilerplate
 
@@ -458,7 +459,7 @@ selection_move(amount, direction) ->
     point2 = _get_marker_position(global_selection:'to');
     p = player();
     if (p == null && direction == null, _error(player, 'move_selection_no_player_error'));
-    translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
+    translation_vector = if(direction == null, p~'look'*amount, pos_offset([0,0,0],direction, amount));
     clear_markers(global_selection:'from', global_selection:'to');
     point1 = point1 + translation_vector;
     point2 = point2 + translation_vector;
@@ -492,24 +493,32 @@ __on_tick() ->
     if (p = player(),
         // put your catchall checks here
         global_highlighted_marker = null;
-        reach = if( (held = p~'holds':0)==global_wand, global_reach, has(global_brushes, held), global_brush_reach);
+        reach = if( 
+        	(held = p~'holds':0)==global_wand, global_reach, 
+        	has(global_brushes, held), brush=true; global_brush_reach
+        );
+        if(brush && length(global_selection)<2, clear_selection());
         new_cursor = if ( reach && p~'gamemode'!='spectator',
+        	// support for tracing liquids with brushes
+        	global_trace_type = if(has(global_liquid_brush, held), global_liquid_trace_type, global_default_trace_type);
+        	// get traced block
             if (marker = _trace_marker(p, global_reach),
                 global_highlighted_marker = marker;
                 _get_marker_position(marker)
             ,
                 _get_player_look_at_block(p, reach) )
         );
+        // delete old marker if new one isn't the same
         if (global_cursor && new_cursor != global_cursor,
             draw_shape('box', 0, 'from', global_cursor, 'to', global_cursor+1, 'fill', 0xffffff22);
         );
+        // render new marker or refresh old one
         if (new_cursor,
              draw_shape('box', 50, 'from', new_cursor, 'to', new_cursor+1, 'fill', 0xffffff22);
         );
         global_cursor = new_cursor;
     )
 );
-
 
 __on_player_swings_hand(player, hand) ->
 (
@@ -622,7 +631,7 @@ _render_selection_tick() ->
 
 _get_player_look_at_block(player, range) ->
 (
-    block = query(player, 'trace', range, 'blocks');
+    block = query(player, 'trace', range, global_trace_type);
     if (block,
         pos(block)
     ,
@@ -669,7 +678,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p','d','s','g'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g','l'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -682,7 +691,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 //d     "dry" out the pasted structure (remove water and waterlogged)
 //s     keep block states of replaced block, if new block matches
 //g     when replacing air or water, some greenery gets repalced too
-
+//l 	when used in a brush, the brush will trace for liquids as well as blocks
 
 _parse_flags(flags) ->(
     if(!flags, return({}));
@@ -918,6 +927,7 @@ _error(player, key, ... replace)->
 // Brush
 
 global_brushes = {};
+global_liquid_brush = {};
 global_brush_reach = 100;
 
 brush(action, flags, ...args) -> (
@@ -928,7 +938,8 @@ brush(action, flags, ...args) -> (
     if(
         action=='clear',
         if(has(global_brushes, held_item),
-            delete(global_brushes, held_item),
+            delete(global_brushes, held_item);
+            delete(global_liquid_brush, held_item),
             _error(player, 'no_brush_error', held_item)
         ),
         action=='list', //TODO imprvove list with interactiveness
@@ -957,7 +968,8 @@ brush(action, flags, ...args) -> (
         );
         global_brushes:held_item = [action, args, flags];
 
-        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
+        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')));
+        if(action=='drain' || _parse_flags(flags)~'l', global_liquid_brush+=held_item) // to change trace method
     )
 );
 
@@ -1636,7 +1648,6 @@ flood_fill(block, axis, flags) ->
 
 _flood_generic(block, axis, start, flags) ->
 (
-	print(flags);
     // Define function to request neighbours perpendiular to axis
     if(
         axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
