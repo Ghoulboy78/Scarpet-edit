@@ -60,9 +60,9 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
-    ['drain', ['_drain', 25, null], false],
+    ['drain', ['_drain', null, null], false],
     ['drain <radius>', ['_drain', null], [1, 'help_cmd_drain', 'help_cmd_drain_tooltip', null]],
-    ['drain f <flag>', _(flag)->_drain(25, flag), false],
+    ['drain f <flag>', _(flag)->_drain(null, flag), false],
     ['drain <radius> f <flag>', '_drain', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
@@ -1729,8 +1729,9 @@ _drain_generic(pos, radius, flags) -> (
 		    );
 		);
 
-	    if(!no_selection && _is_inside_selection(player~'pos'), 
+	    if( !no_selection && radius==null && _is_inside_selection(pos), 
 	    	_flood_tester(pos)->_is_inside_selection(pos),
+	    	if(radius==null, radius=25);
 	    	_flood_tester(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius
 	    );
 	    _flood_generic('air', null, start, flags);
