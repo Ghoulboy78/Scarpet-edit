@@ -332,7 +332,7 @@ __config()->{
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
         'feature'->{'type'->'term','options'-> get_features_list()},
-		'brush'->{'type'->'term', 'suggester'->_(ignered)->keys(global_brushes)},
+		'brush'->{'type'->'term', 'suggester'->_(ignored)->keys(global_brushes)},
 	}
 };
 //player globals
@@ -951,18 +951,18 @@ _error(player, key, ... replace)->
 global_brushes = {};
 global_brush_reach = 100;
 global_brushes_parameters_map = {
-	'cube'-> ['block', 'size', 'replacement'],
-	'cuboid'-> ['block', 'size', 'replacement'],
-	'shpere' -> ['block', 'radius', 'replacement'],
-	'ellipsoid' -> ['block', 'radii', replacement],
-	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replacement'],
-	'cone' -> ['block', 'radius', 'height', 'saxis', 'replacement'],
-	'prism_polygon' -> ['block', 'radius', 'height', 'vertices', 'axis', 'rotation', 'replacement'],
-	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'vertices', 'axis', 'rotation', 'replacement'],
-	'line' -> ['block', 'length', 'replacement'],
+	'cube'-> ['block', 'size', 'replace'],
+	'cuboid'-> ['block', 'size', 'replace'],
+	'shpere' -> ['block', 'radius', 'replace'],
+	'ellipsoid' -> ['block', 'radii', replace],
+	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replace'],
+	'cone' -> ['block', 'radius', 'height', 'saxis', 'replace'],
+	'prism_polygon' -> ['block', 'radius', 'height', 'vertices', 'axis', 'rotation', 'replace'],
+	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'vertices', 'axis', 'rotation', 'replace'],
+	'line' -> ['block', 'length', 'replace'],
 	'flood' -> ['block', 'radius', 'axis'],
 	'feature' -> ['what'],
-	'spray' -> ['block', 'size', 'count', 'replacement'],
+	'spray' -> ['block', 'size', 'count', 'replace'],
 };
 
 brush(action, flags, ...args) -> (
@@ -977,7 +977,7 @@ brush(action, flags, ...args) -> (
             _print(player, 'no_longer_brush', held_item),
             _error(player, 'no_brush_error', held_item)
         ),
-        action=='list', //TODO imprvove list with interactiveness
+        action=='list',
         if(global_brushes,
         	print(player, '');
             _print(player, 'brush_list_header');
@@ -995,7 +995,7 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_extra_info'),
             _print(player, 'brush_empty_list')
         ),
-        action=='info', //TODO improve info with better descriptions
+        action=='info',
         if(args, held_item=args:0);
         if(has(global_brushes, held_item),
         	print(player, '');
@@ -1004,7 +1004,9 @@ brush(action, flags, ...args) -> (
 			if( (param_names=global_brushes_parameters_map:(params:0)) == null,
 				 print(player, format( _translate('brush_info_params'), str('w %s%s','',params:1), _translate('brush_info_params_tooltip') )),
 				 _print(player, 'brush_info_params');
-				 for(param_names, print(player, str('  %s: %s', _, params:1:_i)))
+				 for(param_names, 
+                    param_value = if(_=='replace' && params:1:_i ==null, 'anything', params:1:_i);
+                    print(player, str('  %s: %s', _, param_value)))
 			);
 			print(player, format( _translate('brush_info_flags'), if(params:2, str('w %s', params:2), _translate('brush_info_no_flags') ) )),
 			// if it's not a brush
