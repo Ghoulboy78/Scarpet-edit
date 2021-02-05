@@ -36,7 +36,7 @@ base_commands_map = [
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
     ['stack f <flag>', _(flags)->stack(1,null,flags), false], //TODO here too Help for flags
-    ['stack <count> f <flag>', _(count,flags)->stack(1,null,flags), false],
+    ['stack <count> f <flag>', _(count,flags)->stack(count,null,flags), false],
     ['stack <count> <direction> f <flag>', 'stack', false],
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
@@ -1409,50 +1409,59 @@ spray(pos, args, flags)->(
 
 //Command processing functions
 
-global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-    success=null;
-    existing = block(pos);
 
-    // undo expects positions, not blocks
-    if(type(pos)!='list', pos=pos(pos));
-
-    if(!(nbt=extra:'nbt'),nbt={});
-
-    state = if(flags~'s' && all(keys(bs_e=block_state(existing)), has(block_state(block), _)),
-        bs_e,{}
-        );
-
-    if(flags~'d',
-        if(
-            block=='water', block='air',
-            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
-        );
-    );
-    if(flags~'w' && (
-        (existing == 'water' && block_state(existing, 'level')=='0') ||
-        block_state(existing, 'waterlogged')=='true'
+        if( !( 
+            (flags~'a' && block=='air' ) || 
+            ((flags~'a' &&flags~'g') &&has(global_air_greenery, str(block))) 
         ),
-        if(
-            block=='air', block='water', // "waterlog" air blocks
-            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
-        );
-    );
-    if(flags~'g',
-        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
-        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
-    );
+        success=null;
+        existing = block(pos);
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)) && !(flags~'a'&&air(block)),
-        postblock=if(flags && flags~'u',without_updates(set(existing,block,state,encode_nbt(nbt))),set(existing,block,state,encode_nbt(nbt))); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
-        prev_biome=biome(pos);
-        if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
-        success=existing;
-        global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
-    );
-    bool(success)//cos undo uses this
+        // undo expects positions, not blocks
+        if(type(pos)!='list', pos=pos(pos));
+
+        state = if(flags~'s',
+            bs_e=block_state(existing);
+            bs_b=block_state(block);
+            if(all(keys(bs_e), has(bs_b, _)),
+                bs_e, {}
+            );
+        , {});
+        if(flags~'d',
+            if(
+                block=='water' || (flags~'g' &&has(global_water_greenery, str(block))) , block='air',
+                block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+            );
+        );
+        if(flags~'w' && (
+            (existing == 'water' && block_state(existing, 'level')=='0') ||
+            block_state(existing, 'waterlogged')=='true'
+            ),
+            if(
+                block=='air', block='water', // "waterlog" air blocks
+                block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+            );
+        );
+        if(flags~'g',
+            if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+            if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
+        );
+
+        if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
+            postblock=if(flags && flags~'u',without_updates(set(existing,block,state)),set(existing,block,state)); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
+            prev_biome=biome(pos);
+            if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
+            success=existing;
+            global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
+        );
+        bool(success), //cos undo uses this
+        false
+    )
+
 );
 
 _block_matches(existing, block_predicate) ->
@@ -1878,10 +1887,12 @@ move(new_pos,flags)->(
 );
 
 stack(count,direction,flags) -> (
+    print([count, type(count)]);
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
     [pos1,pos2]=_get_current_selection(player);
     flags = _parse_flags(flags);
+    print(flags);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
