@@ -42,9 +42,9 @@ base_commands_map = [
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
     ['move <pos> f <flag>', 'move', false], //TODO flags help
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
-    ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
+    ['copy',['_copy',null, false],false],
     ['copy force',['_copy',null, true],false],
-    ['copy <pos>',['_copy', false],false],
+    ['copy <pos>',['_copy', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
     ['copy <pos> force',['_copy', true],false],
     ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
     ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
@@ -778,6 +778,14 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
+    'help_cmd_clear_clipboard' -> 'l Clears current clipboard',
+    'help_cmd_copy' ->            'l Copy current selection to clipboard',
+    'help_cmd_copy_tooldtip' ->   'g Uses [pos] or player position as origin for the copied structure',
+    'help_cmd_paste' ->           'l Paste clipboard',
+    'help_cmd_drain' -> 	  'l Drains liquid you are standing on',
+    'help_cmd_drain_tooltip' ->   'g Acts in a radius or withing the selection',
+    'help_cmd_flood' -> 	  'l Perferoms a 3D flood fill out of [block]',
+    'help_cmd_flood_tooltip' ->	  'g Use [axis] to make a flat fill',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -859,7 +867,7 @@ global_lang_keys = global_default_lang = {
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
-    'action_drain' -> 			   'drain',
+    'action_drain' ->              'drain',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
