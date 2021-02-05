@@ -67,6 +67,7 @@ Left clicking again will reselect the whole box.
  - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
  - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
+ - `/world-edit up <distance>` -> Teleports you up `<distance>` ammount of blocks. Places a block under you if there was nothing there, so you don't fall and can start building right away.
 
 #### Brushes
 

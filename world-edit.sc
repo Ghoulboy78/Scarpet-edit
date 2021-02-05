@@ -56,6 +56,7 @@ base_commands_map = [
     ['selection move', _() -> selection_move(1, null), false],
     ['selection move <amount>', _(n)->selection_move(n, null), false],
     ['selection move <amount> <direction>', 'selection_move',false],
+    ['up <amount>', 'tp_up', [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
     ['flood <block>', ['flood_fill', null, null], false],
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
@@ -761,6 +762,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
+    'help_cmd_up' ->              'l Teleport up specified ammount of block',
+    'help_cmd_up_tooltip' ->      'g Generate a glass block under you if there was nothing there',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -1837,4 +1840,10 @@ paste(pos, flags)->(
         set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
     );
     add_to_history('action_paste',player)
+);
+
+tp_up(distance)-> (
+    p = player();
+    modify(p, 'pos', pp=(p~'pos'+ [0,distance,0]));
+    if(air(pp-[0,1,0]), set(pp-[0,1,0], 'glass'))
 );
