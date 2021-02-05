@@ -36,7 +36,7 @@ base_commands_map = [
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
     ['stack f <flag>', _(flags)->stack(1,null,flags), false], //TODO here too Help for flags
-    ['stack <count> f <flag>', _(stackcount,flags)->stack(1,null,flags), false],
+    ['stack <count> f <flag>', _(count,flags)->stack(1,null,flags), false],
     ['stack <count> <direction> f <flag>', 'stack', false],
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
@@ -293,7 +293,7 @@ __config()->{
         'saxis'->{'type'->'term', 'options'->['+x', '-x', '+y', '-y', '+z', '-z']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
-        'stack'->{'type'->'int','min'->1,'suggest'->[]},
+        'count'->{'type'->'int','min'->1,'suggest'->[]},
         'flag' -> {
             'type' -> 'term',
             'suggester' -> _(args) -> (
