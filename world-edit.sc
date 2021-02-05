@@ -864,6 +864,7 @@ global_lang_keys = global_default_lang = {
     'structure_delete_success' ->      'gi Successfully deleted %s.nbt',                              //structure name
     'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
     'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
+    
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
@@ -883,6 +884,8 @@ global_lang_keys = global_default_lang = {
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
     'action_spray' -> 			   'spray',
+    'action_walls' ->              'walls',
+    'action_outline' ->            'outline',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
@@ -1041,12 +1044,12 @@ _brush_action(pos, brush) -> (
 
 cube(pos, args, flags) -> (
     _cuboid(pos, args, flags);
-    add_to_history('cube',player())
+    add_to_history('action_cube',player())
 );
 
 cuboid(pos, args, flags) -> (
     _cuboid(pos, args, flags);
-    add_to_history('cuboid',player())
+    add_to_history('action_cuboid',player())
 );
 
 _cuboid(pos, args, flags) -> (
@@ -1775,7 +1778,7 @@ walls(block, sides, replacement, flags) -> (
 
     _walls_generic(pos1, pos2, sides, block, replacement, flags);
 
-    add_to_history('walls', player)
+    add_to_history('action_walls', player)
 );
 
 _walls_generic(min_corner, max_corner, sides, block, replacement, flags) -> (
@@ -1815,7 +1818,7 @@ outline(block, replafement, flags) -> (
         _fill_offset(pos1+_, offsets:(_i+2));
     );
 
-    add_to_history('outline',player)    
+    add_to_history('action_outline',player)    
 );
 
 flood_fill(block, axis, flags) ->
