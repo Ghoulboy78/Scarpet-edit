@@ -64,6 +64,7 @@ Left clicking again will reselect the whole box.
  - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase you didnt' choose a wise spot making the selection.
  - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the player's position. Can both "fill" used to be air or replace some other block.
  - `/world-edit flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for isntance, will fill the horizontal plane.
+ - `/world-edit drain [radius]` -> Drains the liquid the player is standing on. By default, it does so on a given radius, ut you can set that with the optional parameter. If you don't specify a radius and are standing in a seleciton, it will drain within the selection only. It supports the `-g` flag, try it!
  - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
  - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
@@ -83,6 +84,7 @@ The available actions for brushes are:
 - `prism_star <block> <outer_radius> <inner_radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a star whouse points touch a circle of radius `outer_radius` with `vertices` ammount of points. Said star is the base for a prism of height `height` along `axis`. Optionally, it can be rotated from it's base orientation.
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed and it only uses the clicked block to get the direction of the line.
 - `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
+- `drain <radius>` -> Drains the liquids connected to the liquid block you click, up to `<radius>` blocks away.
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 
@@ -107,3 +109,4 @@ Available flags:
  - `-s` -> Preserves block states when seting blocks
  - `-g` -> When replacing air or water, greenery corresponding to each medium will be replaced too
  - `-h` -> When creating a shape, makes it hollow
+ - `-l` -> When used to register a brush, the brush will targer liquids as well as blocks, instead of going right through them to the block behind.
