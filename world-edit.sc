@@ -969,12 +969,52 @@ _brush_action(pos, brush) -> (
 global_brush_shapes={
     'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
                 [block, size, replacement] = args;
-                scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}));
+                flags = _parse_flags(flags);
+
+                if(flags~'h', //hollow is O(n^2) operation, so only need double forloop. Makes it kinda bulky, but worth it tbh
+                    radius = round(size/2);
+                    c_for(a = 1-radius, a<= radius-1, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
+                        c_for(b = 1-radius, b <= radius-1, b+=1,//todo test code
+                            set_block(pos + [a, b, radius], block, replacement, flags, {});
+                            set_block(pos + [a, b, -radius], block, replacement, flags, {});
+                            set_block(pos + [a, radius, b], block, replacement, flags, {});
+                            set_block(pos + [a, -radius, b], block, replacement, flags, {});
+                            set_block(pos + [radius, a, b], block, replacement, flags, {});
+                            set_block(pos + [-radius, a, b], block, replacement, flags, {});
+                        )
+                    ),
+                    scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}))
+                );
+
                 add_to_history('action_cube',player())
             ),
     'cuboid'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
                 [block, size, replacement] = args;
-                scan(pos,size/2, set_block(_, block, replacement, flags, {}));
+                if(flags~'h', // This hollow function is slower, cos gotta iterate over all three axes when setting. todo test
+                    [radius_x, radius_y, radius_z]=size/2;
+
+                    c_for(a = -radius_x, a<= radius_x, a+=1,
+                        c_for(b = -radius_x, b<= radius_x, b+=1,
+                            set_block(pos + [radius_x, a, b], block, replacement, flags, {});
+                            set_block(pos + [-radius_x, a, b], block, replacement, flags, {});
+                        )
+                    );
+
+                    c_for(a = -radius_,y a<= radius_y, a+=1,
+                        c_for(b = -radius_y, b<= radius_y, b+=1,
+                            set_block(pos + [radius_y, a, b], block, replacement, flags, {});
+                            set_block(pos + [-radius_y, a, b], block, replacement, flags, {});
+                        )
+                    );
+
+                    c_for(a = -radius_z, a<= radius_z, a+=1,
+                        c_for(b = -radius_z, b<= radius_z, b+=1,
+                            set_block(pos + [radius_z, a, b], block, replacement, flags, {});
+                            set_block(pos + [-radius_z, a, b], block, replacement, flags, {});
+                        )
+                    ),
+                    scan(pos,size/2, set_block(_, block, replacement, flags, {}))
+                );
                 add_to_history('action_cuboid',player())
             ),
     'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
@@ -997,7 +1037,7 @@ global_brush_shapes={
                 for(range(0, 180, 45/radius),
                     cyaw = cos(_)*cpitch*radius;
                     syaw = sin(_)*cpitch*radius;
-                    if(hollow,
+                    if(flags ~'h',
                         set_block(cx+cyaw,cy+spitch*radius,cz+syaw,block,replacement);
                         set_block(cx+cos(_+180)*cpitch*radius,cy+spitch*radius,cz+sin(_+180)*cpitch*radius,block,replacement),
                         for(range(-syaw,syaw+1),
@@ -1011,11 +1051,10 @@ global_brush_shapes={
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
-            hollow = flags~'h';
             pointup=signed_axis~'+';
-            for(range(height),
+            loop(height,
                 r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat(pos, _, r, signed_axis, block, if((pointup&&_==0)||(!pointup && _==height-1),false,hollow),replacement, flags)//Always close bottom off
+                fill_flat_circle(pos, _, r, signed_axis, block, if((pointup && _==0)||(!pointup && _==height-1),false,flags~'h'),replacement, flags)//Always close bottom off
             );
             add_to_history('action_cone',player())
         ),
@@ -1023,8 +1062,8 @@ global_brush_shapes={
             [block, radius, height, axis, replacement] = args;
             flags = _parse_flags(flags);
             hollow=flags~'h';
-            for(range(height),
-                fill_flat(pos, _, radius, orientation, block, if(_==0 || _==height-1,false,hollow), replacement, flags)//Always close ends off
+            loop(height,
+                fill_flat_circle(pos, _, radius, orientation, block, if(_==0 || _==height-1,false,flags~'h'), replacement, flags)//Always close ends off
             );
             add_to_history('action_cylinder',player())
         ),
@@ -1051,11 +1090,7 @@ global_brush_shapes={
             start = pos;
             [block, radius, axis] = args;
             if(block(start)==block, return());
-            // test if inside sphere
-            _flood_tester(pos, outer(start), outer(radius)) -> (
-                _sq_distance(pos, start) <= radius*radius
-            );
-            _flood_generic(block, axis, start, flags);
+            _flood_generic(block, axis, start, _(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius,  flags);
         ),
     'prism_polygon'->_(pos, args, flags)->(
             [block, radius, height, n_points, axis, rotation, replacement] = args;
@@ -1103,7 +1138,7 @@ global_brush_shapes={
         )
 };
 
-fill_flat(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
+fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
     r = floor(dr);
     drsq = dr^2;
     if(orientation~'x',
@@ -1225,7 +1260,7 @@ feature(pos, args, flags) -> (
 );
 
 
-_flood_generic(block, axis, start, flags) ->(
+_flood_generic(block, axis, start, flood_tester,  flags) ->(
 
     // Define function to request neighbours perpendicular to axis
     if(
@@ -1234,6 +1269,8 @@ _flood_generic(block, axis, start, flags) ->(
         axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
         axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
     );
+
+    _flood_tester(pos)->call(flood_tester, pos);
 
     interior_block = block(start);
     if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
@@ -1611,11 +1648,7 @@ flood_fill(block, axis, flags) ->
     [pos1,pos2]=_get_current_selection(player);
     min_pos = map(pos1, min(_, pos2:_i));
     max_pos = map(pos1, max(_, pos2:_i));
-    // test if inside selection
-    _flood_tester(pos, outer(min_pos), outer(max_pos)) -> (
-        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
-    );
-    _flood_generic(block, axis, start, flags);
+    _flood_generic(block, axis, start, _(pos, outer(min_pos), outer(max_pos)) -> all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i), flags);
 
 );
 
