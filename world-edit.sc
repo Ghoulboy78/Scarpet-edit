@@ -56,6 +56,7 @@ base_commands_map = [
     ['selection move', _() -> selection_move(1, null), false],
     ['selection move <amount>', _(n)->selection_move(n, null), false],
     ['selection move <amount> <direction>', 'selection_move',false],
+    ['up', ['tp_up', 0], [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
     ['up <amount>', 'tp_up', [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
     ['flood <block>', ['flood_fill', null, null], false],
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
