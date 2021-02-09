@@ -31,6 +31,9 @@ base_commands_map = [
     ['redo all', ['redo', 0], [-1, 'help_cmd_redo_all', null, null]],
     ['wand', ['_set_or_give_wand',null], [-1, 'help_cmd_wand', null, null]],
     ['wand <wand>', '_set_or_give_wand', [-1, 'help_cmd_wand_2', null, null]],
+    ['angel', '_give_angel_block_item', [-1, 'help_cmd_angel_give', null, null]],
+    ['angel new', '_set_angel_block_item', [-1, 'help_cmd_angel_new', null, null]],
+    ['angel clear', '_clear_angel_block_item', [-1, 'help_cmd_angel_clear', null, null]],
     ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
@@ -344,6 +347,7 @@ global_cursor = null;
 global_highlighted_marker = null;
 global_selection = {}; // holds ids of two official corners of the selection
 global_markers = {};
+global_angel_block = null;
 
 _help(page) ->
 (
@@ -498,7 +502,8 @@ __on_tick() ->
         // put your catchall checks here
         global_highlighted_marker = null;
         reach = if( 
-        	(held = p~'holds':0)==global_wand, global_reach, 
+        	(held = p~'holds':0)==global_wand, global_reach,
+            held==global_angel_block, brush=true; global_reach, // brush=true is used so that the selection doesn't linger, need to make this better
         	has(global_brushes, held), brush=true; global_brush_reach
         );
         if(brush && length(global_selection)<2, clear_selection());
@@ -561,7 +566,11 @@ __on_player_uses_item(player, item_tuple, hand) ->
         ),
         has(global_brushes, held), // TODO: make it so that if brush is a block, placing is not processed
         pos = _get_player_look_at_block(player, global_brush_reach);
-        _brush_action(pos, held)
+        _brush_action(pos, held),
+        
+        held==global_angel_block,
+        pos = _get_player_look_at_block(player, global_reach);
+        _place_angel_block(pos)
     )
 );
 
@@ -659,7 +668,10 @@ _get_current_selection(player)->
 _set_or_give_wand(wand) -> (
     p = player();
     if(wand,//checking if player specified a wand to be added
-        if((['tools', 'combat']~item_category(wand:0)) != null,
+        if(
+         (['tools', 'combat']~item_category(wand:0)) != null ||
+         wand==global_angel_block ||
+         has(global_brushes, wand),
             global_wand = wand;
             _print(p, 'new_wand', wand:0);
             return(),
@@ -802,6 +814,9 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_flood' ->     'l Register brush to perfrm flood fill out of [block] starting on right clicked block',
     'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
     'help_cmd_brush_feature' ->   'l Register brush to plop feature',
+    'help_cmd_angel_give' ->      'l Gives player the current angel block item',
+    'help_cmd_angel_clear' ->     'l Clears item currently registered as angel block',
+    'help_cmd_angel_new' ->       'l Registers held item as angel block item',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
@@ -831,7 +846,7 @@ global_lang_keys = global_default_lang = {
     'move_selection_no_player_error' -> 'r To move selection in the direction of the player, you need to have a player',
     'no_selection_error' ->             'r Missing selection for operation for player %s', //player
     'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
-    'invalid_wand' ->                   'r Wand has to be a tool or weapon',
+    'invalid_wand' ->                   'r Wand has to be a tool or weapon that is not already a brush or angel block',
 
     'new_brush' ->                      'wi %s is now a brush with action %s',
     'brush_info' ->                     'w %s has action %s bound to it with parameters %s and flags %s',
@@ -841,6 +856,7 @@ global_lang_keys = global_default_lang = {
     'brush_extra_info' ->               'ig For detailed info on a brush use /world-edit brush info',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks',
+    'bad_brush_error' ->                'r Wand or angel block items can\'t be brushes',
 
     'structure_list' ->                'w List of structures:',
     'saved_structure' ->               'w Saved structure as %s.nbt',                                 //structure name
@@ -849,6 +865,13 @@ global_lang_keys = global_default_lang = {
     'structure_delete_success' ->      'gi Successfully deleted %s.nbt',                              //structure name
     'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
     'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
+
+    'angel_block_new' ->               'w Clicking with %s will now palce an angel block',              //new angel block item
+    'angel_block_given' ->             'w Gave yourself angel block item: %s',
+    'angel_block_clear' ->             'w Unregistered angel block item',
+    'angel_block_none_error' ->        'r There\'s no angel block defined! Use \'angel new\' to register one',
+    'angel_block_bad_item' ->          'r Angel block can\'t be something that is already assigned to another action',
+
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
@@ -868,6 +891,7 @@ global_lang_keys = global_default_lang = {
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
     'action_drain' ->              'drain',
+    'action_angel' ->              'angel_block',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
@@ -945,7 +969,7 @@ global_brush_reach = 100;
 brush(action, flags, ...args) -> (
     player = player();
     held_item = player~'holds':0;
-    if(held_item==global_wand, _error(player, 'bad_wand_brush_error'));
+    if(held_item==global_wand || held_item==global_angel_block, _error(player, 'bad_brush_error'));
 
     if(
         action=='clear',
@@ -1393,6 +1417,29 @@ print_history()->(
     )
 );
 
+_give_angel_block_item() -> (
+    if(global_angel_block,
+        run(str('/give %s %s', player()~'command_name', global_angel_block));
+        _print(player(), 'angel_block_given', global_angel_block),
+        _error(player(), 'angel_block_none_error')
+    );
+);
+_set_angel_block_item() -> (
+    if( (item = player()~'holds':0) == global_wand || has(global_brushes, item),
+        _error(player(), 'angel_block_bad_item'),
+        global_angel_block = item;
+        _print(player(), 'angel_block_new', global_angel_block)
+    );
+);
+_clear_angel_block_item() -> (
+    p = player();
+    if(global_angel_block, 
+        global_angel_block=null;
+        _print(p, 'angel_block_clear'),
+        _error(p, 'angel_block_none_error')
+    )
+);
+
 //Command functions
 
 undo(moves)->(
@@ -1645,6 +1692,10 @@ set_in_selection(block,replacement,flags)->
     add_to_history('action_set', player)
 );
 
+_place_angel_block(pos) -> (
+    if(air(pos), set_block(pos, 'stone', null, null, {}));
+    add_to_history('action_angel', player())
+);
 
 flood_fill(block, axis, flags) ->
 (
