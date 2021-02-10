@@ -348,6 +348,7 @@ global_highlighted_marker = null;
 global_selection = {}; // holds ids of two official corners of the selection
 global_markers = {};
 global_angel_block = null;
+global_items_with_actions = {global_wand -> 'wand'};
 
 _help(page) ->
 (
@@ -668,25 +669,27 @@ _get_current_selection(player)->
 _set_or_give_wand(wand) -> (
     p = player();
     if(wand,//checking if player specified a wand to be added
-        if(
-         (['tools', 'combat']~item_category(wand:0)) != null ||
-         wand==global_angel_block ||
-         has(global_brushes, wand),
+        wand = wand:0; //because it comes as a [item, count, nbt] tuple
+        if( (['tools', 'combat']~item_category(wand)) != null,
+            new_action_item(wand, 'wand');
+            delete(global_items_with_actions, global_wand);
             global_wand = wand;
-            _print(p, 'new_wand', wand:0);
+            _print(p, 'new_wand', wand);
             return(),
             //else, can't set as wand
             _error(p, 'invalid_wand')
         )
     );//else, if just ran '/world-edit wand' with no extra args
     //give player wand if hand is empty
-    if(held_item_tuple = p~'holds' == null,
+    if( (held_item_tuple = p~'holds') == null,
        slot = inventory_set(p, p~'selected_slot', 1, global_wand);
        return()
     );
     //else, set current held item as wand, if valid
     held_item = held_item_tuple:0;
     if( (['tools', 'combat']~item_category(held_item)) != null,
+        new_action_item(held_item, 'wand');
+        delete(global_items_with_actions, global_wand);
         global_wand = held_item;
         _print(p, 'new_wand', held_item),
        //else, can't set as wand
@@ -846,7 +849,7 @@ global_lang_keys = global_default_lang = {
     'move_selection_no_player_error' -> 'r To move selection in the direction of the player, you need to have a player',
     'no_selection_error' ->             'r Missing selection for operation for player %s', //player
     'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
-    'invalid_wand' ->                   'r Wand has to be a tool or weapon that is not already a brush or angel block',
+    'invalid_wand' ->                   'r Wand has to be a tool or weapon',
 
     'new_brush' ->                      'wi %s is now a brush with action %s',
     'brush_info' ->                     'w %s has action %s bound to it with parameters %s and flags %s',
@@ -866,11 +869,17 @@ global_lang_keys = global_default_lang = {
     'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
     'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
 
-    'angel_block_new' ->               'w Clicking with %s will now palce an angel block',              //new angel block item
+    'angel_block_new' ->               'w Clicking with %s will now palce an angel block',            //new angel block item
     'angel_block_given' ->             'w Gave yourself angel block item: %s',
     'angel_block_clear' ->             'w Unregistered angel block item',
     'angel_block_none_error' ->        'r There\'s no angel block defined! Use \'angel new\' to register one',
     'angel_block_bad_item' ->          'r Angel block can\'t be something that is already assigned to another action',
+
+    'action_item_not_existing_error' -> 'r %s is not registered as %s',                                                     //item, action
+    'action_item_existing_error' ->     'r %s is already registered as %s. Unregister it first, or choose another item.',   //item, action 
+    'action_item_angel' ->              'angel block item',
+    'action_item_wand' ->               'wand',
+    'action_item_brush' ->              'brush',    
 
     //Block-setting actions
     'action_cube'->                'cube',
@@ -969,15 +978,13 @@ global_brush_reach = 100;
 brush(action, flags, ...args) -> (
     player = player();
     held_item = player~'holds':0;
-    if(held_item==global_wand || held_item==global_angel_block, _error(player, 'bad_brush_error'));
 
     if(
         action=='clear',
-        if(has(global_brushes, held_item),
-            delete(global_brushes, held_item);
-            delete(global_liquid_brush, held_item),
-            _error(player, 'no_brush_error', held_item)
-        ),
+        remove_action_item(held_item, 'brush');
+        delete(global_brushes, held_item);
+        delete(global_liquid_brush, held_item),
+        
         action=='list', //TODO imprvove list with interactiveness
         if(global_brushes,
             _print(player, 'brush_list_header');
@@ -999,8 +1006,9 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_reach', global_brush_reach)
         ),
         // else, register new brush with given action
-        if(has(global_brushes, held_item),
-            _print(player, 'brush_replaced', held_item)
+        if((registered = global_items_with_actions:held_item) == 'brush',
+            _print(player, 'brush_replaced', held_item),
+            new_action_item(held_item, 'brush')
         );
         global_brushes:held_item = [action, args, flags];
 
@@ -1425,19 +1433,36 @@ _give_angel_block_item() -> (
     );
 );
 _set_angel_block_item() -> (
-    if( (item = player()~'holds':0) == global_wand || has(global_brushes, item),
-        _error(player(), 'angel_block_bad_item'),
-        global_angel_block = item;
-        _print(player(), 'angel_block_new', global_angel_block)
-    );
+    new_action_item(item = player()~'holds':0, 'angel');
+    delete(global_items_with_actions, global_angel_block);
+    global_angel_block = item;
+    _print(player(), 'angel_block_new', global_angel_block)
 );
 _clear_angel_block_item() -> (
     p = player();
-    if(global_angel_block, 
-        global_angel_block=null;
-        _print(p, 'angel_block_clear'),
-        _error(p, 'angel_block_none_error')
-    )
+    remove_action_item(global_angel_block, 'angel');
+    global_angel_block=null;
+    _print(p, 'angel_block_clear')
+);
+
+global_item_action_translation_key = {
+  'brush' -> 'action_item_brush',
+  'wand' -> 'action_item_wand',
+  'angel' -> 'action_item_angel',  
+};
+
+new_action_item(item, action) -> (
+    if(has(global_items_with_actions, item),
+        _error(player(), 'action_item_existing_error', item, _translate(global_item_action_translation_key:(global_items_with_actions:item)) ),
+        global_items_with_actions:item = action;
+    );
+);
+
+remove_action_item(item, action) -> (
+    if( (registered = global_items_with_actions:item) != null && registered == action,
+        delete(global_items_with_actions, item),
+        _error(player(), 'action_item_not_existing_error', item, _translate(global_item_action_translation_key:action))
+    );
 );
 
 //Command functions
