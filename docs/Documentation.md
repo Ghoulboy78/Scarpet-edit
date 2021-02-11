@@ -65,8 +65,8 @@ Left clicking again will reselect the whole box.
  - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the player's position. Can both "fill" used to be air or replace some other block.
  - `/world-edit flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for isntance, will fill the horizontal plane.
  - `/world-edit hollow [block]` -> Hollows out all shapes within the selection. If optional `[block]` argument is given, only hollows out shapes made of that block.
+ - `/world-edit outline <block> [block_to_outline]` -> Outlines the selection with `<block>`. It only affects blocks matching `[block_to_outline]`, if given.
  - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
- - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
 
 #### Brushes
@@ -85,6 +85,7 @@ The available actions for brushes are:
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed and it only uses the clicked block to get the direction of the line.
 - `flood <block> [radius] [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting poin (defaults to 50). The flood happens in the plane perpendicular to `axis`, if given.
 - `hollow [radius]` -> hollows out the continuos blob of blocks starting in the clicked block, going no further from the starting point than `[radius]` (defaults to 50).
+- `outline <block> [radius]` -> outlines the continuos blob of blocks startig in the clicked block with `[block]`, going no further from the starting point than `[radius]` (defaults to 50).
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 

@@ -65,7 +65,7 @@ base_commands_map = [
     ['hollow f <flag>', _(flag) -> _hollow(null, flag), false],
     ['hollow <block> f <flag>', '_hollow', false],
     ['outline <block>', ['_outline', null, null], false],
-    ['outline <block> <outline_block>', ['_outline', null], false],
+    ['outline <block> <outline_block>', ['_outline', null], [1, 'help_cmd_outline', 'help_cmd_outline_tooltip', false]],
     ['outline <block> f <flag>', _(block, flag) -> _outline(block, null, flag), false],
     ['outline <block> <outline_block> f <flag>', '_outline', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
@@ -119,6 +119,9 @@ base_commands_map = [
     ['brush hollow f <flag>', _(flag) -> brush('hollow', flag, 50), false],
     ['brush hollow <radius> f <flag>', _(radius, flag) -> brush('hollow', flag, radius), false],
     ['brush outline <block>', _(block) -> brush('outline', null, block, 50), false],
+    ['brush outline <block> <radius>', _(block, radius) -> brush('outline', null, block, radius), [1, 'help_cmd_brush_outline', 'help_cmd_brush_generic', false]],
+    ['brush outline <block> f <flag>', _(block, flag) -> brush('outline', flag, block, 50), false],
+    ['brush outline <block> <radius> f <flag>', _(block, radius, flag) -> brush('outline', flag, block, radius), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
     ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
@@ -777,7 +780,9 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
     'help_cmd_hollow' ->          'l Hollows out all connex shapes inside selection',
-    'help_cmd_hollow' ->          'g Specify [block] to hollow out only shapes of that material',
+    'help_cmd_hollow_tooltip' ->  'g Specify [block] to hollow out only shapes of that material',
+    'help_cmd_outline' ->         'l Outline all blocks within selection with <block>',
+    'help_cmd_outline_tooltip' -> 'g Specify [outline_block] to only outline shapes of that material',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -1326,7 +1331,7 @@ hollow(pos, args, flags) -> (
         if(current_is_interior, interior_set += current_pos)
     );
 
-    for(interior_set, set_block(_, 'air', null, flags, {}));
+    for(interior_set, set_block(_, 'air', null, _parse_flags(flags), {}));
     add_to_history('action_hollow', player())
 );
 
@@ -1340,6 +1345,12 @@ outline(pos, args, flags) -> (
     interior = block(origin);
     queue = [origin];
 
+    flags = _parse_flags(flags);
+    if(flags~'g',
+        _check_fun(block) -> air(block) || has(global_air_greenery, str(block)),
+        _check_fun(block) -> air(block)
+    );
+
     while(length(queue)>0, 100000,
         current_pos = queue:(-1);
         delete(queue, -1);
@@ -1350,7 +1361,7 @@ outline(pos, args, flags) -> (
             cn_pos = pos(current_neighbour);
             if(!has(visited, cn_pos) && _sq_distance(origin, cn_pos)<=radius*radius,
                 if( //if it's air, it's outline
-                    air(current_neighbour), 
+                    _check_fun(current_neighbour), 
                     outline_set += current_neighbour,
                     // if it's not air, and is interior, add to queue
                     current_neighbour==interior,
