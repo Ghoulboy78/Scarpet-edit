@@ -60,8 +60,14 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
-    ['hollow', ['_hollow', null], false],
-    ['hollow <block>', '_hollow', [0, 'help_cmd_hollow', 'help_cmd_hollow_tooltip', null]],
+    ['hollow', ['_hollow', null, null], false],
+    ['hollow <block>', ['_hollow', null], [0, 'help_cmd_hollow', 'help_cmd_hollow_tooltip', null]],
+    ['hollow f <flag>', _(flag) -> _hollow(null, flag), false],
+    ['hollow <block> f <flag>', '_hollow', false],
+    ['outline <block>', ['_outline', null, null], false],
+    ['outline <block> <outline_block>', ['_outline', null], false],
+    ['outline <block> f <flag>', _(block, flag) -> _outline(block, null, flag), false],
+    ['outline <block> <outline_block> f <flag>', '_outline', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
@@ -112,6 +118,7 @@ base_commands_map = [
     ['brush hollow <radius>', _(radius) -> brush('hollow', null, radius), [0, 'help_cmd_brush_hollow', 'help_cmd_brush_generic', false]],
     ['brush hollow f <flag>', _(flag) -> brush('hollow', flag, 50), false],
     ['brush hollow <radius> f <flag>', _(radius, flag) -> brush('hollow', flag, radius), false],
+    ['brush outline <block>', _(block) -> brush('outline', null, block, 50), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
     ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
@@ -854,6 +861,7 @@ global_lang_keys = global_default_lang = {
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
     'action_hollow' ->             'hollow',
+    'action_outline' ->            'outline',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
@@ -1253,8 +1261,9 @@ _get_prism_offset(height, axis) -> (
 _flood_fill_shape(perimeter, center, axis) ->(
     // returns blocks corresponding to the interior of the shape defined by <perimeter>
     // should work in 3D too giving a close surphase and passing null as <axis>
+    max_iter = 20000;
     if(
-        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
+        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)); max_iter = 100000,
         axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
         axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
         axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
@@ -1265,7 +1274,7 @@ _flood_fill_shape(perimeter, center, axis) ->(
     map(perimeter,interior:_ = null);
     queue = [center];
 
-    while(length(queue)>0, 10000,
+    while(length(queue)>0, max_iter,
 
         current_pos = queue:0;
         delete(queue, 0);
@@ -1296,7 +1305,7 @@ hollow(pos, args, flags) -> (
     interior = block(origin);
     queue = [origin];
 
-    while(length(queue)>0, 50000,
+    while(length(queue)>0, 100000,
         current_pos = queue:(-1);
         delete(queue, -1);
 
@@ -1320,6 +1329,42 @@ hollow(pos, args, flags) -> (
     for(interior_set, set_block(_, 'air', null, flags, {}));
     add_to_history('action_hollow', player())
 );
+
+
+outline(pos, args, flags) -> (
+    [block, radius] = args;
+    origin = pos;
+
+    outline_set = {};
+    visited = {origin->null};
+    interior = block(origin);
+    queue = [origin];
+
+    while(length(queue)>0, 100000,
+        current_pos = queue:(-1);
+        delete(queue, -1);
+
+        current_is_interior = true;
+        for(neighbours(current_pos),
+            current_neighbour = _;
+            cn_pos = pos(current_neighbour);
+            if(!has(visited, cn_pos) && _sq_distance(origin, cn_pos)<=radius*radius,
+                if( //if it's air, it's outline
+                    air(current_neighbour), 
+                    outline_set += current_neighbour,
+                    // if it's not air, and is interior, add to queue
+                    current_neighbour==interior,
+                    visited += cn_pos;
+                    queue += cn_pos
+                )
+            )
+        );
+    );
+
+    for(outline_set, set_block(_, block, null, flags, {}));
+    add_to_history('action_outline', player())
+);
+
 
 //Command processing functions
 
@@ -1677,10 +1722,10 @@ flood_fill(block, axis, flags) ->
 
 _flood_generic(block, axis, start, flags) ->
 (
-    max_iter = 10000;
+    max_iter = 20000;
     // Define function to request neighbours perpendiular to axis
     if(
-        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)); max_iter = 50000,
+        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)); max_iter = 100000,
         axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
         axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
         axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
@@ -1714,7 +1759,7 @@ _flood_generic(block, axis, start, flags) ->
     add_to_history('action_flood', player())
 );
 
-_hollow(block) -> (
+_hollow(block, flags) -> (
     player=player();
     [pos1,pos2]=_get_current_selection(player);
 
@@ -1729,8 +1774,45 @@ _hollow(block) -> (
             if(all(neighbours(current), _==current), to_delete+=current)
         );
     );
-    for(to_delete, set_block(_, 'air', null, null, {}));
+    for(to_delete, set_block(_, 'air', null, _parse_flags(flags), {}));
     add_to_history('action_hollow', player)
+);
+
+_outline(block, block_to_outline, flags) -> (
+    print(block_to_outline);
+    player=player();
+    [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
+
+    if(flags~'g',
+        print('g');
+        _is_green(block) -> has(global_air_greenery, str(block));
+        _check_fun(block) -> !(air(block) || _is_green(block)),
+        //else, just check air
+        print('no g');
+        _is_green(block) -> false;
+        _check_fun(block) -> !air(block);
+    );
+
+    if(block_to_outline,
+        _is_block(test_block, outer(block_to_outline)) -> test_block==block_to_outline,
+        print('no block');
+        _is_block(test_block) -> true;
+    );
+
+    print('Block: '+_is_block(null));
+    print('Check: '+_check_fun(pos1));
+    print('Green: '+_is_green(pos1));
+    to_set = {};
+    volume(pos1, pos2,
+        //print([_, _check_fun(_), _is_block(_),_check_fun(_) && _is_block(_)]);
+        if(_check_fun(_) && _is_block(_),
+            for(neighbours(_), if(air(_) || _is_green(_), to_set+=_))
+        )
+    );
+
+    for(to_set, set_block(_, block, null, flags, {}));
+    add_to_history('action_outline', player)
 );
 
 rotate(centre, degrees, axis)->(
