@@ -67,6 +67,7 @@ Left clicking again will reselect the whole box.
  - `/world-edit hollow [block]` -> Hollows out all shapes within the selection. If optional `[block]` argument is given, only hollows out shapes made of that block.
  - `/world-edit outline <block> [block_to_outline]` -> Outlines the selection with `<block>`. It only affects blocks matching `[block_to_outline]`, if given.
  - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
+ - `/world-edit outline_selection <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
 
 #### Brushes
