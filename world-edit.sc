@@ -60,6 +60,8 @@ base_commands_map = [
     ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
     ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
+    ['hollow', ['_hollow', null], false],
+    ['hollow <block>', '_hollow', [0, 'help_cmd_hollow', 'help_cmd_hollow_tooltip', null]],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
     ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
@@ -104,6 +106,10 @@ base_commands_map = [
     ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis), 
         [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
     ['brush flood <block> <radius> <axis> f <flag>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false],
+    ['brush hollow', _() -> brush('hollow', null, 50), false],
+    ['brush hollow <radius>', _(radius) -> brush('hollow', null, radius), [0, 'help_cmd_brush_hollow', 'help_cmd_brush_generic', false]],
+    ['brush hollow f <flag>', _(flag) -> brush('hollow', flag, 50), false],
+    ['brush hollow <radius> f <flag>', _(radius, flag) -> brush('hollow', flag, radius), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
     ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
@@ -761,6 +767,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
+    'help_cmd_hollow' ->          'l Hollows out all connex shapes inside selection',
+    'help_cmd_hollow' ->          'g Specify [block] to hollow out only shapes of that material',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
     'help_cmd_brush_list' ->      'l Lists all currently regiestered brushes and their actions',
     'help_cmd_brush_info' ->      'l Gives detailed info of currently held brush',
@@ -774,7 +782,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_polygon' ->   'l Register brush to create polygon prism with [vertices] ammount of sides',
     'help_cmd_brush_star' ->      'l Register brush to create star prism with [vertices] ammount of points',
     'help_cmd_brush_line' ->      'l Register brush to create line from player to where you click of [length], if given',
-    'help_cmd_brush_flood' ->     'l Register brush to perfrm flood fill out of [block] starting on right clicked block',
+    'help_cmd_brush_flood' ->     'l Register brush to perform flood fill out of [block] starting on right clicked block',
+    'help_cmd_brush_hollow' ->    'l Register brush to hollow out shapes',
     'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
     'help_cmd_brush_feature' ->   'l Register brush to plop feature',
 
@@ -842,6 +851,7 @@ global_lang_keys = global_default_lang = {
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
+    'action_hollow' ->             'hollow',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
@@ -1275,6 +1285,40 @@ feature(pos, args, flags) -> (
     plop(pos, what)
 );
 
+hollow(pos, args, flags) -> (
+    [radius] = args;
+    origin = pos;
+
+    interior_set = {};
+    visited = {origin->null};
+    interior = block(origin);
+    queue = [origin];
+
+    while(length(queue)>0, 50000,
+        current_pos = queue:(-1);
+        delete(queue, -1);
+
+        current_is_interior = true;
+        for(neighbours(current_pos),
+            current_neighbour = _;
+            cn_pos = pos(current_neighbour);
+            if(!has(visited, cn_pos) && _sq_distance(origin, cn_pos)<=radius*radius,
+                if(current_neighbour==interior,
+                    visited += cn_pos;
+                    queue += cn_pos,
+
+                    //else
+                    current_is_interior = false;
+                )
+            )
+        );
+        if(current_is_interior, interior_set += current_pos)
+    );
+
+    for(interior_set, set_block(_, 'air', null, flags, {}));
+    add_to_history('action_hollow', player())
+);
+
 //Command processing functions
 
 global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
@@ -1631,10 +1675,10 @@ flood_fill(block, axis, flags) ->
 
 _flood_generic(block, axis, start, flags) ->
 (
-
+    max_iter = 10000;
     // Define function to request neighbours perpendiular to axis
     if(
-        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
+        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)); max_iter = 50000,
         axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
         axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
         axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
@@ -1646,7 +1690,7 @@ _flood_generic(block, axis, start, flags) ->
     visited = {start->null};
     queue = [start];
 
-    while(length(queue)>0, 10000,
+    while(length(queue)>0, max_iter,
 
         current_pos = queue:0;
         delete(queue, 0);
@@ -1666,6 +1710,25 @@ _flood_generic(block, axis, start, flags) ->
     );
 
     add_to_history('action_flood', player())
+);
+
+_hollow(block) -> (
+    player=player();
+    [pos1,pos2]=_get_current_selection(player);
+
+    to_delete  = {};
+    if(block,
+        volume(pos1, pos2,
+            current = _; 
+            if(current==block && all(neighbours(current), _==current), to_delete+=current)
+        ),
+        volume(pos1, pos2,
+            current = _; 
+            if(all(neighbours(current), _==current), to_delete+=current)
+        );
+    );
+    for(to_delete, set_block(_, 'air', null, null, {}));
+    add_to_history('action_hollow', player)
 );
 
 rotate(centre, degrees, axis)->(
