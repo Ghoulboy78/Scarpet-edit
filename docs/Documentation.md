@@ -64,6 +64,7 @@ Left clicking again will reselect the whole box.
  - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase you didnt' choose a wise spot making the selection.
  - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the player's position. Can both "fill" used to be air or replace some other block.
  - `/world-edit flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for isntance, will fill the horizontal plane.
+ - `/world-edit hollow [block]` -> Hollows out all shapes within the selection. If optional `[block]` argument is given, only hollows out shapes made of that block.
  - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
  - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
@@ -82,7 +83,8 @@ The available actions for brushes are:
 - `prism_polygon <block> <radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a polygon inscribed in a circle of `radius` with `vertices` ammount of sides. Said polygon is the base for a prism of height `height` along `axis`. Optionally, it can be rotated from it's base orientation.
 - `prism_star <block> <outer_radius> <inner_radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a star whouse points touch a circle of radius `outer_radius` with `vertices` ammount of points. Said star is the base for a prism of height `height` along `axis`. Optionally, it can be rotated from it's base orientation.
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed and it only uses the clicked block to get the direction of the line.
-- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
+- `flood <block> [radius] [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting poin (defaults to 50). The flood happens in the plane perpendicular to `axis`, if given.
+- `hollow [radius]` -> hollows out the continuos blob of blocks starting in the clicked block, going no further from the starting point than `[radius]` (defaults to 50).
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 
