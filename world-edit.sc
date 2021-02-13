@@ -948,8 +948,6 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_reach', global_brush_reach)
         ),
 
-        action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')),
-
         // else, register new brush with given action
         if(has(global_brushes, held_item),
             _print(player, 'brush_replaced', held_item)
@@ -959,10 +957,11 @@ brush(action, flags, ...args) -> (
 );
 
 shape(action, pos, args, flags)->
-    call(global_brush_shapes:action, pos, args, flags)
+    call(global_brush_shapes:action, pos, args, flags);
 
 _brush_action(pos, brush) -> (
     [action, args, flags] = global_brushes:brush;
+    if(action == 'feature', print(player(), format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')));
     shape(action,pos, args, flags)
 );
 
@@ -1000,7 +999,7 @@ global_brush_shapes={
                         )
                     );
 
-                    c_for(a = -radius_,y a<= radius_y, a+=1,
+                    c_for(a = -radius_y, a<= radius_y, a+=1,
                         c_for(b = -radius_y, b<= radius_y, b+=1,
                             set_block(pos + [radius_y, a, b], block, replacement, flags, {});
                             set_block(pos + [-radius_y, a, b], block, replacement, flags, {});
@@ -1138,6 +1137,10 @@ global_brush_shapes={
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
             );
             add_to_history('action_prism_polygon',player())
+        ),
+    'feature'->_(pos, args, flags)->(
+            [feature] = args;
+            plop(pos, feature);
         )
 };
 
