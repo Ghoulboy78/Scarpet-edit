@@ -6,7 +6,7 @@ import('math','_round');
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
 //# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
-//#
+//#f
 //# Suggestion is derived from command_for_carpet, everything before the first `<`.
 //# Command prefix (/world-edit ) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
@@ -1799,7 +1799,7 @@ _walls_generic(min_corner, max_corner, sides, block, replacement, flags) -> (
     )
 );
 
-outline(block, replafement, flags) -> (
+outline(block, replacement, flags) -> (
     player = player();
     [pos1,pos2]=_get_current_selection(player);
     flags=_parse_flags(flags);
@@ -1955,12 +1955,10 @@ move(new_pos,flags)->(
 );
 
 stack(count,direction,flags) -> (
-    print([count, type(count)]);
     player=player();
     translation_vector = pos_offset([0,0,0],if(direction,direction,player~'facing'));
     [pos1,pos2]=_get_current_selection(player);
     flags = _parse_flags(flags);
-    print(flags);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
 
