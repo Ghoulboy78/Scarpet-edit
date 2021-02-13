@@ -1052,10 +1052,11 @@ global_brush_shapes={
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
             pointup=signed_axis~'+';
-            loop(height,
+            loop(height-1,
                 r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, if((pointup && _==0)||(!pointup && _==height-1),false,flags~'h'),replacement, flags)//Always close bottom off
+                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
             );
+            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
             add_to_history('action_cone',player())
         ),
     'cylinder'->_(pos, args, flags)->(
@@ -1063,8 +1064,10 @@ global_brush_shapes={
             flags = _parse_flags(flags);
             hollow=flags~'h';
             loop(height,
-                fill_flat_circle(pos, _, radius, orientation, block, if(_==0 || _==height-1,false,flags~'h'), replacement, flags)//Always close ends off
+                fill_flat_circle(pos, _, radius, orientation, block, flags~'h', replacement, flags)//Always close ends off
             );
+            fill_flat_circle(pos, 0, radius, orientation, block, false, replacement, flags);//Always close ends off
+            fill_flat_circle(pos, height, radius, orientation, block, false, replacement, flags);
             add_to_history('action_cylinder',player())
         ),
     'paste'->_(pos, args, flags)->(
