@@ -972,8 +972,8 @@ global_brush_shapes={
 
                 if(flags~'h', //hollow is O(n^2) operation, so only need double forloop. Makes it kinda bulky, but worth it tbh
                     radius = round(size/2);
-                    c_for(a = 1-radius, a<= radius-1, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
-                        c_for(b = 1-radius, b <= radius-1, b+=1,//todo test code
+                    c_for(a = radius, a<= radius, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
+                        c_for(b = -radius, b <= radius, b+=1,
                             set_block(pos + [a, b, radius], block, replacement, flags, {});
                             set_block(pos + [a, b, -radius], block, replacement, flags, {});
                             set_block(pos + [a, radius, b], block, replacement, flags, {});
@@ -989,30 +989,28 @@ global_brush_shapes={
             ),
     'cuboid'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
                 [block, size, replacement] = args;
-                if(flags~'h', // This hollow function is slower, cos gotta iterate over all three axes when setting. todo test
-                    [radius_x, radius_y, radius_z]=size/2;
+                size = map(size/2, round(_));
 
-                    c_for(a = -radius_x, a<= radius_x, a+=1,
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [radius_x, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius_x, a, b], block, replacement, flags, {});
-                        )
-                    );
+                if(flags~'h', // This hollow function is bulkier, cos gotta iterate over all three axes when setting.
+                    [radius_x, radius_y, radius_z]=size;
 
                     c_for(a = -radius_y, a<= radius_y, a+=1,
-                        c_for(b = -radius_y, b<= radius_y, b+=1,
-                            set_block(pos + [radius_y, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius_y, a, b], block, replacement, flags, {});
+                        c_for(b = -radius_z, b<= radius_z, b+=1,
+                            set_block(pos + [ radius_x, a, b], block, replacement, flags, {});
+                            set_block(pos + [-radius_x, a, b], block, replacement, flags, {});
+                        );
+                        c_for(b = -radius_x, b<= radius_x, b+=1,
+                            set_block(pos + [ b, a, radius_z], block, replacement, flags, {});
+                            set_block(pos + [ b, a,-radius_z], block, replacement, flags, {});
                         )
                     );
-
-                    c_for(a = -radius_z, a<= radius_z, a+=1,
-                        c_for(b = -radius_z, b<= radius_z, b+=1,
-                            set_block(pos + [radius_z, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius_z, a, b], block, replacement, flags, {});
+                    c_for( a= -radius_x, a<= radius_x, a+=1,
+                        c_for(b = -radius_x, b<= radius_x, b+=1,
+                            set_block(pos + [ b, radius_y, a], block, replacement, flags, {});
+                            set_block(pos + [ b,-radius_y, a], block, replacement, flags, {});
                         )
                     ),
-                    scan(pos,size/2, set_block(_, block, replacement, flags, {}))
+                    scan(pos,size, set_block(_, block, replacement, flags, {}))
                 );
                 add_to_history('action_cuboid',player())
             ),
