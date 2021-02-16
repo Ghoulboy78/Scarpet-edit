@@ -59,10 +59,16 @@ base_commands_map = [
     ['selection move', _() -> selection_move(1, null), false],
     ['selection move <amount>', _(n)->selection_move(n, null), false],
     ['selection move <amount> <direction>', 'selection_move',false],
-    ['flood <block>', ['flood_fill', null, null], false],
-    ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
-    ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
-    ['flood <block> <axis> f <flag>', 'flood_fill', false],
+    ['flood <block>', ['flood_fill', null, null, null], false],
+    ['flood <block> <axis>', ['flood_fill', null, null], false],
+    ['flood <block> none', ['flood_fill', null,  null, null], false],
+    ['flood <block> <axis> <radius>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
+    ['flood <block> none <radius>', _(block, radius) -> flood_fill(block, null, radius, null), false],
+    ['flood <block> f <flag>', _(block,flag) -> flood_fill(block, null, null, flag), false],
+    ['flood <block> <axis> f <flag>', _(block, axis, flag) -> flood_fill(block, axis, null, flag), false],
+    ['flood <block> none f <flag>', _(block, flag) -> flood_fill(block, null, null, flag), false],
+    ['flood <block> <axis> <radius> f <flag>', 'flood_fill', false],
+    ['flood <block> none <radius> f <flag>', _(block, radius, flag) -> flood_fill(block, null, radius, flag), false],
     ['drain', ['_drain', null, null], false],
     ['drain <radius>', ['_drain', null], [1, 'help_cmd_drain', 'help_cmd_drain_tooltip', null]],
     ['drain f <flag>', _(flag)->_drain(null, flag), false],
@@ -106,11 +112,15 @@ base_commands_map = [
     ['brush cone <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['brush cone <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
+    ['brush flood <block>', _(block) -> brush('flood', null, block, null, null), false],
+    ['brush flood <block> f <flag>', _(block, flags) -> brush('flood', flags, block, null, null), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
     ['brush flood <block> <radius> f <flag>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
     ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis), 
-        [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
+        [1, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
     ['brush flood <block> <radius> <axis> f <flag>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false],
+    ['brush flood <block> <radius> none', _(block, radius) -> brush('flood', null, block, radius, null), false],
+    ['brush flood <block> <radius> none f <flag>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
     ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
@@ -1148,20 +1158,6 @@ _define_flat_distance_squared(axis, radius, size) -> (
     );
 );
 
-flood(pos, args, flags) -> (
-
-    start = pos;
-    [block, radius, axis] = args;
-    if(block(start)==block, return());
-
-    // test if inside sphere
-    _flood_tester(pos, outer(start), outer(radius)) -> (
-        _sq_distance(pos, start) <= radius*radius
-    );
-
-    _flood_generic(block, axis, start, _parse_flags(flags));
-);
-
 line(pos, args, flags) -> (
     [block, length, replacement] = args;
 
@@ -1336,6 +1332,12 @@ feature(pos, args, flags) -> (
     plop(pos, what)
 );
 
+flood(pos, args, flags) -> (
+    [block, radius, axis] = args;
+    _flood_fill(block, pos, axis, radius, flags);
+    add_to_history('action_flood', player())
+);
+
 drain(pos, args, flags) -> (
 	[radius] = args;
 	_drain_generic(pos, radius, flags)
@@ -1343,7 +1345,7 @@ drain(pos, args, flags) -> (
 
 //Command processing functions
 
-global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
@@ -1722,25 +1724,44 @@ _place_angel_block(pos) -> (
     add_to_history('action_angel', player())
 );
 
-flood_fill(block, axis, flags) ->
+flood_fill(block, axis, radius, flags) -> (
+    _flood_fill(block, player()~'pos', axis, radius, flags);
+    add_to_history('action_flood', player())
+);
+
+_flood_fill(block, pos, axis, radius, flags) ->
 (
     player = player();
-    start = player~'pos';
+    start = pos;
     if(block(start)==block, return());
 
-    [pos1,pos2]=_get_current_selection(player);
-    min_pos = map(pos1, min(_, pos2:_i));
-    max_pos = map(pos1, max(_, pos2:_i));
-    // test if inside selection
-    _flood_tester(pos, outer(min_pos), outer(max_pos)) -> (
-        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
-    );
-    _flood_generic(block, axis, start, _parse_flags(flags));
+    flags = _parse_flags(flags);
 
+    // check if inside selection, if there is a selection
+    if( length(global_selection) < 2,
+        no_selection = true,
+        // else, there is a selection
+        no_selection = false;
+        [pos1,pos2]=_get_current_selection(player);
+        min_pos = map(pos1, min(_, pos2:_i));
+        max_pos = map(pos1, max(_, pos2:_i));
+        // test if inside selection
+        _is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
+            all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
+        );
+    );
+
+    if( !no_selection && radius==null && _is_inside_selection(start), 
+        _flood_tester(pos)->_is_inside_selection(pos),
+        if(radius==null, radius=25);
+        _flood_tester(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius
+    );
+
+    _flood_generic(block, axis, start,flags);
 );
 
 _flood_generic(block, axis, start, flags) ->
-(
+(   
     // Define function to request neighbours perpendiular to axis
     if(
         axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
@@ -1786,41 +1807,14 @@ _flood_generic(block, axis, start, flags) ->
             );
         );
     );
-
-    add_to_history('action_flood', player())
 );
 
 _drain(radius, flags) -> _drain_generic(player()~'pos', radius, flags);
 
 _drain_generic(pos, radius, flags) -> (
-	player = player();
 	if( (start_bl = block(pos)) == 'lava' || start_bl == 'water',
-
-		flags = _parse_flags(flags);
-		start =  pos;
-
-		// check if inside selection, if there is a selection
-		if( length(global_selection) < 2,
-			no_selection = true,
-			// else, there is a selection
-			no_selection = false;
-		    [pos1,pos2]=_get_current_selection(player);
-		    min_pos = map(pos1, min(_, pos2:_i));
-		    max_pos = map(pos1, max(_, pos2:_i));
-		    // test if inside selection
-		    _is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
-		        all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
-		    );
-		);
-
-	    if( !no_selection && radius==null && _is_inside_selection(pos), 
-	    	_flood_tester(pos)->_is_inside_selection(pos),
-	    	if(radius==null, radius=25);
-	    	_flood_tester(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius
-	    );
-	    _flood_generic('air', null, start, flags);
-
-	    add_to_history('action_drain', player)
+	    _flood_fill('air', pos, null, radius, flags);
+	    add_to_history('action_drain', player())
 	);
 );
 
