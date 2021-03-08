@@ -31,13 +31,13 @@ Left clicking again will reselect the whole box.
     redone with `/world-edit redo`.
  - `/world-edit undo all` -> Undoes entire undo history. Careful!
  - `/world-edit undo history` -> Displays entire undo history.
- - `/world-edit redo [moves]` -> Redoes `[moves]` ammount undone by the player, or one if not specified. Also shows up in
-    undo history.
- - `/world-edit redo all` -> Redoes all undone moves.
+ - `/world-edit redo [moves]` -> Redoes `[moves]` amount of moves previously undone by the player, or one if not specified.
+    Also shows up in undo history so you can re- undo them.
+ - `/world-edit redo all` -> Redoes all undone moves. (These can be re- undone by regular /undo command)
  - `/world-edit wand <wand>` -> Sets wand to held item, or if your hand is empty, gives you the wand. With optional `[wand]`
     argument, it sets wand to specified item
  - `/world-edit rotate <pos> <degrees> <axis>` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
-    `y` or `z`.
+    `y` or `z`. NB: This will look funky if you do not use multiples of 45 or 90.
  - `/world-edit stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise
     specfied. By defaults, it stacks one time.
  - `/world-edit expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
