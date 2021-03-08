@@ -1,6 +1,6 @@
 //World edit for scarpet
 
-import('math','_round');
+import('math','_round', '_euclidean_sq', '_vec_length');
 
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
@@ -1032,7 +1032,9 @@ global_brush_shapes={
             [block, radii, replacement] = args;
 
             scan(pos, radii,
-                if(_sq_distance((pos(_)-pos) / radii, 0) <= 1,
+                l = _euclidean_sq((pos(_) - pos)/radii, 0); //cos sqrt() is slow to do, especially for large areas
+                r = 1/_vec_length(radii)
+                if(l<=1+r && (!flags~'h' || l>=1-r),//this algorithm is slow, but works (sorta, i think...)
                     set_block(pos(_),block, replacement, flags, {})
                 )
             );
@@ -1115,7 +1117,7 @@ global_brush_shapes={
             start = pos;
             [block, radius, axis] = args;
             if(block(start)==block, return());
-            _flood_generic(block, axis, start, _(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius,  flags);
+            _flood_generic(block, axis, start, _(pos, outer(start), outer(radius)) -> _euclidean_sq(pos, start) <= radius*radius,  flags);
         ),
     'prism_polygon'->_(pos, args, flags)->(
             [block, radius, height, n_points, axis, rotation, replacement] = args;
@@ -1193,8 +1195,6 @@ fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags
         )
     );
 );
-
-_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 
 _get_circle_points(R, n, phase) -> (
     // retunrs <n> equidistant points on a circle
