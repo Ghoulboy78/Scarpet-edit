@@ -350,7 +350,7 @@ __config()->{
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
         'feature'->{'type'->'term','options'-> get_features_list()},
-		'brush'->{'type'->'term', 'suggester'->_(ignored)->keys(global_brushes)},
+	'brush'->{'type'->'term', 'suggester'->_(ignored)->keys(global_brushes)},
 	}
 };
 //player globals
