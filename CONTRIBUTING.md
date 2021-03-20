@@ -153,11 +153,11 @@ is done).
 
 Some items have built-in functionality, like the wand, but the user has the ability to add more items with actions associated
 with them (like brushes and angel block, for instance). If you want to add a new item functionality (say, building wand, for 
-example), then you need to take care of a few things, to avoid one item having many actions associated with it:
+example), then you need to take care of a few things, to avoid one item having multiple actions associated with it:
   * When registering an item for a new action, call `new_action_item(item, action)`. This will check if the item is already 
-  registered for another action and call `_error()` if it is. Remember, that `exit`s, so there no need for an extra, that function 
-  does the check for you.
-  * When unregistering an item (not replacing it with a new one, like the wand does, actualy deleting it), call 
+  registered for another action and call `_error()` if it is. Remember, that `exit`s, so there no need for an extra `return()` 
+  call or anything, that function does the check for you.
+  * When unregistering an item (not replacing it with a new one, like the wand does, actually deleting it), call 
   `remove_action_item(item, action)`, which will check that the requested item indeed has that action registered to it. It also 
   `exit`s if it fails. For isntance, `brush` uses it like this:
   ```C++
@@ -171,9 +171,9 @@ example), then you need to take care of a few things, to avoid one item having m
       1. add your action's name to the `global_lang_keys` so it can be translated
       2. add your action's code name to `global_item_action_translation_key` so it can be requested from `global_lang_keys` (for example,
       the angel block's code name is `'angel'`, with a translation key `'action_item_angel'`, which gives the text `'angel block item'`)
-      3. if your new action has a default tool or item (like the wand does), add it to `global_items_with_actions` along with it's action
+      3. if your new action has a default tool or item (like the wand does), add it to `global_items_with_actions` along with its action
   * If registering a new item to your action just replaces the previous one, rather than adding a brand new one (think wand vs brush: one 
-  replaces the old wand with a new one, while the other adds a new brush, leaving the old one suntouched), take good care to manually 
+  replaces the old wand with a new one, while the other adds a new brush, leaving the old ones untouched), take good care to manually 
   delete the old item from `global_items_with_actions` just before adding the new one. Angel block for example does it like this:
   ```C++
   _set_angel_block_item() -> (
