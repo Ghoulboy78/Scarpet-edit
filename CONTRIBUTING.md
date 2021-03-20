@@ -99,7 +99,8 @@ and the value being a lambda function with `(pos, args, flags)` as the arguments
 world in whatever way you see fit, and must call the `add_to_history()` function (cos not all brush functions set blocks).
 You can take whichever arguments you need from the args `args` variable as long as you specify them in the input command.
 You must also add a command which takes the correct inputs and passes them to the `shape()` function in the proper manner.
-You must also add a translation key for the action to the lang file.
+You must also add a translation key for the action to the lang file. Finally, it's encouraged that devs add a list of parameters
+to `global_brushes_parameters_map` to pretify the `brush info` command output. 
 
 If this was too bulky and confusing too understand, here is a full example of  the `cube` function, which simply places
 cubes:
@@ -144,6 +145,16 @@ cubes:
       ... //more entries
    }
    ```
+
+4. We finally add a list of the aprameters the brush uses to `global_brushes_parameters_map` to be the display names when
+  calling  `brush info`:
+  ```
+  global_brushes_parameters_map = {
+    ... //other brushes
+    'cube'-> ['block', 'size', 'replace'],
+    ... //more brushes
+  }
+  ```
 
 #### Messages
 

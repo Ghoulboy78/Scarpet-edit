@@ -6,7 +6,7 @@ import('math','_round', '_euclidean_sq', '_vec_length');
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
 //# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
-//#
+//#f
 //# Suggestion is derived from command_for_carpet, everything before the first `<`.
 //# Command prefix (/world-edit ) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
@@ -22,6 +22,16 @@ base_commands_map = [
     ['set <block> <replacement>', ['set_in_selection',null], [1, 'help_cmd_set', 'help_cmd_set_tooltip', null]],
     ['set <block> f <flag>', _(block,flag)->set_in_selection(block,null,flag), false], //TO-DO Help for flags
     ['set <block> <replacement> f <flag>', 'set_in_selection', false],
+    ['walls <block>', ['walls', 'xz', null, null], false],
+    ['walls <block> <sides>', ['walls', null, null], false],
+    ['walls <block> <sides> <replacement>', ['walls', null], [1, 'help_cmd_walls', 'help_cmd_walls_tooltip', null]],
+    ['walls <block> f <flags>', _(block,flags)->walls(block,'xz',null,flags), false],
+    ['walls <block> <sides> f <flags>', _(block,sides,flags)->walls(block,sides,null,flags), false],
+    ['walls <block> <sides> <replacement> f <flags>', 'walls', false],
+    ['outline <block>', ['outline', null, null], false],
+    ['outline <block> <replacement>', ['outline', null], [1, 'help_cmd_outline', null, null]],
+    ['outline <block> f <flags>', _(block,flags)->outline(block,null,flags), false],
+    ['outline <block> <replacement> f <flags>', 'outline', false],
     ['undo', ['undo', 1], false],
     ['undo <moves>', 'undo', [0, 'help_cmd_undo', null, null]],
     ['undo all', ['undo', 0], [-1, 'help_cmd_undo_all', null, null]],
@@ -36,7 +46,7 @@ base_commands_map = [
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
     ['stack f <flag>', _(flags)->stack(1,null,flags), false], //TODO here too Help for flags
-    ['stack <count> f <flag>', _(stackcount,flags)->stack(1,null,flags), false],
+    ['stack <count> f <flag>', _(count,flags)->stack(count,null,flags), false],
     ['stack <count> <direction> f <flag>', 'stack', false],
     ['expand <pos> <magnitude>', 'expand', [-1, 'help_cmd_expand', 'help_cmd_expand_tooltip', null]],
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
@@ -64,7 +74,8 @@ base_commands_map = [
     ['flood <block> <axis> f <flag>', 'flood_fill', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
-    ['brush info', ['brush', 'info', null], [-1, 'help_cmd_brush_info', null, null]],
+	['brush info', ['brush', 'info', null], false],
+    ['brush info <brush>', _(brush)-> brush('info', null, brush), [0, 'help_cmd_brush_info', null, null]],
     ['brush reach', ['brush', 'reach', null], false],
     ['brush reach <length>', _(length)-> brush('reach', null, length), [0, 'help_cmd_brush_reach', null, null]],
     ['brush cube <block> <size>', _(block, size_int) -> brush('cube', null, block, size_int, null), false],
@@ -157,6 +168,22 @@ base_commands_map = [
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
+    ['brush spray <block>', _(block) -> brush('spray', null, block, 12, 100, null), false],
+    ['brush spray <block> <size_degrees>', _(block, size) -> brush('spray', null, block, size, 100, null), false],
+    ['brush spray <block> <size_degrees> <count>', _(block, size, count) -> brush('spray', null, block, size, count, null), false],
+    ['brush spray <block> f <flag>', _(block, flag) -> brush('spray', flag, block, 12, 100, null), false],
+    ['brush spray <block> <size_degrees> f <flag>', _(block, size, flag) -> brush('spray', flag, block, size, 100, null), false],
+    ['brush spray <block> <size_degrees> <count> f <flag>', _(block, size, count, flag) -> brush('spray', flag, block, size, count, null), false],
+    ['brush spray held_item', _() -> brush('spray', null, null, 12, 100, null), false],
+    ['brush spray held_item <size_degrees>', _(size) -> brush('spray', null, null, size, 100, null), false],
+    ['brush spray held_item <size_degrees> <count>', _(size, count) -> brush('spray', null, null, size, count, null), false],
+    ['brush spray held_item f <flag>', _(flag) -> brush('spray', flag, null, 12, 100, null), false],
+    ['brush spray held_item <size_degrees> f <flag>', _(size, flag) -> brush('spray', flag, null, size, 100, null), false],
+    ['brush spray held_item <size_degrees> <count> f <flag>', _(size, count, flag) -> brush('spray', flag, null, size, count, null), false],
+    ['brush spray <block> <size_degrees> <count> <replacement>', _(block, size, count, replacement) -> brush('spray', null, block, size, count, replacement), [1, 'help_cmd_spray', 'help_cmd_brush_generic', null]],
+    ['brush spray <block> <size_degrees> <count> <replacement> f <flag>', _(block, size, count, replacement, flag) -> brush('spray', flag, block, size, count, replacement), false],
+    ['brush spray held_item <size_degrees> <count> <replacement>', _(size, count, replacement) -> brush('spray', null, null, size, count, replacement), [0, 'help_cmd_spray_held', 'help_cmd_brush_generic', null]],
+    ['brush spray held_item <size_degrees> <count> <replacement> f <flag>', _(size, count, replacement, flag) -> brush('spray', flag, null, size, count, replacement), false],
 
     ['shape cube <pos> <block> <size>', _(pos, block, size_int) -> shape('cube', pos, [block, size_int, null], null), false],
     ['shape cube <pos> <block> <size> f <flag>', _(pos, block, size_int, flags) -> shape('cube', pos, [block, size_int, null], flags), false],
@@ -288,9 +315,10 @@ __config()->{
         'degrees'->{'type'->'int','suggest'->[0,90]},
         'axis'->{'type'->'term','options'->['x','y','z']},
         'saxis'->{'type'->'term', 'options'->['+x', '-x', '+y', '-y', '+z', '-z']},
+        'sides'->{'type'->'term', 'options'->['x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz']},
         'wand'->{'type'->'item','suggest'->['wooden_sword','wooden_axe']},
         'direction'->{'type'->'term','options'->['north','south','east','west','up','down']},
-        'stack'->{'type'->'int','min'->1,'suggest'->[]},
+        'count'->{'type'->'int','min'->1,'suggest'->[]},
         'flag' -> {
             'type' -> 'term',
             'suggester' -> _(args) -> (
@@ -321,11 +349,9 @@ __config()->{
         'size'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'length'->{'type'->'int','min'->1,'suggest'->[5, 10, 30]},
         'vertices'->{'type'->'int', 'min'->3 ,'suggest'->[3, 5, 7]},
-        'feature'->{
-            'type'->'term',
-            'options'-> get_features_list()
-        },
-    }
+        'feature'->{'type'->'term','options'-> get_features_list()},
+	'brush'->{'type'->'term', 'suggester'->_(ignored)->keys(global_brushes)},
+	}
 };
 //player globals
 
@@ -776,6 +802,9 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
+    'help_cmd_walls' ->           'l Set walls of the selection',
+    'help_cmd_walls_tooltip' ->   'l Use [sides] to choose which sides to generate',
+    'help_cmd_outline' ->         'l Outlines the selection with <block>',
     'help_cmd_up' ->              'l Teleport up specified ammount of block',
     'help_cmd_up_tooltip' ->      'g Generate a glass block under you if there was nothing there',
     'help_cmd_brush_clear' ->     'l Unregisters current item as brush',
@@ -795,6 +824,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_flood' ->     'l Register brush to perform flood fill out of [block] starting on right clicked block',
     'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
     'help_cmd_brush_feature' ->   'l Register brush to plop feature',
+    'help_cmd_spray' -> 	  	  'l Register brush to spray paint with given radius an point count',
+    'help_cmd_spray_held' -> 	  'l Register brush to spray paint out of block held in the offhand',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
@@ -826,14 +857,23 @@ global_lang_keys = global_default_lang = {
     'new_wand' ->                       'wi %s is now the app\'s wand, use it with care.', //wand item
     'invalid_wand' ->                   'r Wand has to be a tool or weapon',
 
-    'new_brush' ->                      'wi %s is now a brush with action %s',
-    'brush_info' ->                     'w %s has action %s bound to it with parameters %s and flags %s',
+   
+    'brush_item_tooltip' ->		'^g Click to get one!',
+    'brush_info_title' ->               'y Brush registered to ',
+    'brush_info_action' ->		'b \ Action: ',
+    'brush_info_params' ->		'b \ Parameters: ',
+    'brush_info_params_tooltip' ->	'g See help to understand what each parameter is',
+    'brush_info_flags' ->		'b \ Flags: ',
+    'brush_info_no_flags' ->		'w no flags',
     'brush_replaced' ->                 'w Replacing previous action for brush in %s',
+    'brush_new' ->			'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_empty_list' ->               'gi No brushes registerd so far',
-    'brush_extra_info' ->               'ig For detailed info on a brush use /world-edit brush info',
+    'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
-    'brush_reach' ->                    'w Brush reach is currently %d blocks',
+    'brush_reach' ->                    'w Brush reach is currently %d blocks', // reach
+	'no_brush_error'->					'r %s in not a brush', //item
+    'no_longer_brush' -> 				'w %s is no longer a brush',
 
     'structure_list' ->                'w List of structures:',
     'saved_structure' ->               'w Saved structure as %s.nbt',                                 //structure name
@@ -842,6 +882,7 @@ global_lang_keys = global_default_lang = {
     'structure_delete_success' ->      'gi Successfully deleted %s.nbt',                              //structure name
     'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
     'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
+    
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
@@ -861,12 +902,15 @@ global_lang_keys = global_default_lang = {
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
+    'action_spray' -> 			   'spray',
+    'action_walls' ->              'walls',
+    'action_outline' ->            'outline',
 };
 task(_()->write_file('langs/en_us','json',global_default_lang)); // Make a template for translators. Async cause why not. Maybe make an async section at the bottom?
 
 
 _get_lang_list() -> (
-  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that don't have spaces
+  filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that doesn't have spaces
 );
 
 _change_lang(lang)->(
@@ -933,6 +977,21 @@ _error(player, key, ... replace)->
 
 global_brushes = {};
 global_brush_reach = 100;
+global_brushes_parameters_map = {
+	'cube'-> ['block', 'size', 'replace'],
+	'cuboid'-> ['block', 'size', 'replace'],
+	'shpere' -> ['block', 'radius', 'replace'],
+	'ellipsoid' -> ['block', 'radii', replace],
+	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replace'],
+	'cone' -> ['block', 'radius', 'height', 'saxis', 'replace'],
+    'pyramid' -> ['block', 'radius', 'height', 'saxis', 'replace'],
+	'prism_polygon' -> ['block', 'radius', 'height', 'vertices', 'axis', 'rotation', 'replace'],
+	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'vertices', 'axis', 'rotation', 'replace'],
+	'line' -> ['block', 'length', 'replace'],
+	'flood' -> ['block', 'radius', 'axis'],
+	'feature' -> ['what'],
+	'spray' -> ['block', 'size', 'count', 'replace'],
+};
 
 brush(action, flags, ...args) -> (
     player = player();
@@ -942,21 +1001,43 @@ brush(action, flags, ...args) -> (
     if(
         action=='clear',
         if(has(global_brushes, held_item),
-            delete(global_brushes, held_item),
+            delete(global_brushes, held_item);
+            _print(player, 'no_longer_brush', held_item),
             _error(player, 'no_brush_error', held_item)
         ),
-        action=='list', //TODO imprvove list with interactiveness
+        action=='list',
         if(global_brushes,
+        	print(player, '');
             _print(player, 'brush_list_header');
             for(pairs(global_brushes),
-                print(player, str('%s: %s', _:0, _:1:0));
+				print(player, format(
+					str('lb \ %s: ', item=_:0),
+					_translate('brush_item_tooltip'), 
+					str('!/give %s %s',player, item),
+					str('w %s ', _:1:0),
+					'db [i]',
+					str('^g Click for more info on %s brush', item),
+					str('!/world-edit brush info %s', item)
+				));
             );
             _print(player, 'brush_extra_info'),
             _print(player, 'brush_empty_list')
         ),
-        action=='info', //TODO improve info with better descriptions
+        action=='info',
+        if(args, held_item=args:0);
         if(has(global_brushes, held_item),
-            _print(player, 'brush_info', held_item, params=global_brushes:held_item:0, params:1, params:2),
+        	print(player, '');
+        	print(player, format( _translate('brush_info_title'), str('bl %s', held_item), _translate('brush_item_tooltip'), str('!/give %s %s',player, held_item) ));
+			print(player, format( _translate('brush_info_action'), str('w %s', (params=global_brushes:held_item):0) ));
+			if( (param_names=global_brushes_parameters_map:(params:0)) == null,
+				 print(player, format( _translate('brush_info_params'), str('w %s%s','',params:1), _translate('brush_info_params_tooltip') )),
+				 _print(player, 'brush_info_params');
+				 for(param_names, 
+                    param_value = if(_=='replace' && params:1:_i ==null, 'anything', params:1:_i);
+                    print(player, str('  %s: %s', _, param_value)))
+			);
+			print(player, format( _translate('brush_info_flags'), if(params:2, str('w %s', params:2), _translate('brush_info_no_flags') ) )),
+			// if it's not a brush
             _error(player, 'no_brush_error', held_item)
         ),
         action=='reach',
@@ -971,6 +1052,9 @@ brush(action, flags, ...args) -> (
             _print(player, 'brush_replaced', held_item)
         );
         global_brushes:held_item = [action, args, flags];
+        _print(player, 'brush_new', action, held_item);
+
+        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
     )
 );
 
@@ -1037,7 +1121,7 @@ global_brush_shapes={
 
             scan(pos, radii,
                 l = _euclidean_sq((pos(_) - pos)/radii, 0); //cos sqrt() is slow to do, especially for large areas
-                r = 1/_vec_length(radii)
+                r = 1/_vec_length(radii);
                 if(l<=1+r && (!flags~'h' || l>=1-r),//this algorithm is slow, but works (sorta, i think...)
                     set_block(pos(_),block, replacement, flags, {})
                 )
@@ -1068,7 +1152,7 @@ global_brush_shapes={
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
-            pointup=signed_axis~'+';
+            pointup=slice(signed_axis, 0, 1)=='+';
             loop(height-1,
                 r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
                 fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
@@ -1079,7 +1163,7 @@ global_brush_shapes={
     'pyramid'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
-            pointup=signed_axis~'+';
+            pointup=slice(signed_axis, 0, 1)=='+';
             loop(height-1,
                 r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
                 fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
@@ -1167,6 +1251,62 @@ global_brush_shapes={
             );
             add_to_history('action_prism_polygon',player())
         ),
+
+    'spray'->_(pos, args, flags)->(
+            
+            // because for some reason, the event is called twice
+            if(global_sprayed_tick == tick_time(), return());
+            global_sprayed_tick = tick_time();
+
+
+            [block, size, count, replacement] = args;
+
+            player = player();
+            if(block==null, block=query(player, 'holds', 'offhand'):0);
+
+            // get player looking direction
+            yaw = player~'yaw';
+            pitch = player~'pitch';
+            dir = _direction(yaw, pitch);
+
+            // set up stuff to rotat the random points
+            id3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+            u = _normalize(_cross_prod([0, 0, 1], dir));
+            angle = acos(_dot_prod(dir, [0, 0, 1]));
+            rot_matrix = cos(angle) * id3 + sin(angle) * _corss_matrix(u) + (1-cos(angle)) * _outer_prod(u, u);
+
+            loop(count,
+                
+                // get a random point in the spherical cap around [0, 0, 1]
+                z = rand(1-cos(size)) + cos(size);
+                phi = rand(360);
+                x = sqrt(1-z*z) * cos(phi);
+                y = sqrt(1-z*z) * sin(phi);
+                random_dir = [x, y, z];
+
+                // rotate the point to be around the looking direction
+                rotated_dir_matrix = rot_matrix*[random_dir,random_dir,random_dir];//cos matrix multiplication dont work in scarpet, yet...
+                rotated_dir = map(rotated_dir_matrix, reduce(_, _a+_, 0));
+
+                // set start and end points and slope of the ray trace
+                start = player~'pos' + [0, player~'eye_height', 0];
+                end = rotated_dir*global_brush_reach + start;
+
+                slope = end-start;
+                max_size = max(map(slope, abs(_)));
+                slope = slope / max_size;
+
+                // ray trice until it finds a non air block
+                scanned_block = start;
+                while(air(scanned_block),global_brush_reach,
+                    scanned_block = slope * _ + start;
+                );
+                set_block(scanned_block, block, replacement, flags, {})
+
+            );
+            add_to_history('action_spray', player);
+        ),
+
     'feature'->_(pos, args, flags)->(
             [feature] = args;
             plop(pos, feature);
@@ -1180,21 +1320,21 @@ fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags
         scan(pos,0,-r,-r,
             if((!hollow && (_y^2 + _z^2 <= drsq))||
                 (hollow && (_y^2 + _z^2 <= drsq && (abs(_y)+1)^ 2 + (abs(_z)+1)^2 >= drsq)),
-                set_block(_x+offset,_y,_z,block, replacement, flags, {})
+                set_block([_x+offset,_y,_z],block, replacement, flags, {})
             )
         ),
     orientation ~ 'y',
         scan(pos,-r,0,-r,
-            if((!hollow && (_x^2 + _z^2 <= drsq))||
+            if((!hollow && (_x^2 + _z^2 <= drs/q))||
                 (hollow && (_x^2 + _z^2 <= drsq && (abs(_x)+1)^ 2 + (abs(_z)+1)^2 >= drsq)),
-                set_block(_x,_y+offset,_z,block, replacement, flags, {})
+                set_block([_x,_y+offset,_z],block, replacement, flags, {})
             )
         ),
     orientation ~ 'z',
         scan(pos,-r,-r,0,
             if((!hollow && (_y^2 + _x^2 <= drsq))||
                 (hollow && (_y^2 + _x^2 <= drsq && (abs(_y)+1)^ 2 + (abs(_x)+1)^2 >= drsq)),
-                set_block(_x,_y,_z+offset,block, replacement, flags, {})
+                set_block([_x,_y,_z+offset],block, replacement, flags, {})
             )
         )
     );
@@ -1292,6 +1432,17 @@ feature(pos, args, flags) -> (
     plop(pos, what)
 );
 
+// Some algebra stuff needed for the spray paint
+_direction(yaw, pitch) -> [-sin(yaw)*cos(pitch), -sin(pitch), cos(pitch)*cos(yaw)];
+_normalize(vec) -> vec / sqrt(reduce(vec, _a + _*_, 0));
+_dot_prod(v, w) -> reduce(v*w, _a + _, 0);
+_cross_prod(v, w) -> [v:1*w:2 - v:2*w:1, v:2*w:0 - v:0*w:2, v:0*w:1 - v:1*w:0];
+_outer_prod(v, w) -> map(w, v*_);
+_corss_matrix(vec) -> (
+	[x, y, z] = vec;
+	[[0, -z, y], [z, 0, -x], [-y, x, 0]]
+);
+
 
 _flood_generic(block, axis, start, flood_tester,  flags) ->(
 
@@ -1335,50 +1486,59 @@ _flood_generic(block, axis, start, flood_tester,  flags) ->(
 
 //Command processing functions
 
-global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant'};
+global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-    success=null;
-    existing = block(pos);
 
-    // undo expects positions, not blocks
-    if(type(pos)!='list', pos=pos(pos));
-
-    if(!(nbt=extra:'nbt'),nbt={});
-
-    state = if(flags~'s' && all(keys(bs_e=block_state(existing)), has(block_state(block), _)),
-        bs_e,{}
-        );
-
-    if(flags~'d',
-        if(
-            block=='water', block='air',
-            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
-        );
-    );
-    if(flags~'w' && (
-        (existing == 'water' && block_state(existing, 'level')=='0') ||
-        block_state(existing, 'waterlogged')=='true'
+        if( !( 
+            (flags~'a' && block=='air' ) || 
+            ((flags~'a' &&flags~'g') &&has(global_air_greenery, str(block))) 
         ),
-        if(
-            block=='air', block='water', // "waterlog" air blocks
-            block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
-        );
-    );
-    if(flags~'g',
-        if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
-        if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
-    );
+        success=null;
+        existing = block(pos);
 
-    if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)) && !(flags~'a'&&air(block)),
-        postblock=if(flags && flags~'u',without_updates(set(existing,block,state,encode_nbt(nbt))),set(existing,block,state,encode_nbt(nbt))); //TODO remove "flags && " as soon as the null~'u' => 'u' bug is fixed
-        prev_biome=biome(pos);
-        if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
-        success=existing;
-        global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
-    );
-    bool(success)//cos undo uses this
+        // undo expects positions, not blocks
+        if(type(pos)!='list', pos=pos(pos));
+
+        state = if(flags~'s',
+            bs_e=block_state(existing);
+            bs_b=block_state(block);
+            if(all(keys(bs_e), has(bs_b, _)),
+                bs_e, {}
+            );
+        , {});
+        if(flags~'d',
+            if(
+                block=='water' || (flags~'g' &&has(global_water_greenery, str(block))) , block='air',
+                block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
+            );
+        );
+        if(flags~'w' && (
+            (existing == 'water' && block_state(existing, 'level')=='0') ||
+            block_state(existing, 'waterlogged')=='true'
+            ),
+            if(
+                block=='air', block='water', // "waterlog" air blocks
+                block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
+            );
+        );
+        if(flags~'g',
+            if(replacement:0=='water' && has(global_water_greenery,s=str(existing)), replacement=[s, null, [], false]);
+            if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
+        );
+
+        if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
+            postblock=if(flags~'u',without_updates(set(existing,block,state)),set(existing,block,state));
+            prev_biome=biome(pos);
+            if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
+            success=existing;
+            global_affected_blocks+=[pos,existing,{'biome'->prev_biome}];
+        );
+        bool(success), //cos undo uses this
+        false
+    )
+
 );
 
 _block_matches(existing, block_predicate) ->
@@ -1671,6 +1831,55 @@ set_in_selection(block,replacement,flags)->
     add_to_history('action_set', player)
 );
 
+walls(block, sides, replacement, flags) -> (
+    player = player();
+    [pos1,pos2]=_get_current_selection(player);
+    flags=_parse_flags(flags);
+
+    _walls_generic(pos1, pos2, sides, block, replacement, flags);
+
+    add_to_history('action_walls', player)
+);
+
+_walls_generic(min_corner, max_corner, sides, block, replacement, flags) -> (
+
+    [ox, oy, oz] = max_corner-min_corner;
+
+    if(sides~'z',
+        volume(min_corner, min_corner+[ox, oy, 0], set_block(_, block, replacement, flags, {}));
+        volume(max_corner, max_corner-[ox, oy, 0], set_block(_, block, replacement, flags, {}))
+    );
+    if(sides~'x',
+        volume(min_corner, min_corner+[0, oy, oz], set_block(_, block, replacement, flags, {}));
+        volume(max_corner, max_corner-[0, oy, oz], set_block(_, block, replacement, flags, {}))
+    );
+    if(sides~'y',
+        volume(min_corner, min_corner+[ox, 0, oz], set_block(_, block, replacement, flags, {}));
+        volume(max_corner, max_corner-[ox, 0, oz], set_block(_, block, replacement, flags, {}))
+    )
+);
+
+outline(block, replacement, flags) -> (
+    player = player();
+    [pos1,pos2]=_get_current_selection(player);
+    flags=_parse_flags(flags);
+
+    [ox, oy, oz] = pos2-pos1;
+    offsets = [ [ox, 0, 0], [0, oy, 0], [0, 0, oz] ];
+    _fill_offset(pos, offset, outer(block), outer(replacement), outer(flags))-> (
+        volume(pos, pos+offset, set_block(_, block, replacement, flags, {}))
+    );
+
+    for(offsets,
+        _fill_offset(pos1, _);
+        _fill_offset(pos2, _*-1);
+
+        _fill_offset(pos1+_, offsets:(_i+1));
+        _fill_offset(pos1+_, offsets:(_i+2));
+    );
+
+    add_to_history('action_outline',player)    
+);
 
 flood_fill(block, axis, flags) ->
 (
