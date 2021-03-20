@@ -116,14 +116,9 @@ The available actions for brushes are:
     to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane 
     perpendicular to `axis`, if given.
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
-<<<<<<< HEAD
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 - `spray <block> [size] [count] [replacement]` -> creates a spray paint effect: projects `[count]` (100 by default) random rays around the volume the player is looking at in a cone with `[size]` (12 degrees, by default) angle aperture and places `<block>` in a random patter.
 - `spray held_item [size] [count] [replacement]` -> same as abve, but it uses the item held _in the offhand_ intead of a set item. Useful when changing block often, to avoid needing to create multiple brushes.
-=======
-- `feature <feature>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail.
-    DOES NOT SUPPORT `undo` functionality.
->>>>>>> master
 
 All brush functions can be appended with flags, same as fill commands, adding `f -<flags>` at the end of the regular commands.
 
