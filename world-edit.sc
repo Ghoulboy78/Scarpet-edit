@@ -858,15 +858,15 @@ global_lang_keys = global_default_lang = {
     'invalid_wand' ->                   'r Wand has to be a tool or weapon',
 
    
-	'brush_item_tooltip' ->				'^g Click to get one!',
+    'brush_item_tooltip' ->		'^g Click to get one!',
     'brush_info_title' ->               'y Brush registered to ',
-	'brush_info_action' ->				'b \ Action: ',
-	'brush_info_params' ->				'b \ Parameters: ',
-	'brush_info_params_tooltip' ->		'^g See help to understand what each parameter is',
-	'brush_info_flags' ->				'b \ Flags: ',
-	'brush_info_no_flags' ->			'w no flags',
+    'brush_info_action' ->		'b \ Action: ',
+    'brush_info_params' ->		'b \ Parameters: ',
+    'brush_info_params_tooltip' ->	'g See help to understand what each parameter is',
+    'brush_info_flags' ->		'b \ Flags: ',
+    'brush_info_no_flags' ->		'w no flags',
     'brush_replaced' ->                 'w Replacing previous action for brush in %s',
-	'brush_new' ->						'w Registerd new %s brush to %s', //item, action
+    'brush_new' ->			'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_empty_list' ->               'gi No brushes registerd so far',
     'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
