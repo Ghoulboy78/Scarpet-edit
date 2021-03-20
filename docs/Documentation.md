@@ -1,8 +1,9 @@
-# WorldEdit for scarpet (docs)
+# Scarpet-Edit (docs)
 
 ## Description
 
-This is a culmination of many various unofficial WE projects, with the initiative started by gnembon:
+This is a culmination of many various unofficial projects attempting to recreate a World-Edit-like functionality, with 
+the initiative started by gnembon:
 ![img.png](img.png)
 
 The main contributors to this project are:
@@ -25,68 +26,68 @@ It will pop up a grid, and it will follow your mouse (hovering 5 blocks in midai
 Left clicking again will reselect the whole box.
 
 ### Commands:
- - `/world-edit fill <block> [replacement]` -> Fills selection with `<block>`. If `[replacement]` is given, it only fills
+ - `/se fill <block> [replacement]` -> Fills selection with `<block>`. If `[replacement]` is given, it only fills
     replacing that block or block tag.
- - `/world-edit undo [moves]` -> Undoes last move performed by player or as many as specified by `[moves]`. This can be
-    redone with `/world-edit redo`.
- - `/world-edit undo all` -> Undoes entire undo history. Careful!
- - `/world-edit undo history` -> Displays entire undo history.
- - `/world-edit redo [moves]` -> Redoes `[moves]` amount of moves previously undone by the player, or one if not specified.
+ - `/se undo [moves]` -> Undoes last move performed by player or as many as specified by `[moves]`. This can be
+    redone with `/se redo`.
+ - `/se undo all` -> Undoes entire undo history. Careful!
+ - `/se undo history` -> Displays entire undo history.
+ - `/se redo [moves]` -> Redoes `[moves]` amount of moves previously undone by the player, or one if not specified.
     Also shows up in undo history so you can re- undo them.
- - `/world-edit redo all` -> Redoes all undone moves. (These can be re- undone by regular /undo command)
- - `/world-edit wand <wand>` -> Sets wand to held item, or if your hand is empty, gives you the wand. With optional `[wand]`
+ - `/se redo all` -> Redoes all undone moves. (These can be re- undone by regular /undo command)
+ - `/se wand <wand>` -> Sets wand to held item, or if your hand is empty, gives you the wand. With optional `[wand]`
     argument, it sets wand to specified item
- - `/world-edit rotate <pos> <degrees> <axis>` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
+ - `/se rotate <pos> <degrees> <axis>` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
     `y` or `z`. NB: This will look funky if you do not use multiples of 45 or 90.
- - `/world-edit stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise
+ - `/se stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise
     specfied. By defaults, it stacks one time.
- - `/world-edit expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
- - `/world-edit move <pos>` -> Moves selection to `pos`
- - `/world-edit copy` -> Copies selection to clipboard. By default, will not override the existing clipboard (can be changed
+ - `/se expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
+ - `/se move <pos>` -> Moves selection to `pos`
+ - `/se copy` -> Copies selection to clipboard. By default, will not override the existing clipboard (can be changed
     by adding keyword `force`), and will also take the positions relative to position of player.
- - `/world-edit copy <pos>` -> Copies selection to clipboard, with positions relative to `pos`. This is significant when 
+ - `/se copy <pos>` -> Copies selection to clipboard, with positions relative to `pos`. This is significant when 
     pasting blocks, in terms of how it is pasted.
- - `/world-edit paste` -> Pastes selection relative to player position. Be careful in case you didn't choose a wise spot
+ - `/se paste` -> Pastes selection relative to player position. Be careful in case you didn't choose a wise spot
     when making the selection.
- - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
- - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
+ - `/se paste <pos>` -> Pastes selection relative to `pos`
+ - `/se flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
     player's position. Can both "fill"
  what used to be air or replace some other block.
- - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
+ - `/se flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
     instance, will fill the horizontal plane.
- - `/world-edit structure list` -> Lists all available structures. Currently, they are all in the same file as the lang 
+ - `/se structure list` -> Lists all available structures. Currently, they are all in the same file as the lang 
     files, this may change soon. You can add other structure files, and they will load properly 
- - `/world-edit structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
+ - `/se structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
     position if not specified.
- - `/world-edit structure save <name> entities?|force?` -> Saves current selection to a `.nbt` file compatible with vanilla 
+ - `/se structure save <name> entities?|force?` -> Saves current selection to a `.nbt` file compatible with vanilla 
     structure blocks. `entities` will make it save entities, and `force` will override an existing structure with the same
     name.
- - `/world-edit structure save <name> clipboard force?` -> Saves current clipboard to a `.nbt` file compatible with vanilla 
+ - `/se structure save <name> clipboard force?` -> Saves current clipboard to a `.nbt` file compatible with vanilla 
     structure blocks.`force` will override an existing structure with the same name. Gives an error if no clipboard is 
     present. Will also copy entities.
- - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
- - `/world-edit copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or
+ - `/se structure delete <name>` -> Deletes a structure file called `name`.
+ - `/se copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or
     the curren player position, if not. By default, will not override the existing clipboard (can be changed by adding
     keyword `force`), and will also take the positions relative to position of player.
- - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase 
+ - `/se paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase 
     you didnt' choose a wise spot making the selection.
- - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
+ - `/se flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
     player's position. Can both "fill" used to be air or replace some other block.
- - `/world-edit flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for
+ - `/se flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for
     instance, will fill the horizontal plane.
- - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defaults
+ - `/se walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defaults
     to ony vertical walls (`xz`).
- - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
- - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
- - `/world-edit up <distance>` -> Teleports you up `<distance>` ammount of blocks. Places a block under you if there was nothing there, so you don't fall and can start building right away.
+ - `/se outline <block> [replacement]` -> Outlines the selection with `<block>`.
+ - `/se shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
+ - `/se up <distance>` -> Teleports you up `<distance>` ammount of blocks. Places a block under you if there was nothing there, so you don't fall and can start building right away.
 
 #### Brushes
 
 `brushes` let you attach some actions or commands to specific items to use them at a distance. When registering an action
-with `/world-edit brush <action> <arguments>`, the held item type will be converted into a brush and right clicking with
-it will perform the registered action at the highlighted block. To view the currently registered brushes use `/world-edit brush list`.
+with `/se brush <action> <arguments>`, the held item type will be converted into a brush and right clicking with
+it will perform the registered action at the highlighted block. To view the currently registered brushes use `/se brush list`.
 To remove a brush from said list or get more info on the registered action for that brush, hold the corresponding item type
-and use `/world-edit brush clear` or `/world-edit brush info`, respectively.
+and use `/se brush clear` or `/se brush info`, respectively.
 
 The available actions for brushes are:
 - `cube <block> <size> [replacement]` -> creates a cube out of `block` and with side length `size`, replacing only blocks
