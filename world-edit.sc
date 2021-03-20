@@ -1320,21 +1320,21 @@ fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags
         scan(pos,0,-r,-r,
             if((!hollow && (_y^2 + _z^2 <= drsq))||
                 (hollow && (_y^2 + _z^2 <= drsq && (abs(_y)+1)^ 2 + (abs(_z)+1)^2 >= drsq)),
-                set_block(_x+offset,_y,_z,block, replacement, flags, {})
+                set_block([_x+offset,_y,_z],block, replacement, flags, {})
             )
         ),
     orientation ~ 'y',
         scan(pos,-r,0,-r,
-            if((!hollow && (_x^2 + _z^2 <= drsq))||
+            if((!hollow && (_x^2 + _z^2 <= drs/q))||
                 (hollow && (_x^2 + _z^2 <= drsq && (abs(_x)+1)^ 2 + (abs(_z)+1)^2 >= drsq)),
-                set_block(_x,_y+offset,_z,block, replacement, flags, {})
+                set_block([_x,_y+offset,_z],block, replacement, flags, {})
             )
         ),
     orientation ~ 'z',
         scan(pos,-r,-r,0,
             if((!hollow && (_y^2 + _x^2 <= drsq))||
                 (hollow && (_y^2 + _x^2 <= drsq && (abs(_y)+1)^ 2 + (abs(_x)+1)^2 >= drsq)),
-                set_block(_x,_y,_z+offset,block, replacement, flags, {})
+                set_block([_x,_y,_z+offset],block, replacement, flags, {})
             )
         )
     );
