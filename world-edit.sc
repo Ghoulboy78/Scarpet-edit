@@ -41,6 +41,9 @@ base_commands_map = [
     ['redo all', ['redo', 0], [-1, 'help_cmd_redo_all', null, null]],
     ['wand', ['_set_or_give_wand',null], [-1, 'help_cmd_wand', null, null]],
     ['wand <wand>', '_set_or_give_wand', [-1, 'help_cmd_wand_2', null, null]],
+    ['angel', '_give_angel_block_item', [-1, 'help_cmd_angel_give', null, null]],
+    ['angel new', '_set_angel_block_item', [-1, 'help_cmd_angel_new', null, null]],
+    ['angel clear', '_clear_angel_block_item', [-1, 'help_cmd_angel_clear', null, null]],
     ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
@@ -52,9 +55,9 @@ base_commands_map = [
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
     ['move <pos> f <flag>', 'move', false], //TODO flags help
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
-    ['copy',['_copy',null, false],[-1,'help_cmd_copy',null,null]],
+    ['copy',['_copy',null, false],false],
     ['copy force',['_copy',null, true],false],
-    ['copy <pos>',['_copy', false],false],
+    ['copy <pos>',['_copy', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
     ['copy <pos> force',['_copy', true],false],
     ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
     ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
@@ -66,12 +69,22 @@ base_commands_map = [
     ['selection move', _() -> selection_move(1, null), false],
     ['selection move <amount>', _(n)->selection_move(n, null), false],
     ['selection move <amount> <direction>', 'selection_move',false],
+    ['flood <block>', ['flood_fill', null, null, null], false],
+    ['flood <block> <axis>', ['flood_fill', null, null], false],
+    ['flood <block> none', ['flood_fill', null,  null, null], false],
+    ['flood <block> <axis> <radius>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
+    ['flood <block> none <radius>', _(block, radius) -> flood_fill(block, null, radius, null), false],
+    ['flood <block> f <flag>', _(block,flag) -> flood_fill(block, null, null, flag), false],
+    ['flood <block> <axis> f <flag>', _(block, axis, flag) -> flood_fill(block, axis, null, flag), false],
+    ['flood <block> none f <flag>', _(block, flag) -> flood_fill(block, null, null, flag), false],
+    ['flood <block> <axis> <radius> f <flag>', 'flood_fill', false],
+    ['flood <block> none <radius> f <flag>', _(block, radius, flag) -> flood_fill(block, null, radius, flag), false],
+    ['drain', ['_drain', null, null], false],
+    ['drain <radius>', ['_drain', null], [1, 'help_cmd_drain', 'help_cmd_drain_tooltip', null]],
+    ['drain f <flag>', _(flag)->_drain(null, flag), false],
+    ['drain <radius> f <flag>', '_drain', false],
     ['up', ['tp_up', 0], [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
     ['up <amount>', 'tp_up', [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
-    ['flood <block>', ['flood_fill', null, null], false],
-    ['flood <block> <axis>', ['flood_fill', null], [1, 'help_cmd_flood', 'help_cmd_flood_tooltip', null]],
-    ['flood <block> f <flag>', _(block,flags)->flood_fill(block,null,flags), false],
-    ['flood <block> <axis> f <flag>', 'flood_fill', false],
     ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
 	['brush info', ['brush', 'info', null], false],
@@ -119,11 +132,15 @@ base_commands_map = [
     ['brush pyramid <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['brush pyramid <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
+    ['brush flood <block>', _(block) -> brush('flood', null, block, null, null), false],
+    ['brush flood <block> f <flag>', _(block, flags) -> brush('flood', flags, block, null, null), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
     ['brush flood <block> <radius> f <flag>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
     ['brush flood <block> <radius> <axis>', _(block, radius, axis) -> brush('flood', null, block, radius, axis), 
-        [2, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
+        [1, 'help_cmd_brush_flood', 'help_cmd_brush_generic', null]],
     ['brush flood <block> <radius> <axis> f <flag>', _(block, radius, axis, flags) -> brush('flood', flags, block, radius, axis), false],
+    ['brush flood <block> <radius> none', _(block, radius) -> brush('flood', null, block, radius, null), false],
+    ['brush flood <block> <radius> none f <flag>', _(block, radius, flags) -> brush('flood', flags, block, radius, null), false],
     ['brush line <block>', _(block) -> brush('line', null, block, null, null), false],
     ['brush line <block> f <flag>', _(block, flags) -> brush('line', flags, block, null, null), false],
     ['brush line <block> <length> ', _(block, length) -> brush('line', null, block, length, null), false],
@@ -168,6 +185,10 @@ base_commands_map = [
     ['brush prism_star <block> <outer_radius> <inner_radius> <height> <vertices> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
+    ['brush drain', _()->brush('drain', null, 30), false],
+	['brush drain <radius>', _(radius)->brush('drain', null, radius), [0, 'help_cmd_brush_drain', 'help_cmd_brush_generic', null]],
+    ['brush drain f <flag>', _(flag)->brush('drain', flag, 30), false],
+	['brush drain <radius> f <flag>', _(radius, flag)->brush('drain', flag, radius), [0, 'help_cmd_brush_drain', 'help_cmd_brush_generic', null]],
     ['brush spray <block>', _(block) -> brush('spray', null, block, 12, 100, null), false],
     ['brush spray <block> <size_degrees>', _(block, size) -> brush('spray', null, block, size, 100, null), false],
     ['brush spray <block> <size_degrees> <count>', _(block, size, count) -> brush('spray', null, block, size, count, null), false],
@@ -180,9 +201,9 @@ base_commands_map = [
     ['brush spray held_item f <flag>', _(flag) -> brush('spray', flag, null, 12, 100, null), false],
     ['brush spray held_item <size_degrees> f <flag>', _(size, flag) -> brush('spray', flag, null, size, 100, null), false],
     ['brush spray held_item <size_degrees> <count> f <flag>', _(size, count, flag) -> brush('spray', flag, null, size, count, null), false],
-    ['brush spray <block> <size_degrees> <count> <replacement>', _(block, size, count, replacement) -> brush('spray', null, block, size, count, replacement), [1, 'help_cmd_spray', 'help_cmd_brush_generic', null]],
+    ['brush spray <block> <size_degrees> <count> <replacement>', _(block, size, count, replacement) -> brush('spray', null, block, size, count, replacement), [1, 'help_cmd_brush_spray', 'help_cmd_brush_generic', null]],
     ['brush spray <block> <size_degrees> <count> <replacement> f <flag>', _(block, size, count, replacement, flag) -> brush('spray', flag, block, size, count, replacement), false],
-    ['brush spray held_item <size_degrees> <count> <replacement>', _(size, count, replacement) -> brush('spray', null, null, size, count, replacement), [0, 'help_cmd_spray_held', 'help_cmd_brush_generic', null]],
+    ['brush spray held_item <size_degrees> <count> <replacement>', _(size, count, replacement) -> brush('spray', null, null, size, count, replacement), [0, 'help_cmd_brush_spray_held', 'help_cmd_brush_generic', null]],
     ['brush spray held_item <size_degrees> <count> <replacement> f <flag>', _(size, count, replacement, flag) -> brush('spray', flag, null, size, count, replacement), false],
 
     ['shape cube <pos> <block> <size>', _(pos, block, size_int) -> shape('cube', pos, [block, size_int, null], null), false],
@@ -363,7 +384,8 @@ global_clipboard = [];
 
 global_debug_rendering = false;
 global_reach = 4.5;
-
+global_default_trace_type = 'blocks';
+global_liquid_trace_type = 'liquids';
 
 //Extra boilerplate
 
@@ -375,6 +397,8 @@ global_cursor = null;
 global_highlighted_marker = null;
 global_selection = {}; // holds ids of two official corners of the selection
 global_markers = {};
+global_angel_block = null;
+global_items_with_actions = {global_wand -> 'wand'};
 
 _help(page) ->
 (
@@ -494,7 +518,7 @@ selection_move(amount, direction) ->
     point2 = _get_marker_position(global_selection:'to');
     p = player();
     if (p == null && direction == null, _error(player, 'move_selection_no_player_error'));
-    translation_vector = if(direction == null, get_look_direction(p)*amount, pos_offset([0,0,0],direction, amount));
+    translation_vector = if(direction == null, p~'look'*amount, pos_offset([0,0,0],direction, amount));
     clear_markers(global_selection:'from', global_selection:'to');
     point1 = point1 + translation_vector;
     point2 = point2 + translation_vector;
@@ -528,24 +552,33 @@ __on_tick() ->
     if (p = player(),
         // put your catchall checks here
         global_highlighted_marker = null;
-        reach = if( (held = p~'holds':0)==global_wand, global_reach, has(global_brushes, held), global_brush_reach);
+        reach = if( 
+        	(held = p~'holds':0)==global_wand, global_reach,
+            held==global_angel_block, brush=true; global_reach, // brush=true is used so that the selection doesn't linger, need to make this better
+        	has(global_brushes, held), brush=true; global_brush_reach
+        );
+        if(brush && length(global_selection)<2, clear_selection());
         new_cursor = if ( reach && p~'gamemode'!='spectator',
+        	// support for tracing liquids with brushes
+        	global_trace_type = if(has(global_liquid_brush, held), global_liquid_trace_type, global_default_trace_type);
+        	// get traced block
             if (marker = _trace_marker(p, global_reach),
                 global_highlighted_marker = marker;
                 _get_marker_position(marker)
             ,
                 _get_player_look_at_block(p, reach) )
         );
+        // delete old marker if new one isn't the same
         if (global_cursor && new_cursor != global_cursor,
             draw_shape('box', 0, 'from', global_cursor, 'to', global_cursor+1, 'fill', 0xffffff22);
         );
+        // render new marker or refresh old one
         if (new_cursor,
              draw_shape('box', 50, 'from', new_cursor, 'to', new_cursor+1, 'fill', 0xffffff22);
         );
         global_cursor = new_cursor;
     )
 );
-
 
 __on_player_swings_hand(player, hand) ->
 (
@@ -584,7 +617,11 @@ __on_player_uses_item(player, item_tuple, hand) ->
         ),
         has(global_brushes, held), // TODO: make it so that if brush is a block, placing is not processed
         pos = _get_player_look_at_block(player, global_brush_reach);
-        _brush_action(pos, held)
+        _brush_action(pos, held),
+        
+        held==global_angel_block,
+        pos = _get_player_look_at_block(player, global_reach);
+        _place_angel_block(pos)
     )
 );
 
@@ -658,7 +695,7 @@ _render_selection_tick() ->
 
 _get_player_look_at_block(player, range) ->
 (
-    block = query(player, 'trace', range, 'blocks');
+    block = query(player, 'trace', range, global_trace_type);
     if (block,
         pos(block)
     ,
@@ -682,22 +719,27 @@ _get_current_selection(player)->
 _set_or_give_wand(wand) -> (
     p = player();
     if(wand,//checking if player specified a wand to be added
-        if((['tools', 'combat']~item_category(wand:0)) != null,
+        wand = wand:0; //because it comes as a [item, count, nbt] tuple
+        if( (['tools', 'combat']~item_category(wand)) != null,
+            new_action_item(wand, 'wand');
+            delete(global_items_with_actions, global_wand);
             global_wand = wand;
-            _print(p, 'new_wand', wand:0);
+            _print(p, 'new_wand', wand);
             return(),
             //else, can't set as wand
             _error(p, 'invalid_wand')
         )
     );//else, if just ran '/world-edit wand' with no extra args
     //give player wand if hand is empty
-    if(held_item_tuple = p~'holds' == null,
+    if( (held_item_tuple = p~'holds') == null,
        slot = inventory_set(p, p~'selected_slot', 1, global_wand);
        return()
     );
     //else, set current held item as wand, if valid
     held_item = held_item_tuple:0;
     if( (['tools', 'combat']~item_category(held_item)) != null,
+        new_action_item(held_item, 'wand');
+        delete(global_items_with_actions, global_wand);
         global_wand = held_item;
         _print(p, 'new_wand', held_item),
        //else, can't set as wand
@@ -705,7 +747,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p','d','s','g'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g','l'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -718,7 +760,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g'];
 //d     "dry" out the pasted structure (remove water and waterlogged)
 //s     keep block states of replaced block, if new block matches
 //g     when replacing air or water, some greenery gets repalced too
-
+//l 	when used in a brush, the brush will trace for liquids as well as blocks
 
 _parse_flags(flags) ->(
     if(!flags, return({}));
@@ -802,6 +844,14 @@ global_lang_keys = global_default_lang = {
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
+    'help_cmd_clear_clipboard' -> 'l Clears current clipboard',
+    'help_cmd_copy' ->            'l Copy current selection to clipboard',
+    'help_cmd_copy_tooldtip' ->   'g Uses [pos] or player position as origin for the copied structure',
+    'help_cmd_paste' ->           'l Paste clipboard',
+    'help_cmd_drain' -> 	  'l Drains liquid you are standing on',
+    'help_cmd_drain_tooltip' ->   'g Acts in a radius or withing the selection',
+    'help_cmd_flood' -> 	  'l Perferoms a 3D flood fill out of [block]',
+    'help_cmd_flood_tooltip' ->	  'g Use [axis] to make a flat fill',
     'help_cmd_walls' ->           'l Set walls of the selection',
     'help_cmd_walls_tooltip' ->   'l Use [sides] to choose which sides to generate',
     'help_cmd_outline' ->         'l Outlines the selection with <block>',
@@ -824,8 +874,11 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_flood' ->     'l Register brush to perform flood fill out of [block] starting on right clicked block',
     'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
     'help_cmd_brush_feature' ->   'l Register brush to plop feature',
-    'help_cmd_spray' -> 	  	  'l Register brush to spray paint with given radius an point count',
-    'help_cmd_spray_held' -> 	  'l Register brush to spray paint out of block held in the offhand',
+    'help_cmd_brush_spray' ->         'l Register brush to spray paint with given radius an point count',
+    'help_cmd_brush_spray_held' ->    'l Register brush to spray paint out of block held in the offhand',
+    'help_cmd_angel_give' ->      'l Gives player the current angel block item',
+    'help_cmd_angel_clear' ->     'l Clears item currently registered as angel block',
+    'help_cmd_angel_new' ->       'l Registers held item as angel block item',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
@@ -875,6 +928,7 @@ global_lang_keys = global_default_lang = {
 	'no_brush_error'->					'r %s in not a brush', //item
     'no_longer_brush' -> 				'w %s is no longer a brush',
 
+
     'structure_list' ->                'w List of structures:',
     'saved_structure' ->               'w Saved structure as %s.nbt',                                 //structure name
     'existing_structure' ->            'r Existing file %s.nbt, use \'force\' to overwrite',          //structure name
@@ -882,7 +936,19 @@ global_lang_keys = global_default_lang = {
     'structure_delete_success' ->      'gi Successfully deleted %s.nbt',                              //structure name
     'structure_delete_fail' ->         'ri Failed to delete %s.nbt, no such file exists',             //structure name
     'structure_load_fail' ->           'ri Failed to load %s.nbt, no such file exists',               //structure name
-    
+
+    'angel_block_new' ->               'w Clicking with %s will now palce an angel block',            //new angel block item
+    'angel_block_given' ->             'w Gave yourself angel block item: %s',
+    'angel_block_clear' ->             'w Unregistered angel block item',
+    'angel_block_none_error' ->        'r There\'s no angel block defined! Use \'angel new\' to register one',
+    'angel_block_bad_item' ->          'r Angel block can\'t be something that is already assigned to another action',
+
+    'action_item_not_existing_error' -> 'r %s is not registered as %s',                                                     //item, action
+    'action_item_existing_error' ->     'r %s is already registered as %s. Unregister it first, or choose another item.',   //item, action 
+    'action_item_angel' ->              'angel block item',
+    'action_item_wand' ->               'wand',
+    'action_item_brush' ->              'brush',    
+
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
@@ -902,6 +968,8 @@ global_lang_keys = global_default_lang = {
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
     'action_paste' ->              'paste',
+    'action_drain' ->              'drain',
+    'action_angel' ->              'angel_block',
     'action_spray' -> 			   'spray',
     'action_walls' ->              'walls',
     'action_outline' ->            'outline',
@@ -976,6 +1044,7 @@ _error(player, key, ... replace)->
 // Brush
 
 global_brushes = {};
+global_liquid_brush = {};
 global_brush_reach = 100;
 global_brushes_parameters_map = {
 	'cube'-> ['block', 'size', 'replace'],
@@ -989,6 +1058,7 @@ global_brushes_parameters_map = {
 	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'vertices', 'axis', 'rotation', 'replace'],
 	'line' -> ['block', 'length', 'replace'],
 	'flood' -> ['block', 'radius', 'axis'],
+    'drain' -> ['radius'],
 	'feature' -> ['what'],
 	'spray' -> ['block', 'size', 'count', 'replace'],
 };
@@ -996,15 +1066,13 @@ global_brushes_parameters_map = {
 brush(action, flags, ...args) -> (
     player = player();
     held_item = player~'holds':0;
-    if(held_item==global_wand, _error(player, 'bad_wand_brush_error'));
 
     if(
         action=='clear',
-        if(has(global_brushes, held_item),
-            delete(global_brushes, held_item);
-            _print(player, 'no_longer_brush', held_item),
-            _error(player, 'no_brush_error', held_item)
-        ),
+        remove_action_item(held_item, 'brush');
+        delete(global_brushes, held_item);
+        delete(global_liquid_brush, held_item),
+        
         action=='list',
         if(global_brushes,
         	print(player, '');
@@ -1048,13 +1116,15 @@ brush(action, flags, ...args) -> (
         ),
 
         // else, register new brush with given action
-        if(has(global_brushes, held_item),
-            _print(player, 'brush_replaced', held_item)
+        if((registered = global_items_with_actions:held_item) == 'brush',
+            _print(player, 'brush_replaced', held_item),
+            new_action_item(held_item, 'brush')
         );
         global_brushes:held_item = [action, args, flags];
         _print(player, 'brush_new', action, held_item);
 
-        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')))
+        if(action=='feature', print(player, format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')));
+        if(action=='drain' || _parse_flags(flags)~'l', global_liquid_brush+=held_item) // to change trace method
     )
 );
 
@@ -1201,12 +1271,18 @@ global_brush_shapes={
             );
             add_to_history('action_line',player())
         ),
-    'flood'->_(pos, args, flags)->(
-            start = pos;
+
+    'flood'->_(pos, args, flags) -> (
             [block, radius, axis] = args;
-            if(block(start)==block, return());
-            _flood_generic(block, axis, start, _(pos, outer(start), outer(radius)) -> _euclidean_sq(pos, start) <= radius*radius,  flags);
+            _flood_fill(block, pos, axis, radius, flags);
+            add_to_history('action_flood', player())
         ),
+
+    'drain'->_(pos, args, flags) -> (
+            [radius] = args;
+            _drain_generic(pos, radius, flags)
+        ),
+
     'prism_polygon'->_(pos, args, flags)->(
             [block, radius, height, n_points, axis, rotation, replacement] = args;
             center = map(pos, floor(_));
@@ -1427,10 +1503,6 @@ _flood_fill_shape(perimeter, center, axis) ->(
     interior;
 );
 
-feature(pos, args, flags) -> (
-    [what] = args;
-    plop(pos, what)
-);
 
 // Some algebra stuff needed for the spray paint
 _direction(yaw, pitch) -> [-sin(yaw)*cos(pitch), -sin(pitch), cos(pitch)*cos(yaw)];
@@ -1443,46 +1515,6 @@ _corss_matrix(vec) -> (
 	[[0, -z, y], [z, 0, -x], [-y, x, 0]]
 );
 
-
-_flood_generic(block, axis, start, flood_tester,  flags) ->(
-
-    // Define function to request neighbours perpendicular to axis
-    if(
-        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
-        axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
-        axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
-        axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
-    );
-
-    _flood_tester(pos)->call(flood_tester, pos);
-
-    interior_block = block(start);
-    if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
-
-    visited = {start->null};
-    queue = [start];
-
-    while(length(queue)>0, 10000,
-
-        current_pos = queue:0;
-        delete(queue, 0);
-
-        for(flood_neighbours(current_pos),
-            current_neighbour = _;
-            // check neighbours, add the non visited ones to the visited set
-            if(!has(visited, current_neighbour),
-                visited:current_neighbour = null;
-                // if the block is not too far and is interior, delete it and add to queue to check neighbours later
-                if( block(_)==interior_block && _flood_tester(_),
-                    queue:length(queue) = current_neighbour;
-                    set_block(current_neighbour, block, null, flags, {})
-                );
-            );
-        );
-    );
-
-    add_to_history('flood', player())
-);
 
 //Command processing functions
 
@@ -1575,6 +1607,46 @@ print_history()->(
         _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'), _translate(command:'dimension'));//printing twice so it goes on 2 separate lines
         _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
+);
+
+_give_angel_block_item() -> (
+    if(global_angel_block,
+        run(str('/give %s %s', player()~'command_name', global_angel_block));
+        _print(player(), 'angel_block_given', global_angel_block),
+        _error(player(), 'angel_block_none_error')
+    );
+);
+_set_angel_block_item() -> (
+    new_action_item(item = player()~'holds':0, 'angel');
+    delete(global_items_with_actions, global_angel_block);
+    global_angel_block = item;
+    _print(player(), 'angel_block_new', global_angel_block)
+);
+_clear_angel_block_item() -> (
+    p = player();
+    remove_action_item(global_angel_block, 'angel');
+    global_angel_block=null;
+    _print(p, 'angel_block_clear')
+);
+
+global_item_action_translation_key = {
+  'brush' -> 'action_item_brush',
+  'wand' -> 'action_item_wand',
+  'angel' -> 'action_item_angel',  
+};
+
+new_action_item(item, action) -> (
+    if(has(global_items_with_actions, item),
+        _error(player(), 'action_item_existing_error', item, _translate(global_item_action_translation_key:(global_items_with_actions:item)) ),
+        global_items_with_actions:item = action;
+    );
+);
+
+remove_action_item(item, action) -> (
+    if( (registered = global_items_with_actions:item) != null && registered == action,
+        delete(global_items_with_actions, item),
+        _error(player(), 'action_item_not_existing_error', item, _translate(global_item_action_translation_key:action))
+    );
 );
 
 //Block processing functions
@@ -1831,6 +1903,107 @@ set_in_selection(block,replacement,flags)->
     add_to_history('action_set', player)
 );
 
+_place_angel_block(pos) -> (
+    if(air(pos), set_block(pos, 'stone', null, null, {}));
+    add_to_history('action_angel', player())
+);
+
+
+flood_fill(block, axis, radius, flags) -> (
+    _flood_fill(block, player()~'pos', axis, radius, flags);
+    add_to_history('action_flood', player())
+);
+
+_flood_fill(block, pos, axis, radius, flags) ->
+(
+    player = player();
+    start = pos;
+    if(block(start)==block, return());
+
+    flags = _parse_flags(flags);
+
+    // check if inside selection, if there is a selection
+    if( length(global_selection) < 2,
+        no_selection = true,
+        // else, there is a selection
+        no_selection = false;
+        [pos1,pos2]=_get_current_selection(player);
+        min_pos = map(pos1, min(_, pos2:_i));
+        max_pos = map(pos1, max(_, pos2:_i));
+        // test if inside selection
+        _is_inside_selection(pos, outer(min_pos), outer(max_pos)) -> (
+            all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i)
+        );
+    );
+
+    if( !no_selection && radius==null && _is_inside_selection(start), 
+        _flood_tester(pos)->_is_inside_selection(pos),
+        if(radius==null, radius=25);
+        _flood_tester(pos, outer(start), outer(radius)) -> _euclidean_sq(pos, start) <= radius*radius
+    );
+
+    _flood_generic(block, axis, start,flags);
+);
+
+_euclidean_sq(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+_flood_generic(block, axis, start, flags) ->
+(   
+    // Define function to request neighbours perpendiular to axis
+    if(
+        axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)),
+        axis=='x', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'up'), pos_offset(block, 'down')],
+        axis=='y', flood_neighbours(block) -> [pos_offset(block, 'north'), pos_offset(block, 'south'), pos_offset(block, 'east'), pos_offset(block, 'west')],
+        axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
+    );
+
+    interior_block = block(start);
+
+    _is_interior(block, outer(interior_block)) -> block==interior_block;
+    // If flag -g is set, treat greenery as interior
+    if(flags~'g',
+        if( 
+            interior_block == 'air',
+                print('is_air');
+                _is_interior(block) -> (air(block) || has(global_air_greenery, str(block))),
+            interior_block == 'water',
+                _is_interior(block) -> (block=='water' || has(global_water_greenery, str(block))),
+        )
+    );
+
+    if(_flood_tester(start), set_block(start, block, null, flags, {}), return());
+
+    visited = {start->null};
+    queue = [start];
+
+    while(length(queue)>0, 100000,
+
+        current_pos = queue:0;
+        delete(queue, 0);
+
+        for(flood_neighbours(current_pos),
+            current_neighbour = _;
+            // check neighbours, add the non visited ones to the visited set
+            if(!has(visited, current_neighbour),
+                visited += current_neighbour;
+                // if the block is not too far and is interior, delete it and add to queue to check neighbours later
+                if( _is_interior(block(_)) && _flood_tester(_),
+                    queue:length(queue) = current_neighbour;
+                    set_block(current_neighbour, block, null, flags, {})
+                );
+            );
+        );
+    );
+);
+
+_drain(radius, flags) -> _drain_generic(player()~'pos', radius, flags);
+
+_drain_generic(pos, radius, flags) -> (
+    if( (start_bl = block(pos)) == 'lava' || start_bl == 'water',
+        _flood_fill('air', pos, null, radius, flags);
+        add_to_history('action_drain', player())
+    );
+);
+
 walls(block, sides, replacement, flags) -> (
     player = player();
     [pos1,pos2]=_get_current_selection(player);
@@ -1879,19 +2052,6 @@ outline(block, replacement, flags) -> (
     );
 
     add_to_history('action_outline',player)    
-);
-
-flood_fill(block, axis, flags) ->
-(
-    player = player();
-    start = player~'pos';
-    if(block(start)==block, return());
-
-    [pos1,pos2]=_get_current_selection(player);
-    min_pos = map(pos1, min(_, pos2:_i));
-    max_pos = map(pos1, max(_, pos2:_i));
-    _flood_generic(block, axis, start, _(pos, outer(min_pos), outer(max_pos)) -> all(pos, _ >= min_pos:_i) && all(pos, _ <= max_pos:_i), flags);
-
 );
 
 rotate(centre, degrees, axis)->(

@@ -49,11 +49,6 @@ Left clicking again will reselect the whole box.
  - `/world-edit paste` -> Pastes selection relative to player position. Be careful in case you didn't choose a wise spot
     when making the selection.
  - `/world-edit paste <pos>` -> Pastes selection relative to `pos`
- - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
-    player's position. Can both "fill"
- what used to be air or replace some other block.
- - `/world-edit flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
-    instance, will fill the horizontal plane.
  - `/world-edit structure list` -> Lists all available structures. Currently, they are all in the same file as the lang 
     files, this may change soon. You can add other structure files, and they will load properly 
  - `/world-edit structure load <structure name> <pos?>` -> Loads a structure relative to `pos`, or relative to player 
@@ -65,20 +60,21 @@ Left clicking again will reselect the whole box.
     structure blocks.`force` will override an existing structure with the same name. Gives an error if no clipboard is 
     present. Will also copy entities.
  - `/world-edit structure delete <name>` -> Deletes a structure file called `name`.
- - `/world-edit copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or
-    the curren player position, if not. By default, will not override the existing clipboard (can be changed by adding
-    keyword `force`), and will also take the positions relative to position of player.
- - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase 
-    you didnt' choose a wise spot making the selection.
- - `/world-edit flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
-    player's position. Can both "fill" used to be air or replace some other block.
- - `/world-edit flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for
-    instance, will fill the horizontal plane.
- - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defaults
-    to ony vertical walls (`xz`).
+ - `/world-edit copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or the curren player position, if not. By default, 
+   will not override the existing clipboard (can be changed by adding keyword `force`), and will also take the positions relative to position of player.
+ - `/world-edit paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase you didnt' choose a wise spot making the selection.
+ - `/world-edit flood <block> [axis] [radius]` -> Performs a flood fill (fill connex volume) starting at the player's position. Flood will be limited by the current selection, 
+    unless `[radius]` is given, in which case it will happen within a sphere. `[axis]` has to be `x`, `y` or `z` to performa flat flood fill within the plane perpendicular to 
+    the given axis, or `none` to perform a 3D flood fill (default behaviour). Use this with `<block>` set to air to delete stuff.
+ - `/world-edit drain [radius]` -> Drains the liquid the player is standing on. By default, it does so on a given radius, but you can set that with the optional parameter. If 
+  you don't specify a radius and are standing in a seleciton, it will drain within the selection only. It supports the `-g` flag, try it!
+ - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
  - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
- - `/world-edit up <distance>` -> Teleports you up `<distance>` ammount of blocks. Places a block under you if there was nothing there, so you don't fall and can start building right away.
+ - `/world-edit angel [new|clear]` -> Angel block: click in mid air to place a (stone) block you can the build off. Without arguments, it gives the player the item registered 
+  as angel block. With `new`, it will register the currently held item as angel block item. With `clear` clears the current angel block item; you will have to register a new one
+  to use it.
+- `/world-edit up <distance>` -> Teleports you up `<distance>` ammount of blocks. Places a block under you if there was nothing there, so you don't fall and can start building right away.
 
 #### Brushes
 
@@ -112,9 +108,8 @@ The available actions for brushes are:
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing
     only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed,
     and it only uses the clicked block to get the direction of the line.
-- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connected blocks
-    to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane 
-    perpendicular to `axis`, if given.
+- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
+- `drain <radius>` -> Drains the liquids connected to the liquid block you click, up to `<radius>` blocks away.
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 - `spray <block> [size] [count] [replacement]` -> creates a spray paint effect: projects `[count]` (100 by default) random rays around the volume the player is looking at in a cone with `[size]` (12 degrees, by default) angle aperture and places `<block>` in a random patter.
@@ -141,3 +136,4 @@ Available flags:
  - `-s` -> Preserves block states when setting blocks
  - `-g` -> When replacing air or water, greenery corresponding to each medium will be replaced too
  - `-h` -> When creating a shape, makes it hollow
+ - `-l` -> When used to register a brush, the brush will targer liquids as well as blocks, instead of going right through them to the block behind.
