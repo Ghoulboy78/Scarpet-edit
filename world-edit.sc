@@ -1271,13 +1271,6 @@ global_brush_shapes={
             );
             add_to_history('action_line',player())
         ),
-    'flood'->_(pos, args, flags)->(
-            start = pos;
-            [block, radius, axis] = args;
-            if(block(start)==block, return());
-            _flood_generic(block, axis, start, _(pos, outer(start), outer(radius)) -> _euclidean_sq(pos, start) <= radius*radius,  flags);
-        ),
-
 
     'flood'->_(pos, args, flags) -> (
             [block, radius, axis] = args;
@@ -1946,13 +1939,13 @@ _flood_fill(block, pos, axis, radius, flags) ->
     if( !no_selection && radius==null && _is_inside_selection(start), 
         _flood_tester(pos)->_is_inside_selection(pos),
         if(radius==null, radius=25);
-        _flood_tester(pos, outer(start), outer(radius)) -> _sq_distance(pos, start) <= radius*radius
+        _flood_tester(pos, outer(start), outer(radius)) -> _euclidean_sq(pos, start) <= radius*radius
     );
 
     _flood_generic(block, axis, start,flags);
 );
 
-_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+_euclidean_sq(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 _flood_generic(block, axis, start, flags) ->
 (   
     // Define function to request neighbours perpendiular to axis
