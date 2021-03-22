@@ -124,6 +124,8 @@ The available actions for brushes are:
     and it only uses the clicked block to get the direction of the line.
 - `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
 - `drain <radius>` -> Drains the liquids connected to the liquid block you click, up to `<radius>` blocks away.
+- `hollow [radius]` -> hollows out the continuos blob of blocks starting in the clicked block, going no further from the starting point than `[radius]` (defaults to 50).
+- `outline <block> [radius]` -> outlines the continuos blob of blocks startig in the clicked block with `[block]`, going no further from the starting point than `[radius]` (defaults to 50). If `force` is not true, it will only place blocks replacing air.
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 - `spray <block> [size] [count] [replacement]` -> creates a spray paint effect: projects `[count]` (100 by default) random rays around the volume the player is looking at in a cone with `[size]` (12 degrees, by default) angle aperture and places `<block>` in a random patter.
