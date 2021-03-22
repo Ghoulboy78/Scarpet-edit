@@ -17,8 +17,9 @@ This applies to everyone, including admins. The PR needs at least 2 reviews befo
 
 #### Block manipulating commands
 
-If you're gonna add a new function that manipulates blocks in the world, you should first familiarize yourself with the
-existing code, so you know what to do right off the bat, but here is the tl;dr, in case it was too confusing:
+If you're gonna add a new function that manipulates blocks in the world with a player - utilisable function, you should 
+first familiarize yourself with the existing code, so you know what to do right off the bat, but here is the tl;dr, in 
+case it was too confusing:
 
 1. Define the function below all the other defined functions (i.e, underneath the comment which says `//Command functions`).
    This helps with legibility of your code later on.
@@ -79,15 +80,83 @@ existing code, so you know what to do right off the bat, but here is the tl;dr, 
    e     copy/move entities as well
    b     copy/move biomes as well (handled by set_block)
    a     don't paste air
-   h	 create hollow shapes
+   h	   create hollow shapes
    d     "dry" out the pasted structure (remove water and waterlogged)
    s     keep block states of replaced block, if new block matches
    g     when replacing air or water, some greenery gets repalced too
+   l     when registering a brush with this flag, the brush will trace for liquids as well as blocks
    ```
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
    argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to 
    handle undoing, `set_block` does that on its own.
-   
+
+#### Brushes
+
+If you are adding a new brush function, there is a simple syntax to follow to ensure it is compatible with the existing 
+brush function utility. You must add your new function in the following fashion:
+
+Add your function as an entry to the `global_brush_shapes` map variable, with the key being the string name of your function,
+and the value being a lambda function with `(pos, args, flags)` as the arguments. This is where you can manipulate the 
+world in whatever way you see fit, and must call the `add_to_history()` function (cos not all brush functions set blocks).
+You can take whichever arguments you need from the args `args` variable as long as you specify them in the input command.
+You must also add a command which takes the correct inputs and passes them to the `shape()` function in the proper manner.
+You must also add a translation key for the action to the lang file. Finally, it's encouraged that devs add a list of parameters
+to `global_brushes_parameters_map` to pretify the `brush info` command output. 
+
+If this was too bulky and confusing too understand, here is a full example of  the `cube` function, which simply places
+cubes:
+
+1. First, we add an entry to the `global_brush_shapes` map variable which consists of the string `'cube'` mapped to the 
+   block setting function:
+      ```
+   global_brush_shapes={
+         ... //brush entries
+         'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
+            [block, size, replacement] = args;
+            scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}));
+            add_to_history('action_cube',player())
+         ),
+         ... //more entries
+   }
+      ```
+   Here, we can see the lambda (`_(pos, args, flags)->`) which is called when you right click with the brush or use the
+   `/shape` command.
+
+
+2. We can see that we got three arguments: `[block, size, replacement] = args;`. We can know that we are going to get
+   these arguments when we define the command:
+   ```
+   base_commands_map = [
+      ... //commands
+      ['cube <block> <size> replace <replacement> f <flags>', _(block, size, replacement, flags)->shape('cube',[block, size, replacement], flags)'']
+      ... //more commands
+   ]
+   ```
+   It is important to use that syntax of calling the `shape()` function to work properly.
+
+
+3. We can also see that we ran the `add_to_history` function with `'action_cube'`, not `'cube'`. This is because we need
+   to then add an entry to the translations map (`global_default_lang`). This is so the action name can be translated to
+   other languages when running the `/undo history` command. Add your translation key to
+   the map, mapped to the en_us translation:
+   ```
+   global_default_lang = {
+      ... //other entries
+      'action_cube' -> 'cube',
+      ... //more entries
+   }
+   ```
+
+4. We finally add a list of the aprameters the brush uses to `global_brushes_parameters_map` to be the display names when
+  calling  `brush info`:
+  ```
+  global_brushes_parameters_map = {
+    ... //other brushes
+    'cube'-> ['block', 'size', 'replace'],
+    ... //more brushes
+  }
+  ```
+
 #### Messages
 
 If you want to print a message as an output to the player, the easiest way is using the `_print(player, message_id, ...extra_args)`
@@ -122,18 +191,18 @@ add your commands into the `base_command_map` instead with the following format:
 -  `[command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)`
 -  `[command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]`
 
-Explained in words: In the list, you add the command for carpet ("syntax") (eg `'fill <block>'`) as the first element.
-The second element is the "interpretation" for Carpet (what will that do, basically the other side of a regular commands
-map), and then the third item is either `false` (to prevent it from appearing in help menu, for example, `help` can be 
-hidden since `help [page]` is basically the same) or another list with the info for the help menu, which you can find below.
+In words: the first two arguments are the usual key and value arguments in the `__config():'commands'` map when defining custom commands 
+with scarpet the regular way. For example, they can be `'fill <block>'` and `'fill_with_blocks'`, where the latter is a user-defined 
+function. The third element in the list is what defines the representation of the command in the help menu. Use `false` to hide the command
+from the help menu (not every variation of a command needs it's individual entry), or see below for more info.
 
-- `command_for_carpet`: As mentioned, it is the command "syntax" that will be passed to Carpet, the equivalent to the 
-  first side of a regular commands map
-- `interpretation_for_carpet`: As mentioned, it is how Carpet will process that command, the equivalent to the other side
-  of a regular commands map
-- `optional_arguments_since`: The position of the first argument to make visibly optional (`<arg>` to `[arg]`). Can be 
-  used to merge multiple commands in help menu (e.g. `help` and `help <page>` into `help [page]`). If the command shouldn't
-  have any optional arguments, use `-1`
+- `command_for_carpet`: it's the command "syntax" that will be passed to Carpet, the equivalent to the 
+  key in regular commands map
+- `interpretation_for_carpet`: it's how Carpet will process that command, the equivalent to value argument of a regular commands map
+- `optional_arguments_since`: the index of the first optional argument in the command out of all arguments given. optional arguemtns will
+  be printed as `[arg]`, and mandaroty ones as `<arg>` For isntance, setting it to `0` will make all arguments optional, while setting it to
+  `2` means the first two arguments are mandatory. Set it to `-1` if all arguments are mandatory. This can be used to merge multiple commands
+  into one help entry (for isntance, `help [page]` represents both the `help` and `help <page>` commands).
 - `description`: The description of the command in the help menu. Must be a translation string (see [Messages](#messages))
   or a lambda (if you need arguments in the translation, `_()->_translate('string', ...args)`). (it can technically be 
   `null`, but the idea is to add a description)
@@ -141,12 +210,48 @@ hidden since `help [page]` is basically the same) or another list with the info 
   it must be a translation string or a lambda (if you need arguments in the translation)
 - `description_action` An optional action to run when the player clicks the description. Can be `null`. If present, it must
   start with either `!` (to specify it will _run_ the action) or `?` (to specify it will _suggest_ the action). The command
-  is automatically prefixed with `/worldedit ` (and a space)
+  is automatically prefixed with `/world-edit ` (and a space)
 
 The command suggestion will be derived from `command_for_carpet`: everything before the first `<`.
 
 You should try to fit each entry in a single line (when viewed in the help menu) for proper pagination (until something 
 is done).
+
+#### Items with new functionality
+
+Some items have built-in functionality, like the wand, but the user has the ability to add more items with actions associated
+with them (like brushes and angel block, for instance). If you want to add a new item functionality (say, building wand, for 
+example), then you need to take care of a few things, to avoid one item having multiple actions associated with it:
+  * When registering an item for a new action, call `new_action_item(item, action)`. This will check if the item is already 
+  registered for another action and call `_error()` if it is. Remember, that `exit`s, so there no need for an extra `return()` 
+  call or anything, that function does the check for you.
+  * When unregistering an item (not replacing it with a new one, like the wand does, actually deleting it), call 
+  `remove_action_item(item, action)`, which will check that the requested item indeed has that action registered to it. It also 
+  `exit`s if it fails. For isntance, `brush` uses it like this:
+  ```C++
+      if(
+        action=='clear',
+        remove_action_item(held_item, 'brush'); // delete old item from global_items_with_actions
+        delete(global_brushes, held_item); // deregister item as brush
+        ...
+  ```
+  * For these two functions to work properly, you any new action you add needs a few things: 
+      1. add your action's name to the `global_lang_keys` so it can be translated
+      2. add your action's code name to `global_item_action_translation_key` so it can be requested from `global_lang_keys` (for example,
+      the angel block's code name is `'angel'`, with a translation key `'action_item_angel'`, which gives the text `'angel block item'`)
+      3. if your new action has a default tool or item (like the wand does), add it to `global_items_with_actions` along with its action
+  * If registering a new item to your action just replaces the previous one, rather than adding a brand new one (think wand vs brush: one 
+  replaces the old wand with a new one, while the other adds a new brush, leaving the old ones untouched), take good care to manually 
+  delete the old item from `global_items_with_actions` just before adding the new one. Angel block for example does it like this:
+  ```C++
+  _set_angel_block_item() -> (
+    new_action_item(item = player()~'holds':0, 'angel'); // add new item
+    delete(global_items_with_actions, global_angel_block); // delete old one
+    global_angel_block = item; // register new item as angel block
+    ...
+  ```
+  This is extremely important so that old deregistered items can be reused for new actions by the player.
+
 
 #### Other functions
 
