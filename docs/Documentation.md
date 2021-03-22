@@ -68,8 +68,10 @@ Left clicking again will reselect the whole box.
     the given axis, or `none` to perform a 3D flood fill (default behaviour). Use this with `<block>` set to air to delete stuff.
  - `/world-edit drain [radius]` -> Drains the liquid the player is standing on. By default, it does so on a given radius, but you can set that with the optional parameter. If 
   you don't specify a radius and are standing in a seleciton, it will drain within the selection only. It supports the `-g` flag, try it!
+ - `/world-edit hollow [block]` -> Hollows out all shapes within the selection. If optional `[block]` argument is given, only hollows out shapes made of that block.
+ - `/world-edit outline <block> [block_to_outline] [force]` -> Outlines the selection with `<block>`. It only affects blocks matching `[block_to_outline]`, if given. If `force` is not true, it will only place blocks replacing air.
  - `/world-edit walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
- - `/world-edit outline <block> [replacement]` -> Outlines the selection with `<block>`.
+ - `/world-edit outline_selection <block> [replacement]` -> Outlines the selection with `<block>`.
  - `/world-edit shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
  - `/world-edit angel [new|clear]` -> Angel block: click in mid air to place a (stone) block you can the build off. Without arguments, it gives the player the item registered 
   as angel block. With `new`, it will register the currently held item as angel block item. With `clear` clears the current angel block item; you will have to register a new one
@@ -110,6 +112,8 @@ The available actions for brushes are:
     and it only uses the clicked block to get the direction of the line.
 - `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
 - `drain <radius>` -> Drains the liquids connected to the liquid block you click, up to `<radius>` blocks away.
+- `hollow [radius]` -> hollows out the continuos blob of blocks starting in the clicked block, going no further from the starting point than `[radius]` (defaults to 50).
+- `outline <block> [radius]` -> outlines the continuos blob of blocks startig in the clicked block with `[block]`, going no further from the starting point than `[radius]` (defaults to 50). If `force` is not true, it will only place blocks replacing air.
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
 - `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
 - `spray <block> [size] [count] [replacement]` -> creates a spray paint effect: projects `[count]` (100 by default) random rays around the volume the player is looking at in a cone with `[size]` (12 degrees, by default) angle aperture and places `<block>` in a random patter.
