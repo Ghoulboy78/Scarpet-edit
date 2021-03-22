@@ -1085,7 +1085,7 @@ global_brushes_parameters_map = {
 	'cube'-> ['block', 'size', 'replace'],
 	'cuboid'-> ['block', 'size', 'replace'],
 	'shpere' -> ['block', 'radius', 'replace'],
-	'ellipsoid' -> ['block', 'radii', replace],
+	'ellipsoid' -> ['block', 'radii', 'replace'],
 	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replace'],
 	'cone' -> ['block', 'radius', 'height', 'saxis', 'replace'],
     'pyramid' -> ['block', 'radius', 'height', 'saxis', 'replace'],
