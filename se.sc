@@ -1016,7 +1016,7 @@ _get_lang_list() -> (
   filter(map(list_files('langs','json'), slice(_,6)), !(_~' ')); // Any JSON files in /langs/ that doesn't have spaces
 );
 
-_change_lang(lang)->(f
+_change_lang(lang)->(
     languages = _get_lang_list();
     if(lang == null,
         _print(player(),'langs_availables');
