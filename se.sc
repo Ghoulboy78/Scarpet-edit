@@ -1,14 +1,14 @@
-//World edit for scarpet
+//Scarpet edit
 
 import('math','_round', '_euclidean_sq', '_vec_length');
 
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
 //#   [command_for_carpet, interpretation_for_carpet, [optional_arguments_since, description, description_tooltip, description_action]]
-//# optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
-//#f
+//#   optional_arguments_since is the position of the first arg to make optional (<arg> to [arg]). If none, use -1
+//#
 //# Suggestion is derived from command_for_carpet, everything before the first `<`.
-//# Command prefix (/world-edit ) is automatically added to description_action
+//# Command prefix (/se) is automatically added to description_action
 //# description_action accepts both execute and suggest actions, by prefixing it with either `!` or `?` (needed)
 //# Both description and description_tooltip must be a language string, or a lambda if string needs args.
 //# Try to fit each entry in a single line (help menu) for proper pagination (until something is done).
@@ -426,9 +426,9 @@ global_markers = {};
 global_angel_block = null;
 global_items_with_actions = {global_wand -> 'wand'};
 
-_help(page) ->
-(
-    command = '/'+system_info('app_name')+' ';
+global_command_name = '/'+system_info('app_name')+' ';
+
+_help(page) -> (
     // Header
     print(format(_translate('help_header_prefix'), _translate('help_header_title'), _translate('help_header_suffix')));
 
@@ -455,13 +455,13 @@ _help(page) ->
         entry = help_entries:current_entry;
         //Allow different desc actions
         if(slice(entry:4,0,1) == '!',
-            description_action = '!'+command+slice(entry:4,1);
+            description_action = '!'+global_command_name+slice(entry:4,1);
         , slice(entry:4,0,1) == '?',
-            description_action = '?'+command+slice(entry:4,1);
+            description_action = '?'+global_command_name+slice(entry:4,1);
         );
         if(entry:2 != null, arrow = 'd  -> ');
         //print(entry:2);
-        print(format(entry:0, '?'+command+entry:1, arrow,
+        print(format(entry:0, '?'+global_command_name+entry:1, arrow,
             if(type(entry:2) == 'function', call(entry:2), _translate(entry:2)),
             '^'+if(type(entry:3) == 'function', call(entry:3), _translate(entry:3)),description_action)
         );
@@ -480,11 +480,11 @@ _help(page) ->
     if (page != 1,
         footer += format('d [<<]',
                     '^'+_translate('help_pagination_first'),
-                    '!'+command+'help');
+                    '!'+global_command_name+'help');
         footer += ' ';
         footer += format('d [<]',
                     '^'+_translate('help_pagination_prev',page-1),
-                    '!'+command+'help '+(page-1));
+                    '!'+global_command_name+'help '+(page-1));
     ,
         footer += format('g [<<]');
         footer += ' ';
@@ -496,11 +496,11 @@ _help(page) ->
         last_page = ceil((entry_number)/8);
         footer += format('d [>]',
                         '^'+_translate('help_pagination_next',page+1),
-                        '!'+command+'help '+(page+1));
+                        '!'+global_command_name+'help '+(page+1));
         footer += ' ';
         footer += format('d [>>]',
                         '^'+_translate('help_pagination_last',last_page),
-                        '!'+command+'help '+last_page);
+                        '!'+global_command_name+'help '+last_page);
     ,
         footer += format('g [>]');
         footer += ' ';
@@ -755,7 +755,7 @@ _set_or_give_wand(wand) -> (
             //else, can't set as wand
             _error(p, 'invalid_wand')
         )
-    );//else, if just ran '/world-edit wand' with no extra args
+    );//else, if just ran '/se wand' with no extra args
     //give player wand if hand is empty
     if( (held_item_tuple = p~'holds') == null,
        slot = inventory_set(p, p~'selected_slot', 1, global_wand);
@@ -829,9 +829,9 @@ global_lang_keys = global_default_lang = {
     'language' ->         'English',
 
     'help_header_prefix' ->       'c ----------------- [ ',
-    'help_header_title' ->        'd World-Edit Help',
+    'help_header_title' ->        'd Scarpet-Edit Help',
     'help_header_suffix' ->       'c  ] -----------------',
-    'help_welcome' ->             'c Welcome to the World-Edit Scarpet app\'s help!',
+    'help_welcome' ->             'c Welcome to the Scarpet-Edit app\'s help!',
     'help_welcome_tooltip' ->     'y Hooray!',
     'help_your_selection' ->      'c Your selection',
     'help_selection_bounds' ->    'l From %s to %s',
@@ -955,7 +955,6 @@ global_lang_keys = global_default_lang = {
     'brush_replaced' ->                 'w Replacing previous action for brush in %s',
     'brush_new' ->			'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
-    'brush_empty_list' ->               'gi No brushes registerd so far',
     'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks', // reach
@@ -1045,9 +1044,9 @@ _change_lang(lang)->(
             missing = length(missing_translations_list);
             if(missing,
                 logger('warn',
-                    '[World-Edit Scarpet] Current translation for '+_translate('language')+' is incomplete. Missing keys: \n'
+                    '[Scarpet-Edit] Current translation for '+_translate('language')+' is incomplete. Missing keys: \n'
                         +join('\n- ',missing_translations_list));
-                logger('warn', '[World-Edit Scarpet] Until fixed, default language (english) keys will be used');
+                logger('warn', '[Scarpet-Edit] Until fixed, default language (english) keys will be used');
                 _print(player(),'langs_completeness',_translate('language'),round(100 - missing/(length(global_lang_keys)+missing)*100),missing);
             );
         ));
@@ -1086,7 +1085,7 @@ global_brushes_parameters_map = {
 	'cube'-> ['block', 'size', 'replace'],
 	'cuboid'-> ['block', 'size', 'replace'],
 	'shpere' -> ['block', 'radius', 'replace'],
-	'ellipsoid' -> ['block', 'radii', replace],
+	'ellipsoid' -> ['block', 'radii', 'replace'],
 	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replace'],
 	'cone' -> ['block', 'radius', 'height', 'saxis', 'replace'],
     'pyramid' -> ['block', 'radius', 'height', 'saxis', 'replace'],

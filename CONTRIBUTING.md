@@ -177,8 +177,8 @@ in those situations:
   errored.
 
 A message added with this method will appear in the default US English translation. If you want to translate to other 
-languages, you just need to create a JSON file with your language's id (e.g. `it_it.json`), and add it into the `world-edit.data/langs`
-folder. When the file is in there, you'll be able to load it by using `/world-edit lang [lang id]` ingame. The app will 
+languages, you just need to create a JSON file with your language's id (e.g. `it_it.json`), and add it into the `se.data/langs`
+folder. When the file is in there, you'll be able to load it by using `/se lang [lang id]` ingame. The app will 
 warn to the console if you try to load an uncomplete language ingame, including all missing keys so it's easier to translate.
 While those are not available, it will use the default US English values for those.
 
