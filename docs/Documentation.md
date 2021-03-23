@@ -26,6 +26,11 @@ It will pop up a grid, and it will follow your mouse (hovering 5 blocks in midai
 Left clicking again will reselect the whole box.
 
 ### Commands:
+ - `/se selection clear` -> Clears starting and ending points, so you can re-select them.
+ - `/se selection expand [amount]` -> Expands selection by `amount` blocks (1 if unspecified), moving each selection box
+   behind by 1 diagonal position each time
+ - `/se selection move [amount] [direction]` -> Moves the selection by `amount` blocks (1 if unspecified) in the direction
+   `direction` (player's main facing direction if unspecified)
  - `/se fill <block> [replacement]` -> Fills selection with `<block>`. If `[replacement]` is given, it only fills
     replacing that block or block tag.
  - `/se undo [moves]` -> Undoes last move performed by player or as many as specified by `[moves]`. This can be
@@ -52,7 +57,7 @@ Left clicking again will reselect the whole box.
  - `/se paste <pos>` -> Pastes selection relative to `pos`
  - `/se flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
     player's position. Can both "fill"
- what used to be air or replace some other block.
+    what used to be air or replace some other block.
  - `/se flood <block> <axis>` -> Flood fill will happen only perpendicular to an axis. Setting axis to `y`, for 
     instance, will fill the horizontal plane.
  - `/se structure list` -> Lists all available structures. Currently, they are all in the same file as the lang
@@ -78,15 +83,17 @@ Left clicking again will reselect the whole box.
  - `/se walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defaults
     to ony vertical walls (`xz`).
  - `/se outline <block> [replacement]` -> Outlines the selection with `<block>`.
- - `/se shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
- - `/se drain [radius]` -> Drains the liquid the player is standing on. By default, it does so on a given radius, but you can set that with the optional parameter. If
-   you don't specify a radius and are standing in a seleciton, it will drain within the selection only. It supports the `-g` flag, try it!
- - `/se walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defalts to ony vertical walls (`xz`).
+ - `/se shape ...` -> Generates a shape centered around the player. See brushes for all options and parameters.
+ - `/se drain [radius]` -> Drains the liquid the player is standing on. By default, it does so on a given radius, but you
+   can set that with the optional parameter. If you don't specify a radius and are standing in a seleciton, it will drain
+   within the selection only. It supports the `-g` flag, try it!
+ - `/se walls <block> [sides] [replacement]` -> Creates walls on the sides specified around the selection, defaults to 
+   only vertical walls (`xz`).
  - `/se outline <block> [replacement]` -> Outlines the selection with `<block>`.
- - `/se shape ...` -> Generates a shape centered arround the palyer. See brushes for all options and parameters.
- - `/se angel [new|clear]` -> Angel block: click in mid air to place a (stone) block you can the build off. Without arguments, it gives the player the item registered
-  as angel block. With `new`, it will register the currently held item as angel block item. With `clear` clears the current angel block item; you will have to register a new one
-  to use it.
+ - `/se shape ...` -> Generates a shape centered around the player. See brushes for all options and parameters.
+ - `/se angel [new|clear]` -> Angel block: click in mid-air to place a (stone) block you can the build off. Without 
+   arguments, it gives the player the item registered as angel block. With `new`, it will register the currently held item
+   as angel block item. With `clear` clears the current angel block item; you will have to register a new one to use it.
  - `/se up <distance>` -> Teleports you up `<distance>` ammount of blocks. Places a block under you if there was nothing
    there, so you don't fall and can start building right away.
 
@@ -122,14 +129,23 @@ The available actions for brushes are:
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing
     only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed,
     and it only uses the clicked block to get the direction of the line.
-- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane perpendicular to `axis`, if given.
+- `flood <block> <radius> [axis]` -> creates a flood fill starting in the target block and modifying all the connex blocks 
+  to become `block`, always staying within `radius` blocks of the starting point. The flood happens in the plane
+  perpendicular to `axis`, if given.
 - `drain <radius>` -> Drains the liquids connected to the liquid block you click, up to `<radius>` blocks away.
-- `hollow [radius]` -> hollows out the continuos blob of blocks starting in the clicked block, going no further from the starting point than `[radius]` (defaults to 50).
-- `outline <block> [radius]` -> outlines the continuos blob of blocks startig in the clicked block with `[block]`, going no further from the starting point than `[radius]` (defaults to 50). If `force` is not true, it will only place blocks replacing air.
+- `hollow [radius]` -> hollows out the continuos blob of blocks starting in the clicked block, going no further from the
+  starting point than `[radius]` (defaults to 50).
+- `outline <block> [radius]` -> outlines the continuos blob of blocks startig in the clicked block with `[block]`, going
+  no further from the starting point than `[radius]` (defaults to 50). If `force` is not true, it will only place blocks
+  replacing air.
 - `paste` -> pastes the current clipboard, using the targeted block as origin.
-- `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail. DOES NOT SUPPORT `undo` functionality.
-- `spray <block> [size] [count] [replacement]` -> creates a spray paint effect: projects `[count]` (100 by default) random rays around the volume the player is looking at in a cone with `[size]` (12 degrees, by default) angle aperture and places `<block>` in a random patter.
-- `spray held_item [size] [count] [replacement]` -> same as abve, but it uses the item held _in the offhand_ intead of a set item. Useful when changing block often, to avoid needing to create multiple brushes.
+- `feature <fearure>` -> places a feature (decoration) in the targeted location. Can fail, if natural feature would fail.
+  DOES NOT SUPPORT `undo` functionality.
+- `spray <block> [size] [count] [replacement]` -> creates a spray paint effect: projects `[count]` (100 by default) random
+  rays around the volume the player is looking at in a cone with `[size]` (12 degrees, by default) angle aperture and places
+  `<block>` in a random patter.
+- `spray held_item [size] [count] [replacement]` -> same as abve, but it uses the item held _in the offhand_ intead of a
+  set item. Useful when changing block often, to avoid needing to create multiple brushes.
 
 All brush functions can be appended with flags, same as fill commands, adding `f -<flags>` at the end of the regular commands.
 
@@ -152,4 +168,5 @@ Available flags:
  - `-s` -> Preserves block states when setting blocks
  - `-g` -> When replacing air or water, greenery corresponding to each medium will be replaced too
  - `-h` -> When creating a shape, makes it hollow
- - `-l` -> When used to register a brush, the brush will targer liquids as well as blocks, instead of going right through them to the block behind.
+ - `-l` -> When used to register a brush, the brush will targer liquids as well as blocks, instead of going right through
+   them to the block behind.
