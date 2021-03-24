@@ -44,7 +44,8 @@ base_commands_map = [
     ['angel', '_give_angel_block_item', [-1, 'help_cmd_angel_give', null, null]],
     ['angel new', '_set_angel_block_item', [-1, 'help_cmd_angel_new', null, null]],
     ['angel clear', '_clear_angel_block_item', [-1, 'help_cmd_angel_clear', null, null]],
-    ['rotate <pos> <degrees> <axis>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['rotate <pos> <degrees> <axis>', ['rotate', null], [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
@@ -2218,7 +2219,7 @@ _outline(block, block_to_outline, force, flags) -> (
     add_to_history('action_outline', player)
 );
 
-rotate(centre, degrees, axis)->(
+rotate(centre, degrees, axis, flags)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
 
@@ -2257,7 +2258,7 @@ rotate(centre, degrees, axis)->(
     );
 
     for(rotation_map,
-        set_block(_,rotation_map:_,null,null,{})
+        set_block(_,rotation_map:_,null,flags,{})
     );
 
     add_to_history('action_rotate', player)
