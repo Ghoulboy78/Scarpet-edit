@@ -2369,7 +2369,7 @@ _copy(origin, force)->(
     global_clipboard += entities;//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
-        global_clipboard+=[pos(_)-origin,block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
+        global_clipboard+=[pos(_)-origin, _, biome(_)]//all the important stuff, can add more if the flags require it
     );
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
@@ -2389,8 +2389,8 @@ paste(pos, flags)->(
     );
 
     for(slice(global_clipboard, 1), //cos gotta skip the entity one
-        [pos_vector, old_block, old_states, old_nbt, old_biome] = _;
-        set_block(pos_vector + pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
+        [pos_vector, old_block, old_biome] = _;
+        set_block(pos_vector + pos, old_block, null, flags, {'biome'->old_biome})
     );
     add_to_history('action_paste',player)
 );
