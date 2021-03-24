@@ -2384,9 +2384,7 @@ paste(pos, flags)->(
     if(flags~'e',
     	entities=global_clipboard:0;
         for(entities,
-        	print(_:'pos');
-        	print(pos + _:'pos');
-            spawn(_:'type',pos + _:'pos',encode_nbt(_:'nbt'))
+            spawn(_:'type',pos - [0.5, 0, 0.5] + _:'pos',encode_nbt(_:'nbt')) //adjusted for average entity size, requires to know entity size for better precision
         )
     );
 
