@@ -2353,17 +2353,17 @@ _copy(origin, force)->(
     );
     global_clipboard=[];
 
-    min_pos=map(pos1,min(_,pos2:_i));
-    avg_pos=(pos1+pos2)/2;
+    center = (pos2 + pos1)/2;
+    halfsize = (pos2 +1 - pos1)/2;
 
-    entities = map(entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))), //if its empty, this just wont run, no errors
-        print(_);
+    entities = map(entity_area('*', center, halfsize), //if its empty, this just wont run, no errors
+    	if(_~'type'=='player', continue()); //skip player entities
 
         nbt=parse_nbt(_~'nbt');
         old_pos=pos(_);
         pos=old_pos-min_pos;
         delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
-        {'type'->_~'type','pos'->pos,'nbt'->nbt}
+        {'type'->_~'type','pos'->pos-origin,'nbt'->nbt}
     );
 
     global_clipboard += entities;//always gonna have entities, incase u wanna paste with them
@@ -2381,19 +2381,18 @@ paste(pos, flags)->(
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
-    print(global_clipboard:0);
-    entities=global_clipboard:0;
-
     if(flags~'e',
+    	entities=global_clipboard:0;
         for(entities,
-            spawn(_:'type',_:'pos',_:'nbt')
+        	print(_:'pos');
+        	print(pos + _:'pos');
+            spawn(_:'type',pos + _:'pos',encode_nbt(_:'nbt'))
         )
     );
 
-    for(slice(global_clipboard, 1),//cos gotta skip the entity one
+    for(slice(global_clipboard, 1), //cos gotta skip the entity one
         [pos_vector, old_block, old_states, old_nbt, old_biome] = _;
-        new_pos=pos+pos_vector;
-        set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
+        set_block(pos_vector + pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
     );
     add_to_history('action_paste',player)
 );
