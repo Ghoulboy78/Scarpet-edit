@@ -1772,8 +1772,9 @@ undo(moves)->(
     for(range(moves),
         command = global_history:(length(global_history)-1);//to get last item of list properly
         in_dimension(command:'dimension',
-            for(command:'affected_positions',
-                set_block(_:0,_:1,null,{'b'},_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
+        	positions = command:'affected_positions';
+            for(range(length(positions)-1, -1 , -1), // iterate over the thing in reverse order
+                set_block(positions:_:0, positions:_:1, null, {'b'}, positions:_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
             )
         );
         delete(global_history,(length(global_history)-1))
