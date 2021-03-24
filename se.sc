@@ -2319,6 +2319,7 @@ stack(count,direction,flags) -> (
     flags = _parse_flags(flags);
 
     translation_vector = translation_vector*map(pos1-pos2,abs(_)+1);
+    entities = if(flags~'e', get_entities(pos1, pos2, 0));
 
     loop(count,
         c = _;
@@ -2327,6 +2328,7 @@ stack(count,direction,flags) -> (
             pos = pos(_)+offset;
             set_block(pos,_,null,flags,{});
         );
+        paste_entities(entities, offset);
     );
 
     add_to_history('action_stack', player);
