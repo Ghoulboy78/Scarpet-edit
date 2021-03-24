@@ -2389,8 +2389,8 @@ paste(pos, flags)->(
     );
 
     for(slice(global_clipboard, 1), //cos gotta skip the entity one
-        [pos_vector, old_block, old_biome] = _;
-        set_block(pos_vector + pos, old_block, null, flags, {'biome'->old_biome})
+        [relative_pos, old_block, old_biome] = _;
+        set_block(relative_pos + pos, old_block, null, flags, {'biome'->old_biome})
     );
     add_to_history('action_paste',player)
 );
