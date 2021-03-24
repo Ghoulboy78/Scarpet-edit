@@ -2297,12 +2297,13 @@ move(new_pos,flags)->(
     entities=if(flags~'e', get_entities(pos1, pos2, 0)); //checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
 
     volume(pos1,pos2,
-        put(move_map,pos(_)+translation_vector,[block(_), biome(_)]); //not setting now cos still querying, could mess up and set block we wanted to query
-        set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) //check for waterlog
+        move_map:_ = biome(_); //not setting now cos still querying, could mess up and set block we wanted to query
     );
 
+    print(move_map);
     for(move_map,
-        set_block(_,move_map:_:0,null,flags,{'biome'->move_map:_:1});
+        set_block(pos(_)+translation_vector, _, null, flags, {'biome'-> move_map:_});
+        set_block(_,if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) //check for waterlog
     );
 
     paste_entities(entities, translation_vector);
