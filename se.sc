@@ -1644,9 +1644,6 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
         ),
 
         success=null;
-        print([pos, type(pos), block, type(block)]);
-        for(pos, print(_));
-        pos = map(pos, round(_));
         existing = block(pos);
 
         // undo expects positions, not blocks
@@ -2359,7 +2356,9 @@ _copy(origin, force)->(
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
 
-    map(entities = entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))), //if its empty, this just wont run, no errors
+    entities = map(entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))), //if its empty, this just wont run, no errors
+        print(_);
+
         nbt=parse_nbt(_~'nbt');
         old_pos=pos(_);
         pos=old_pos-min_pos;
@@ -2370,7 +2369,7 @@ _copy(origin, force)->(
     global_clipboard += entities;//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
-        global_clipboard+=[centre-pos(_),block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
+        global_clipboard+=[pos(_)-origin,block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
     );
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
@@ -2382,6 +2381,7 @@ paste(pos, flags)->(
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
+    print(global_clipboard:0);
     entities=global_clipboard:0;
 
     if(flags~'e',
@@ -2390,8 +2390,8 @@ paste(pos, flags)->(
         )
     );
 
-    for(range(1,length(global_clipboard)-1),//cos gotta skip the entity one
-        [pos_vector, old_block, old_states, old_nbt, old_biome]=global_clipboard:_;
+    for(slice(global_clipboard, 1),//cos gotta skip the entity one
+        [pos_vector, old_block, old_states, old_nbt, old_biome] = _;
         new_pos=pos+pos_vector;
         set_block(new_pos, old_block, null, flags, {'state'->old_states,'biome'->old_biome,'nbt'->old_nbt})
     );
