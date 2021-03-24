@@ -867,7 +867,7 @@ global_lang_keys = global_default_lang = {
     'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
     'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z',
     'help_cmd_stack' ->           'l Stacks selection n times in dir',
-    'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\s view direction by default',
+    'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\'s view direction by default',
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
     'help_cmd_expand_tooltip' ->  'g Expands the selection [magnitude] from [pos]',
     'help_cmd_move' ->            'l Moves selection to <pos>',
@@ -1716,7 +1716,7 @@ print_history()->(
     total=min(length(history),10);//total items to print
     for(range(total),
         command=history:(length(history)-(_+1));//getting last 10 items in reverse order
-        _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'),     command:'dimension');//printing twice so it goes on 2 separate lines
+        _print(player, 'entry_undo_1', (history~command)+1, _translate(command:'type'),command:'dimension');//printing two lines so it goes on 2 separate lines
         _print(player, 'entry_undo_2', length(command:'affected_positions'))
     )
 );
