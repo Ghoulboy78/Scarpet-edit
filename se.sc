@@ -1629,6 +1629,7 @@ _corss_matrix(vec) -> (
 	[x, y, z] = vec;
 	[[0, -z, y], [z, 0, -x], [-y, x, 0]]
 );
+_mat_mul_vec(matrix, vec) -> map(matrix * [vec, vec, vec], reduce(_, _a+_, 0));
 
 
 //Command processing functions
@@ -1774,14 +1775,14 @@ get_entities(pos1, pos2, origin) -> (
 
         nbt=parse_nbt(_~'nbt');
         delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
-        {'entity'-> _, 'type'->_~'type', 'pos'->_~'pos' - origin, 'nbt'->nbt, 'width'->_~'width'}
+        {'entity'-> _, 'type'->_~'type', 'pos'->_~'pos' - origin, 'nbt'->nbt}
     );
 );
 
 paste_entities(entity_list, origin) -> (
     // expects output as formated by get_entities()
     for(entity_list,
-        spawn(_:'type', _:'pos' +origin - [0.5, 0, 0.5] * _:'width' ,encode_nbt(_:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
+        spawn(_:'type', _:'pos' + origin ,encode_nbt(_:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
     )
 );
 
@@ -2246,7 +2247,6 @@ rotate(centre, degrees, axis, flags)->(
     [pos1,pos2]=_get_current_selection(player);
 
     rotation_map={};
-    rotation_matrix=[];
     if( axis=='x',
         rotation_matrix=[
             [1,0,0],
@@ -2268,19 +2268,19 @@ rotate(centre, degrees, axis, flags)->(
 
     volume(pos1,pos2,
         block=block(_);//todo rotating stairs etc.
-        prev_pos=pos(_);
-        subtracted_pos=prev_pos-centre;
-        rotated_matrix=rotation_matrix*[subtracted_pos,subtracted_pos,subtracted_pos];//cos matrix multiplication dont work in scarpet, yet...
-        new_pos=[];
-        for(rotated_matrix,
-            new_pos+=reduce(_,_a+_,0)
-        );
-        new_pos=new_pos+centre;
-        put(rotation_map,new_pos,block)//not setting now cos still querying, could mess up and set block we wanted to query
+        new_pos = _mat_mul_vec(rotation_matrix, pos(_) - centre);
+        new_pos = new_pos + centre;
+        rotation_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
     );
 
     for(rotation_map,
         set_block(_,rotation_map:_,null,flags,{})
+    );
+
+    if(flags~'e', 
+        entities = get_entities(pos1, pos2, map(centre, floor(_)));
+        for(entities, _:'pos' = _mat_mul_vec(rotation_matrix, _:'pos'));
+        paste_entities(entities, map(centre, floor(_)));
     );
 
     add_to_history('action_rotate', player)
@@ -2294,20 +2294,20 @@ move(new_pos,flags)->(
     translation_vector = new_pos - pos1;
     flags=_parse_flags(flags);
 
-    entities=if(flags~'e', get_entities(pos1, pos2, 0)); //checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
-
     volume(pos1,pos2,
         move_map:_ = biome(_); //not setting now cos still querying, could mess up and set block we wanted to query
     );
 
-    print(move_map);
     for(move_map,
         set_block(pos(_)+translation_vector, _, null, flags, {'biome'-> move_map:_});
         set_block(_,if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) //check for waterlog
     );
 
-    paste_entities(entities, translation_vector);
-    for(entities, modify( _:'entity', 'remove'));
+    if(flags~'e', 
+        entities = get_entities(pos1, pos2, 0);
+        paste_entities(entities, translation_vector);
+        for(entities, modify( _:'entity', 'remove'));
+    ); 
 
     add_to_history('action_move', player)
 );
@@ -2364,10 +2364,10 @@ _copy(origin, force)->(
     );
     global_clipboard=[];
 
-    global_clipboard += get_entities(pos1, pos2, origin); // always gonna have entities, incase u wanna paste with them
+    global_clipboard += get_entities(pos1, pos2, map(pos1, floor(_))); // always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
-        global_clipboard+=[pos(_)-origin, _, biome(_)]//all the important stuff, can add more if the flags require it
+        global_clipboard+=[pos(_)-origin, block(_), biome(_)]//all the important stuff, can add more if the flags require it
     );
 
     _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
@@ -2379,7 +2379,7 @@ paste(pos, flags)->(
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
-    if(flags~'e', paste_entities(global_clipboard:0, pos));
+    if(flags~'e', paste_entities(global_clipboard:0, map(global_clipboard:1:0+pos, floor(_))) );
 
     for(slice(global_clipboard, 1), //cos gotta skip the entity one
         [relative_pos, old_block, old_biome] = _;
