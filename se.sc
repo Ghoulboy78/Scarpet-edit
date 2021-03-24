@@ -1761,6 +1761,30 @@ remove_action_item(item, action) -> (
     );
 );
 
+get_entities(pos1, pos2, origin) -> (
+    // this function expects pos1 and pos2 to be the negative- and positive-most corners of the areas
+    // get_selection() returns postiions in this format already!
+    // origin is a vector to translate the entitie spsitions with; use 0 if not needed
+
+    center = (pos2 + pos1)/2;
+    halfsize = (pos2 +1 - pos1)/2;
+
+    map(entity_area('*', center, halfsize), //if its empty, this just wont run, no errors
+        if(_~'type'=='player', continue()); //skip player entities
+
+        nbt=parse_nbt(_~'nbt');
+        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
+        {'entity'-> _, 'type'->_~'type', 'pos'->_~'pos' - origin, 'nbt'->nbt, 'width'->_~'width'}
+    );
+);
+
+paste_entities(entity_list, origin) -> (
+    // expects output as formated by get_entities()
+    for(entity_list,
+        spawn(_:'type', _:'pos' +origin - [0.5, 0, 0.5] * _:'width' ,encode_nbt(_:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
+    )
+);
+
 //Block processing functions
 
 undo(moves)->(
@@ -2266,30 +2290,23 @@ move(new_pos,flags)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
 
-    min_pos=map(pos1,min(_,pos2:_i));
-    avg_pos=(pos1+pos2)/2;
     move_map={};
-    translation_vector=new_pos-min_pos;
+    translation_vector = new_pos - pos1;
     flags=_parse_flags(flags);
-    entities=if(flags~'e',entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))),[]);//checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
+
+    entities=if(flags~'e', get_entities(pos1, pos2, 0)); //checking here cos checking for entities is expensive, sp dont wanna do it unnecessarily
 
     volume(pos1,pos2,
-        put(move_map,pos(_)+translation_vector,[block(_), biome(_)]);//not setting now cos still querying, could mess up and set block we wanted to query
-        set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{})//check for waterlog
+        put(move_map,pos(_)+translation_vector,[block(_), biome(_)]); //not setting now cos still querying, could mess up and set block we wanted to query
+        set_block(pos(_),if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) //check for waterlog
     );
 
     for(move_map,
         set_block(_,move_map:_:0,null,flags,{'biome'->move_map:_:1});
     );
 
-    for(entities,//if its empty, this just wont run, no errors
-        nbt=parse_nbt(_~'nbt');
-        old_pos=pos(_);
-        pos=old_pos-min_pos+new_pos;
-        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
-        spawn(_~'type',pos,encode_nbt(nbt));
-        modify(_,'remove')
-    );
+    paste_entities(entities, translation_vector);
+    for(entities, modify( _:'entity', 'remove'));
 
     add_to_history('action_move', player)
 );
@@ -2344,20 +2361,7 @@ _copy(origin, force)->(
     );
     global_clipboard=[];
 
-    center = (pos2 + pos1)/2;
-    halfsize = (pos2 +1 - pos1)/2;
-
-    entities = map(entity_area('*', center, halfsize), //if its empty, this just wont run, no errors
-    	if(_~'type'=='player', continue()); //skip player entities
-
-        nbt=parse_nbt(_~'nbt');
-        old_pos=pos(_);
-        pos=old_pos-min_pos;
-        delete(nbt,'Pos');//so that when creating new entity, it doesnt think it is in old location
-        {'type'->_~'type','pos'->pos-origin,'nbt'->nbt}
-    );
-
-    global_clipboard += entities;//always gonna have entities, incase u wanna paste with them
+    global_clipboard += get_entities(pos1, pos2, origin); // always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
         global_clipboard+=[pos(_)-origin, _, biome(_)]//all the important stuff, can add more if the flags require it
@@ -2372,12 +2376,7 @@ paste(pos, flags)->(
     if(!global_clipboard,_error(player, 'paste_no_clipboard', player));
     flags=_parse_flags(flags);
 
-    if(flags~'e',
-    	entities=global_clipboard:0;
-        for(entities,
-            spawn(_:'type',pos - [0.5, 0, 0.5] + _:'pos',encode_nbt(_:'nbt')) //adjusted for average entity size, requires to know entity size for better precision
-        )
-    );
+    if(flags~'e', paste_entities(global_clipboard:0, pos));
 
     for(slice(global_clipboard, 1), //cos gotta skip the entity one
         [relative_pos, old_block, old_biome] = _;
