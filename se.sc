@@ -1637,37 +1637,29 @@ global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-		
-	if( !( 
-            (flags~'a' && block=='air' ) || 
-            ((flags~'a' && flags~'g') && has(global_air_greenery, str(block))) 
-        ),
-
+	if( (flags~'a' && block!='air')|| !(flags~'a' && flags~'g' && has(global_air_greenery, str(block))),
         success=null;
         existing = block(pos);
-
-        // undo expects positions, not blocks
+        // undo expects positions (i.e triplets of positions), not blocks
         if(type(pos)!='list', pos=pos(pos));
 
         state = if(flags~'s',
-            bs_e=block_state(existing);
-            bs_b=block_state(block);
+            bs_e=block_state(existing); //existing block states
+            bs_b=block_state(block);//if the block we gonna place can have all the block states of the block currently in that place, then it gets them. If not, nada
             if(all(keys(bs_e), has(bs_b, _)),
                 bs_e, {}
-            );
-        , {});
+            ),
+            {}
+        );
         if(flags~'d',
-            if(
-                block=='water' || (flags~'g' &&has(global_water_greenery, str(block))) , block='air',
+            if(block=='water' || (flags~'g' && has(global_water_greenery, str(block))) , block='air',
                 block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','false')
             );
         );
-        if(flags~'w' && (
-            (existing == 'water' && block_state(existing, 'level')=='0') ||
-            block_state(existing, 'waterlogged')=='true'
-            ),
-            if(
-                block=='air', block='water', // "waterlog" air blocks
+        if(flags~'w' && ((existing == 'water' && block_state(existing, 'level')=='0') ||
+            block_state(existing, 'waterlogged')=='true'),
+
+            if(block=='air', block='water', // "waterlog" air blocks
                 block_state(block, 'waterlogged')!=null, put(state, 'waterlogged','true')
             );
         );
@@ -1686,7 +1678,6 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
         bool(success), //cos undo uses this
         false
     )
-
 );
 
 _block_matches(existing, block_predicate) ->
