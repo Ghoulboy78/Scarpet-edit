@@ -1637,12 +1637,16 @@ global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-
-        if( !( 
+		
+	if( !( 
             (flags~'a' && block=='air' ) || 
-            ((flags~'a' &&flags~'g') &&has(global_air_greenery, str(block))) 
+            ((flags~'a' && flags~'g') && has(global_air_greenery, str(block))) 
         ),
+
         success=null;
+        print([pos, type(pos), block, type(block)]);
+        for(pos, print(_));
+        pos = map(pos, round(_));
         existing = block(pos);
 
         // undo expects positions, not blocks
@@ -1675,7 +1679,7 @@ set_block(pos, block, replacement, flags, extra)->(//use this function to set bl
             if(replacement:0=='air' && has(global_air_greenery,s=str(existing)), replacement=[s, null, [], false]);
         );
 
-        if(block != existing && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
+        if(!same_block(block, existing) && (!replacement || _block_matches(existing, replacement)) && (!flags~'p' || air(pos)),
             postblock=if(flags~'u',without_updates(set(existing,block,state)),set(existing,block,state));
             prev_biome=biome(pos);
             if(flag~'b'&&extra:'biome',set_biome(pos,extra:'biome'));
@@ -1696,6 +1700,12 @@ _block_matches(existing, block_predicate) ->
     (block_tag == null || block_tags(existing, block_tag)) &&
     all(properties, block_state(existing, _) == properties:_) &&
     (!tag || tag_matches(block_data(existing), tag))
+);
+
+same_block(block, existing) -> (
+	block == existing && 
+	all(block_state(block), block_state(block, _)==block_state(existing, _) ) &&
+	(block_data(block)!=null || block_data(existing)!=null)
 );
 
 add_to_history(function,player)->(
@@ -1950,11 +1960,11 @@ structure(name, action, args)->(
 
         if(global_clipboard,
             if(args:'force',
-                _print(player,'copy_force');
-                global_clipboard=[],
+                _print(player,'copy_force'),
                 _error(player,'copy_clipboard_not_empty')
             )
         );
+        global_clipboard = [];
 
         file=parse_nbt(file);
         palette=file:'palette';
@@ -2340,18 +2350,16 @@ _copy(origin, force)->(
     [pos1,pos2]=_get_current_selection(player);
     if(global_clipboard,
         if(force,
-            _print(player,'copy_force');
-            global_clipboard=[],
+            _print(player,'copy_force'),
             _error(player,'copy_clipboard_not_empty', player)
         )
     );
+    global_clipboard=[];
 
     min_pos=map(pos1,min(_,pos2:_i));
     avg_pos=(pos1+pos2)/2;
 
-    entities = entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_)));
-
-    for(entities,//if its empty, this just wont run, no errors
+    map(entities = entity_area('*',avg_pos,map(avg_pos-min_pos,abs(_))), //if its empty, this just wont run, no errors
         nbt=parse_nbt(_~'nbt');
         old_pos=pos(_);
         pos=old_pos-min_pos;
@@ -2359,7 +2367,7 @@ _copy(origin, force)->(
         {'type'->_~'type','pos'->pos,'nbt'->nbt}
     );
 
-    global_clipboard+entities;//always gonna have entities, incase u wanna paste with them
+    global_clipboard += entities;//always gonna have entities, incase u wanna paste with them
 
     volume(pos1,pos2,
         global_clipboard+=[centre-pos(_),block(_),block_state(_),block_data(_),biome(_)]//all the important stuff, can add more if the flags require it
