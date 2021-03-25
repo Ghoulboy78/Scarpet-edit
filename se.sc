@@ -32,13 +32,19 @@ base_commands_map = [
     ['outline_selection <block> <replacement>', ['outline_sel', null], [1, 'help_cmd_outline', null, null]],
     ['outline_selection <block> f <flags>', _(block,flags)->outline_sel(block,null,flags), false],
     ['outline_selection <block> <replacement> f <flags>', 'outline_sel', false],
-    ['undo', ['undo', 1], false],
-    ['undo <moves>', 'undo', [0, 'help_cmd_undo', null, null]],
-    ['undo all', ['undo', 0], [-1, 'help_cmd_undo_all', null, null]],
+    ['undo', ['undo', 1, null], false],
+    ['undo <moves>', ['undo', null], [0, 'help_cmd_undo', null, null]],
+    ['undo all', ['undo', 0, null], [-1, 'help_cmd_undo_all', null, null]],
+    ['undo f <flag>', _(flag) -> undo(1, flag), false],
+    ['undo <moves> f <flag>', 'undo', false],
+    ['undo all f <flag>', _(flag) -> undo(0, flag), false],
     ['undo history', 'print_history', [-1, 'help_cmd_undo_history', null, null]],
-    ['redo', ['redo', 1], false],
-    ['redo <moves>', 'redo', [0, 'help_cmd_redo', 'help_cmd_redo_tooltip', null]],
-    ['redo all', ['redo', 0], [-1, 'help_cmd_redo_all', null, null]],
+    ['redo', ['redo', 1, null], false],
+    ['redo <moves>', ['redo', null], [0, 'help_cmd_redo', 'help_cmd_redo_tooltip', null]],
+    ['redo all', ['redo', 0, null], [-1, 'help_cmd_redo_all', null, null]],
+    ['redo f <flag>', _(flag) -> redo(1, flag), false],
+    ['redo <moves> f <flag>', 'redo', false],
+    ['redo all f <flag>', _(flag) -> redo(0, flag), false],
     ['wand', ['_set_or_give_wand',null], [-1, 'help_cmd_wand', null, null]],
     ['wand <wand>', '_set_or_give_wand', [-1, 'help_cmd_wand_2', null, null]],
     ['angel', '_give_angel_block_item', [-1, 'help_cmd_angel_give', null, null]],
@@ -417,6 +423,8 @@ global_max_iter = 20000;
 //Extra boilerplate
 
 global_affected_blocks=[];
+global_added_entities=[];
+global_removed_entities=[];
 
 //Block-selection
 
@@ -916,16 +924,22 @@ global_lang_keys = global_default_lang = {
     'help_cmd_angel_new' ->       'l Registers held item as angel block item',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
+    'filled_and_entitites' ->     'gi Filled %d blocks and modified %d entities',           //blocks number, entitites number
+    'modified_entities' ->        'gi Modified %d entitites',                               //entitites number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
     'many_undo' ->                'w Undo history for player %s is very long, showing only the last ten items', // player
     'entry_undo_1' ->             'w %d: type: %s (dimension: %s):',                        //index, command type, dimension
     'entry_undo_2 ' ->            'w     affected positions: %s',                           //blocks number
     'no_undo' ->                  'r No actions to undo for player %s',                     // player
     'more_moves_undo' ->          'w Your number is too high, undoing all moves for %s',    // player
-    'success_undo' ->             'gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+    'success_undo_b' ->           'gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
+    'success_undo_e' ->           'gi Successfully undid %d operations, affecting %d entitites', // moves number, entitites number
+    'success_undo_b_and_e' ->     'gi Successfully undid %d operations, affecting %d blocks and %d entitites', // moves number, blocks number, entitites number
     'no_redo' ->                  'r No actions to redo for player %s',                     // player
     'more_moves_redo' ->          'w Your number is too high, redoing all moves for %s',    // player
-    'success_redo' ->             'gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+    'success_redo_b' ->           'gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
+    'success_redo_e' ->           'gi Successfully redid %d operations, affecting %d entitites', // moves number, entitites number
+    'success_redo_b_and_e' ->     'gi Successfully redid %d operations, affecting %d blocks and %d entitites', // moves number, blocks number, entitites number
 
 
     'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
@@ -1698,14 +1712,29 @@ same_block(block, existing) -> (
 );
 
 add_to_history(function,player)->(
-    if(length(global_affected_blocks)==0,exit(_print(player, 'filled',0)));//not gonna add empty list to undo ofc...
+    l1 = length(global_affected_blocks);
+    l2 = length(global_added_entities);
+    l3 = length(global_removed_entities);
+    if( l1+l2+l3 == 0, exit(_print(player, 'filled',0)) );//not gonna add empty list to undo ofc...
+
     command={
         'type'->function,
         'affected_positions'->global_affected_blocks,
-        'dimension'->player~'dimension'
+        'dimension'->player~'dimension',
+        'new_entities' -> global_added_entities,
+        'old_entities' -> global_removed_entities
     };
-    _print(player,'filled',length(global_affected_blocks));
+    if(l1==0,
+        _print(player,'modified_entities',l2+l3), // modified only entitites
+        l2==0 && l3==0,
+        _print(player,'filled',l1), //modified only blocks
+        // else, modified both
+        _print(player,'filled_and_entitites',l1, l2+l3), 
+    );            
+        
     global_affected_blocks=[];
+    global_added_entities=[];
+    global_removed_entities=[];
     global_history+=command;
 );
 
@@ -1782,33 +1811,65 @@ get_entities(pos1, pos2, origin) -> (
 paste_entities(entity_list, origin) -> (
     // expects output as formated by get_entities()
     for(entity_list,
-        spawn(_:'type', _:'pos' + origin ,encode_nbt(_:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
+        e = spawn(_:'type', _:'pos' + origin ,encode_nbt(_:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
+        global_added_entities += e~'uuid';
     )
 );
 
 //Block processing functions
 
-undo(moves)->(
+undo(moves, flags)->(
     player = player();
     if(length(global_history)==0||global_history==null,_error(player, 'no_undo', player));//incase an op was running command, we want to print error to them
     if(length(global_history)<moves,_print(player, 'more_moves_undo', player);moves=0);
     if(moves==0,moves=length(global_history));
+
+    flags = _parse_flags(flags);
+    flags += 'b';
+
     for(range(moves),
         command = global_history:(length(global_history)-1);//to get last item of list properly
         in_dimension(command:'dimension',
         	positions = command:'affected_positions';
             for(range(length(positions)-1, -1 , -1), // iterate over the thing in reverse order
-                set_block(positions:_:0, positions:_:1, null, {'b'}, positions:_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
-            )
+                set_block(positions:_:0, positions:_:1, null, flags, positions:_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
+            );
+            if(has(flags, 'e'),
+                for(command:'new_entities', 
+                    e = entity_id(_);
+                    if(e, 
+                        global_removed_entities += {'entity'->e, 'type'->e~'type', 'pos'->e~'pos', 'nbt'->parse_nbt(e~'nbt')};
+                        modify(e, 'remove')
+                    );
+                );
+                for(command:'old_entities', 
+                    e = spawn(_:'type', _:'pos', encode_nbt(_:'nbt'));
+                    global_added_entities += e~'uuid';
+                );
+            );
         );
         delete(global_history,(length(global_history)-1))
     );
-    global_undo_history+={'affected_positions'->global_affected_blocks,'dimension'->current_dimension()};//we already know that its not gonna be empty before this, so no need to check now.
-    _print(player, 'success_undo', moves, length(global_affected_blocks));
+    global_undo_history+={
+        'affected_positions'->global_affected_blocks,
+        'dimension'->current_dimension(), 
+        'new_entities'->global_added_entities, 
+        'old_entities'->global_removed_entities
+    };//we already know that its not gonna be empty before this, so no need to check now.
+    
+    if( (l1= length(global_affected_blocks))==0, 
+        _print(player, 'success_undo_e', moves, length(global_added_entities) + length(global_removed_entities)),
+        if( (l2 = length(global_added_entities) + length(global_removed_entities)) == 0,
+            _print(player, 'success_undo_b', moves, l1),
+            _print(player, 'success_undo_b_and_e', moves, l1, l2),
+        );
+    );
     global_affected_blocks=[];
+    global_added_entities=[];
+    global_removed_entities=[];
 );
 
-redo(moves)->(
+redo(moves, flags)->(
     player=player();
     if(length(global_undo_history)==0||global_undo_history==null,_error(player,'no_redo',player));
     if(length(global_undo_history)<moves,_print(player, 'more_moves_redo', player);moves=0);
@@ -1819,14 +1880,42 @@ redo(moves)->(
         in_dimension(command:'dimension',
             for(command:'affected_positions',
                 set_block(_:0,_:1,null,{'b'},_:2);
-            )
+            );
+            if(flags~'e',
+                for(command:'new_entities', 
+                    e = entity_id(_);
+                    if(e, 
+                        global_removed_entities += {'entity'->e, 'type'->e~'type', 'pos'->e~'pos', 'nbt'->parse_nbt(e~'nbt')};
+                        modify(e, 'remove')
+                    );
+                );
+                for(command:'old_entities', 
+                    e = spawn(_:'type', _:'pos', encode_nbt(_:'nbt'));
+                    global_added_entities += e~'uuid';
+                );
+            );
         );
 
         delete(global_undo_history,(length(global_undo_history)-1))
     );
-    global_history+={'type'->'redo','affected_positions'->global_affected_blocks, 'dimension'->player~'dimension'};//Doing this the hacky way so I can add custom goodbye message
-    _print(player, 'success_redo', moves, length(global_affected_blocks));
+    global_history+={ 
+        'type'->'redo',
+        'affected_positions'->global_affected_blocks,
+        'dimension'->current_dimension(), 
+        'new_entities'->global_added_entities, 
+        'old_entities'->global_removed_entities
+    };//Doing this the hacky way so I can add custom goodbye message
+    
+    if( (l1= length(global_affected_blocks))==0, 
+        _print(player, 'success_redo_e', moves, length(global_added_entities) + length(global_removed_entities)),
+        if( (l2 = length(global_added_entities) + length(global_removed_entities)) == 0,
+            _print(player, 'success_redo_b', moves, l1),
+            _print(player, 'success_redo_b_and_e', moves, l1, l2),
+        );
+    );
     global_affected_blocks=[];
+    global_added_entities=[];
+    global_removed_entities=[];
 );
 
 structure(name, action, args)->(
@@ -2294,19 +2383,18 @@ move(new_pos,flags)->(
     translation_vector = new_pos - pos1;
     flags=_parse_flags(flags);
 
-    volume(pos1,pos2,
-        move_map:_ = biome(_); //not setting now cos still querying, could mess up and set block we wanted to query
-    );
-
-    for(move_map,
-        set_block(pos(_)+translation_vector, _, null, flags, {'biome'-> move_map:_});
-        set_block(_,if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) //check for waterlog
-    );
+    // in three steps to avoid messing with states while modifying the thing:
+    volume(pos1,pos2, move_map:block(_) = biome(_) );//not setting now cos still querying, could mess up and set block we wanted to query
+    for(move_map, set_block(_,if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) ); //check for waterlog
+    for(move_map, set_block(pos(_)+translation_vector, _, null, flags, {'biome'-> move_map:_}) );
 
     if(flags~'e', 
         entities = get_entities(pos1, pos2, 0);
         paste_entities(entities, translation_vector);
-        for(entities, modify( _:'entity', 'remove'));
+        for(entities, 
+            global_removed_entities += _;
+            modify( _:'entity', 'remove') // I could TP instead of add and remove, but that would make undoing way harder; this results in wrong message of affected entitites
+        );
     ); 
 
     add_to_history('action_move', player)
