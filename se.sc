@@ -1693,8 +1693,8 @@ _block_matches(existing, block_predicate) ->
 
 same_block(block, existing) -> (
 	block == existing && 
-	all(block_state(block), block_state(block, _)==block_state(existing, _) ) &&
-	(block_data(block)!=null || block_data(existing)!=null)
+	all(block_state(block), block_state(block, _) == block_state(existing, _)) &&
+	(block_data(block)==null && block_data(existing)==null )
 );
 
 add_to_history(function,player)->(
