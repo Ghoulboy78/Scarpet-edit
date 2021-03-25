@@ -1878,8 +1878,9 @@ redo(moves, flags)->(
         command = global_undo_history:(length(global_undo_history)-1);//to get last item of list properly
 
         in_dimension(command:'dimension',
-            for(command:'affected_positions',
-                set_block(_:0,_:1,null,{'b'},_:2);
+            positions = command:'affected_positions';
+            for(range(length(positions)-1, -1 , -1), // iterate over the thing in reverse order
+                set_block(positions:_:0, positions:_:1, null, flags, positions:_:2);//we dont know whether or not a new biome was set, so we have to store it here jic. If it wasnt, then nothing happens, cos the biome is the same
             );
             if(flags~'e',
                 for(command:'new_entities', 
