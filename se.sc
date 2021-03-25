@@ -45,7 +45,7 @@ base_commands_map = [
     ['angel new', '_set_angel_block_item', [-1, 'help_cmd_angel_new', null, null]],
     ['angel clear', '_clear_angel_block_item', [-1, 'help_cmd_angel_clear', null, null]],
     ['rotate <pos> <degrees> <axis>', ['rotate', null], [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
-    ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', false],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
