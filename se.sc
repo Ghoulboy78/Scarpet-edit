@@ -580,7 +580,7 @@ __on_tick() ->
         global_highlighted_marker = null;
         reach = if( 
         	(held = p~'holds':0)==global_wand, global_reach,
-            held==global_angel_block, brush=true; global_reach, // brush=true is used so that the selection doesn't linger, need to make this better
+            global_angel_block && held==global_angel_block, brush=true; global_reach, // brush=true is used so that the selection doesn't linger, need to make this better
         	has(global_brushes, held), brush=true; global_brush_reach
         );
         if(brush && length(global_selection)<2, clear_selection());
