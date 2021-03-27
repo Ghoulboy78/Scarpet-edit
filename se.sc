@@ -2386,7 +2386,7 @@ move(new_pos,flags)->(
 
     // in three steps to avoid messing with states while modifying the thing:
     volume(pos1,pos2, move_map:block(_) = biome(_) );//not setting now cos still querying, could mess up and set block we wanted to query
-    for(move_map, set_block(_,if(flags~'w'&&block_state(_,'waterlogged')=='true','water','air'),null,null,{}) ); //check for waterlog
+    for(move_map, set_block(_,if(flags~'w'&& (block_state(_,'waterlogged')=='true' || _=='water'),'water','air'),null,null,{}) ); //check for waterlog
     for(move_map, set_block(pos(_)+translation_vector, _, null, flags, {'biome'-> move_map:_}) );
 
     if(flags~'e', 
