@@ -109,7 +109,7 @@
   "help_cmd_up_tooltip": "g Genera un bloque de cristal si no había nada donde pararse",
   "help_pagination_last": "g Ir a última página (%d)",
   "help_cmd_set": "l Rellena la selección con el bloque seleccionado",
-  "langs_add_more_tip": "y Agrega más idiomas a la carpeta %s para usarlos! buscalos en nuetro repositorio!",
+  "langs_add_more_tip": "y Agrega más idiomas a la carpeta %s para usarlos! Búscalos en nuetro repositorio!",
   "help_cmd_hollow_tooltip": "g Especifica [block] para vaciar formas sólo de ese material",
   "help_cmd_redo": "l Rehace los últimos [n] movimientos deshechos, uno por defecto",
   "help_cmd_brush_cube": "l Registra brocha para crear cubo con lado [size] de [block]",
