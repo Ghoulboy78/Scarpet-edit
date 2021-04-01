@@ -72,7 +72,7 @@
   "action_cube": "cubo",
   "new_wand": "wi La varita de la aplicación ahora es %s, usar con cuidado.",
   "help_cmd_brush_spray_held": "l Registra brocha para pintura en aerosol con el bloque sostenido en la mano secundaria",
-  "help_welcome": "c Bienvenidos al menú de ayuda de Scarpet-Edit!",
+  "help_welcome": "c Bienvenido al menú de ayuda de Scarpet-Edit!",
   "help_cmd_undo_all": "l Deshace toda la historia de acciones",
   "help_cmd_brush_line": "l Registra brocha para crear línea entre el judagor y el lugar seleccionado de longitud [length], si se especifica",
   "success_undo": "gi Se deshicieron %d exitosamente, rellenando %d bloques",
