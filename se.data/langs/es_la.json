@@ -96,7 +96,7 @@
   "help_cmd_angel_new": "l Registra item actual como bloque ángel",
   "action_angel": "bloque ángel",
   "help_cmd_up": "l Teletransporta hacia arriba la cantidad de bloques especificada",
-  "help_cmd_brush_sphere": "l registra brocha para ahcer esferas de [radius] con [block]",
+  "help_cmd_brush_sphere": "l registra brocha para hacer esferas de [radius] con [block]",
   "help_cmd_angel_give": "l Entrega al jugador el bloque ángel actual",
   "help_cmd_brush_polygon": "l Registra brocha para hacer un polígono con [vertices] cantidad de lados",
   "action_outline_sel": "contorno selección",
