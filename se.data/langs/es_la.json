@@ -159,7 +159,7 @@
   "help_cmd_help": "l Muestra este menú de ayuda, o la página especificada",
   "help_cmd_redo_all": "l Rehace todos los movimientos deshechos",
   "angel_block_given": "w Recibiste item de bloque ángel: %s",
-  "help_cmd_set_tooltip": "g Se peude utilziar una etiqueta para reemplazar bloques",
+  "help_cmd_set_tooltip": "g Se puede utilizar una etiqueta para reemplazar bloques",
   "help_cmd_outline_force": "l También reemplaza bloques que o son aire",
   "clear_clipboard": "wi Se eliminó el portapapeles del jugador %s",
   "help_pagination_first": "g Ir a la primera página",
