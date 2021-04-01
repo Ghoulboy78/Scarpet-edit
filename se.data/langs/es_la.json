@@ -17,7 +17,7 @@
   "help_pagination_prev": "g Página anterior (%d)",
   "help_cmd_copy": "l Copiar selección actual al portapapeles",
   "help_cmd_brush_flood": "l Registra brocha para realizar un llenado de inundación con [block] empezando en el bloque seleccionado",
-  "more_moves_redo": "w Valor demasiado grande, rehaciando todas las acciones de %s",
+  "more_moves_redo": "w Valor demasiado grande, rehaciendo todas las acciones de %s",
   "no_undo_history": "w Sin historia de acciones para mostrar de %s",
   "action_outline": "contorno",
   "help_cmd_brush_feature": "l Registra brocha para colocar decoraciones",
