@@ -137,7 +137,7 @@
   "help_app_lang_selected": "l %s",
   "action_move": "mover",
   "help_pagination_next": "g Ir a la siguiente página (%d)",
-  "brush_info_params_tooltip": "g Ver la ayuda para entender qué ahcer cada parámetro",
+  "brush_info_params_tooltip": "g Ver la ayuda para entender qué hace cada parámetro",
   "action_flood": "inundación",
   "brush_new": "w Registra nueva brocha %s a %s",
   "angel_block_new": "w Cliquear con %s coloca un bloque ángel",
