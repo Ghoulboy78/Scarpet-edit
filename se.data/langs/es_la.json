@@ -166,6 +166,6 @@
   "action_drain": "drenado",
   "help_selected_wand_item": "l %s",
   "many_undo": "w La historia de acciones a deshacer de %s es muy larga, se muestran sólo las diez más recientes",
-  "structure_load_fail": "ri no se pudo cargar %s.nbt exitosament, archivo no encontrado",
+  "structure_load_fail": "ri No se pudo cargar %s.nbt, archivo no encontrado",
   "brush_info_title": "y Brocha registrada a "
 }
