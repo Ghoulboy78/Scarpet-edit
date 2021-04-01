@@ -58,7 +58,7 @@
   "action_sphere": "esfera",
   "help_cmd_paste": "l Pega portapapeles",
   "help_cmd_brush_generic": "l Sostiene un ítem para covnertirlo en brocha",
-  "angel_block_bad_item": "r Bloque nagel no puede ser alg que ya está asignado a otra acción",
+  "angel_block_bad_item": "r Bloque ángel no puede ser algo que ya está asignado a otra acción",
   "move_selection_no_player_error": "r Para mover la selección en la dirección del jugadro, hace falta un jugador",
   "language": "Español",
   "copy_success": "gi Se copiaron exitosamente %s bloques y %s entidadaes al portapapeles",
