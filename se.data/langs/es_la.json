@@ -7,7 +7,7 @@
   "no_redo": "r Sin acciones que rehacer para el jugador %s",
   "help_cmd_expand": "l Expande selección [magn] respecto a [pos]",
   "brush_info_no_flags": "w sin banderas",
-  "help_make_selection": "c Usar la barita para seleccionar posiciones inicial y final",
+  "help_make_selection": "c Usar la varita para seleccionar posiciones inicial y final",
   "brush_empty_list": "gi Sin brochas registradas hasta ahora",
   "action_cone": "cono",
   "action_cuboid": "cuboide",
