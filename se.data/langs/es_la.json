@@ -31,7 +31,7 @@
   "brush_list_header": "bc === Las brochas actuales son ===",
   "help_cmd_brush_cylinder": "l Registra brocha para crear un cilindro con [radius] y [height] a lo largo de [axis] de [block]",
   "help_cmd_brush_spray": "l Registra brocha para pintura en aerosol con el radio y la cantidad de puntos dados",
-  "more_moves_undo": "w Valor demasiado grande, deshaciando todas las acciones de %s",
+  "more_moves_undo": "w Valor demasiado grande, deshaciendo todas las acciones de %s",
   "help_welcome_tooltip": "y Síii!",
   "action_item_angel": "item de bloque ángel",
   "saved_structure": "w Estructura guardada como %s.nbt",
