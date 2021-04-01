@@ -154,7 +154,7 @@
   "help_cmd_stack_tooltip": "g Si no se provee, la dirección aquella en la que el jugador está mirando",
   "structure_delete_fail": "ri No se pudo eliminar %s.nbt, no existe el archivo",
   "langs_availables": "y Idiomas disponibles:",
-  "help_your_selection": "c Tu slección",
+  "help_your_selection": "c Tu selección",
   "action_expand": "expandir",
   "help_cmd_help": "l Muestra este menú de ayuda, o la página especificada",
   "help_cmd_redo_all": "l Rehace todos los movimientos deshechos",
