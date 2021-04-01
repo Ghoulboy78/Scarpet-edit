@@ -11,7 +11,7 @@
   "brush_empty_list": "gi Sin brochas registradas hasta ahora",
   "action_cone": "cono",
   "action_cuboid": "cuboide",
-  "help_cmd_brush_list": "l Lista todas las prochas registradas y sus acciones",
+  "help_cmd_brush_list": "l Lista todas las brochas registradas y sus acciones",
   "action_cylinder": "cilindro",
   "angel_block_clear": "w Desregistra el bloque ángel",
   "help_pagination_prev": "g Página anterior (%d)",
