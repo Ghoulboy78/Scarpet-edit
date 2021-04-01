@@ -38,7 +38,7 @@
   "help_cmd_rotate": "l Rota [deg] en torno a [pos]",
   "brush_info_action": "b  Acción: ",
   "help_cmd_brush_pyramid": "l Registra brocha para crear pirámide con [radius] y [height] sobre eje [axis] en la dirección del signo",
-  "langs_completeness": "gi Nota: %s la traducción está completa en un %s%%: %s frases faltantes",
+  "langs_completeness": "gi Nota: La traducción al %s solo está completa en un %s%%: %s frases faltantes",
   "no_undo": "r Sin acciones que deshacer de %s",
   "help_cmd_brush_outline": "l Registra brocha de contorno",
   "help_cmd_rotate_tooltip": "g <axis> (eje) debe ser x, y o z",
