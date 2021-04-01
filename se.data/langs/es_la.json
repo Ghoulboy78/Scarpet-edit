@@ -29,7 +29,7 @@
   "action_line": "línea",
   "action_structure_paste": "pegado_estructura",
   "brush_list_header": "bc === Las brochas actuales son ===",
-  "help_cmd_brush_cylinder": "l Registra brocha para crar un cilindro con [radius] y [height] a lo largo de [axis] de [block]",
+  "help_cmd_brush_cylinder": "l Registra brocha para crear un cilindro con [radius] y [height] a lo largo de [axis] de [block]",
   "help_cmd_brush_spray": "l Registra brocha para pintura en aerosol con el radio y la cantidad de puntos dados",
   "more_moves_undo": "w Valor demasiado grande, deshaciando todas las acciones de %s",
   "help_welcome_tooltip": "y Síii!",
