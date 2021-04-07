@@ -143,7 +143,7 @@
   "angel_block_new": "w Cliquear con %s coloca un bloque ángel",
   "action_hollow": "vaciado",
   "help_cmd_walls_tooltip": "l Utiliza [sides] para elegir qué lados generar",
-  "help_cmd_drain": "l Drena el líquido en el que estás parado",
+  "help_cmd_drain": "l Drena el líquido en el que estás",
   "help_cmd_drain_tooltip": "g Actúa en un radio o dentro de la selección",
   "filled": "gi Se rellenaron %d bloques",
   "help_cmd_walls": "l Crea paredes en la selección",
