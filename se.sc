@@ -50,7 +50,9 @@ base_commands_map = [
     ['angel', '_give_angel_block_item', [-1, 'help_cmd_angel_give', null, null]],
     ['angel new', '_set_angel_block_item', [-1, 'help_cmd_angel_new', null, null]],
     ['angel clear', '_clear_angel_block_item', [-1, 'help_cmd_angel_clear', null, null]],
-    ['rotate <pos> <degrees> <axis>', ['rotate', null], [-1, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['rotate <pos> <degrees>', ['rotate', 'y', null], false],//will replace old stuff if need be
+    ['rotate <pos> <degrees> f <flag>', _(pos, deg, flag) -> rotate(pos, deg, 'y', flag), false],//will replace old stuff if need be
+    ['rotate <pos> <degrees> <axis>', ['rotate', null], [2, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', false],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
@@ -873,7 +875,7 @@ global_lang_keys = global_default_lang = {
     'help_cmd_wand' ->            'l Sets held item as wand or gives it if hand is empty',
     'help_cmd_wand_2' ->          'l Changes the current wand item',
     'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
-    'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z',
+    'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z, defaults to y',
     'help_cmd_stack' ->           'l Stacks selection n times in dir',
     'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\'s view direction by default',
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable

@@ -42,8 +42,8 @@ Left clicking again will reselect the whole box.
  - `/se redo all` -> Redoes all undone moves. (These can be re- undone by regular /undo command)
  - `/se wand <wand>` -> Sets wand to held item, or if your hand is empty, gives you the wand. With optional `[wand]`
     argument, it sets wand to specified item
- - `/se rotate <pos> <degrees> <axis>` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
-    `y` or `z`. NB: This will look funky if you do not use multiples of 45 or 90.
+ - `/se rotate <pos> <degrees> [axis]` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
+    `y` or `z`, defaults to `y`. NB: This will look funky if you do not use multiples of 45 or 90.
  - `/se stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise
     specfied. By defaults, it stacks one time.
  - `/se expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
