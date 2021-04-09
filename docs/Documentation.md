@@ -120,11 +120,11 @@ The available actions for brushes are:
 - `cone <block> <radius> <height> [signed_axis] [replacement]` -> creates a cone out of `block` and with `radius` and 
     `height` along `signed_axis` (if given; else, defaults to `+y` for a vertical cone pointing up), replacing only blocks
     that match `replacement` (block or tag), if given.
-- `prism_polygon <block> <radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a prism with the base
-    of a regular polygon inscribed in a circle of `radius` with `vertices` amount of sides and height `height` along `axis`.
+- `prism_polygon <block> <radius> <height> <points> [axis] [rotation] [replacement]` -> generates a prism with the base
+    of a regular polygon inscribed in a circle of `radius` with `points` amount of sides and height `height` along `axis`.
     Optionally, it can be rotated from its base orientation.
-- `prism_star <block> <outer_radius> <inner_radius> <height> <vertices> [axis] [rotation] [replacement]` -> generates a 
-    star whose points touch a circle of radius `outer_radius` with `vertices` amount of points. Said star is the base 
+- `prism_star <block> <outer_radius> <inner_radius> <height> <points> [axis] [rotation] [replacement]` -> generates a 
+    star whose points touch a circle of radius `outer_radius` with `points` amount of points. Said star is the base 
     for a prism of height `height` along `axis`. Optionally, it can be rotated from its base orientation.
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing
     only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed,
