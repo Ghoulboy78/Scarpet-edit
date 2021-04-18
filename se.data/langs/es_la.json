@@ -57,19 +57,11 @@
   "brush_info_flags": "b Banderas: ",
   "brush_more_info_tooltip": "Cliquea para más información sobre la brocha %s",
   "action_sphere": "esfera",
-<<<<<<< HEAD
   "help_cmd_paste": "l Pega el portapapeles",
   "help_cmd_brush_generic": "l Sostén un ítem para covnertirlo en brocha",
   "angel_block_bad_item": "r El bloque ángel no puede ser algo que ya está asignado a otra acción",
   "move_selection_no_player_error": "r Para mover la selección en la dirección del jugador hace falta un jugador",
   "language": "Español (Latinoamérica)",
-=======
-  "help_cmd_paste": "l Pega portapapeles",
-  "help_cmd_brush_generic": "l Sostiene un ítem para convertirlo en brocha",
-  "angel_block_bad_item": "r Bloque ángel no puede ser algo que ya está asignado a otra acción",
-  "move_selection_no_player_error": "r Para mover la selección en la dirección del jugador, hace falta un jugador",
-  "language": "Español",
->>>>>>> 5a700f9622b2bc3780e71d3c929db5844ab70ec0
   "copy_success": "gi Se copiaron exitosamente %s bloques y %s entidadaes al portapapeles",
   "structure_delete_success": "gi Se borró %s.nbt exitosamente",
   "help_cmd_lang": "l Cambia el idioma de la aplicación a [lang]",
