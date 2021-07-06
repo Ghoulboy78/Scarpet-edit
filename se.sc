@@ -1,4 +1,4 @@
-//Scarpet edit
+//ScarpetEdit
 
 import('math','_round', '_euclidean_sq', '_vec_length');
 
@@ -840,9 +840,9 @@ global_lang_keys = global_default_lang = {
     'language' ->         'English',
 
     'help_header_prefix' ->       'c ----------------- [ ',
-    'help_header_title' ->        'd Scarpet-Edit Help',
+    'help_header_title' ->        'd ScarpetEdit Help',
     'help_header_suffix' ->       'c  ] -----------------',
-    'help_welcome' ->             'c Welcome to the Scarpet-Edit app\'s help!',
+    'help_welcome' ->             'c Welcome to the ScarpetEdit app\'s help!',
     'help_welcome_tooltip' ->     'y Hooray!',
     'help_your_selection' ->      'c Your selection',
     'help_selection_bounds' ->    'l From %s to %s',
@@ -1062,9 +1062,9 @@ _change_lang(lang)->(
             missing = length(missing_translations_list);
             if(missing,
                 logger('warn',
-                    '[Scarpet-Edit] Current translation for '+_translate('language')+' is incomplete. Missing keys: \n'
+                    '[ScarpetEdit] Current translation for '+_translate('language')+' is incomplete. Missing keys: \n'
                         +join('\n- ',missing_translations_list));
-                logger('warn', '[Scarpet-Edit] Until fixed, default language (english) keys will be used');
+                logger('warn', '[ScarpetEdit] Until fixed, default language (english) keys will be used');
                 _print(player(),'langs_completeness',_translate('language'),round(100 - missing/(length(global_lang_keys)+missing)*100),missing);
             );
         ));
