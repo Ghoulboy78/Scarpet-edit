@@ -2485,3 +2485,25 @@ tp_up(distance)-> (
     modify(p, 'pos', pp=(p~'pos'+ [0,distance,0]));
     if(air(pp-[0,1,0]), set(pp-[0,1,0], 'glass'))
 );
+
+__on_start() -> (
+    // Unregister lang install handler in the player scopes, keeps it in the "global" one. Else languages get installed multiple times per player online
+    handle_event('se_install_lang', null);
+);
+
+// Allows an installer to provide language files for Scarpet Edit in the tick when the app has been loaded
+handle_event('se_install_lang', _(lang_data) -> (
+        if (type(lang_data) != 'list' || length(lang_data) != 2, throw('invalid event data'));
+        
+        lang_code = lang_data:0;
+        lang_content = lang_data:1;
+        if (type(lang_content) != 'map', throw('invalid lang content'));
+
+        try ( // We don't want to prevent app load if a language fails to be installed, that's minor
+            write_file('langs/' + lang_code, 'json', lang_content);
+        , 'json_error',
+            print('[SE] Error when installing ' + lang_code + 'language' + _);
+        );
+    );
+);
+schedule(0, _() -> handle_event('se_install_lang',null)); // Remove handler at the end of the tick. Installer should be done by that moment
