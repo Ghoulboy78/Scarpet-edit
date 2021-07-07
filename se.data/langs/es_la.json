@@ -1,7 +1,7 @@
 {
   "help_pagination_prefix": "c --------------- ",
   "help_sel_wand_tooltip": "g Usar el comando 'wand' para cambiar la varita",
-  "help_header_title": "d Ayuda de Scarpet-Edit",
+  "help_header_title": "d Ayuda de ScarpetEdit",
   "help_cmd_brush_paste": "l Regista una brocha para pegar el portapapeles con origen en el bloque seleccionado",
   "help_cmd_flood_tooltip": "g usar [axis] Para realizar un llenado plano",
   "no_redo": "r Sin acciones que rehacer para el jugador %s",
@@ -73,7 +73,7 @@
   "action_cube": "cubo",
   "new_wand": "wi La varita de la aplicación ahora es %s, usar con cuidado.",
   "help_cmd_brush_spray_held": "l Registra una brocha para pintura en aerosol con el bloque sostenido en la mano secundaria",
-  "help_welcome": "c Bienvenido al menú de ayuda de Scarpet-Edit!",
+  "help_welcome": "c Bienvenido al menú de ayuda de ScarpetEdit!",
   "help_cmd_undo_all": "l Deshace toda el historial de acciones",
   "help_cmd_brush_line": "l Registra brocha para crear línea entre el judagor y el lugar seleccionado de longitud [length], si se especifica",
   "success_undo": "gi Se deshicieron %d acciones exitosamente, rellenando %d bloques",
