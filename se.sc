@@ -1219,9 +1219,33 @@ global_brush_shapes={
             [block, size, replacement] = args;
             flags = _parse_flags(flags);
 
-            for(draw_pyramid([pos, radius, height, 'y', flags~'h', false]),
-                set_block(_,block,replacement, flags, {})
+            [px, py, pz] = map(size, round(_/2-0.5));
+            [nx, ny, nz] = map(size, round(-_/2+0.5));
+            if(flags~'h',
+                for(range(nx, px+1),
+                    x = _;
+                    for(range(ny, py+1),
+                        y=_;
+                        set_block(pos+[x,y,pz], block, replacement, flags, {});
+                        set_block(pos+[x,y,nz], block, replacement, flags, {})
+                    );
+                    for(range(nz, pz+1),
+                        z=_;
+                        set_block(pos+[x,py,z], block, replacement, flags, {});
+                        set_block(pos+[x,ny,z], block, replacement, flags, {})
+                    )
+                );
+                for(range(ny, py+1),
+                    y = _;
+                    for(range(nz, pz+1),
+                        z=_;
+                        set_block(pos+[px,y,z], block, replacement, flags, {});
+                        set_block(pos+[nx,y,z], block, replacement, flags, {})
+                    )
+                ),
+                scan(pos, size, set_block(_, block, replacement, flags, {}))
             );
+
             add_to_history('action_cuboid',player())
         ),
     'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
@@ -1680,7 +1704,7 @@ add_to_history(function,player)->(
         l2==0 && l3==0,
         _print(player,'filled',l1), //modified only blocks
         // else, modified both
-        _print(player,'filled_and_entitites',l1, l2+l3), 
+        _print(player,'filled_and_entitites',l1, l2+l3),
     );            
         
     global_affected_blocks=[];
