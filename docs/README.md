@@ -11,7 +11,7 @@ there's also an in-game help menu.
 
 For more detailed instructions on how to install scarpet scripts, check: https://github.com/gnembon/fabric-carpet/wiki/Installing-carpet-scripts-in-your-world
 
-If you want to contribute, make sure you have read [the contributions manual](/CONTRIBUTING.md) first. This is important
+If you want to contribute, make sure you have read [the contributions manual](/docs/CONTRIBUTING.md) first. This is important
 to maintain the code structure and formatting, to make it easier for future contributions. 
 
 NB: It's good practice to read this before every contribution.
