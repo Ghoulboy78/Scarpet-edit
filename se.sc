@@ -1273,7 +1273,7 @@ global_brush_shapes={
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
 
-            pointing = if(signed_axis ~ '+', 'up', 'down');
+            pointing = if(signed_axis ~ '\\+', 'up', 'down');
             orientation = split(signed_axis):1;
             fill_type = if(flags~'h', 'hollow', 'filled');
 
@@ -1287,7 +1287,7 @@ global_brush_shapes={
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
 
-            pointing = if(signed_axis ~ '+', 'up', 'down');
+            pointing = if(signed_axis ~ '\\+', 'up', 'down');
             orientation = split(signed_axis):1;
             fill_type = if(flags~'h', 'hollow', 'filled');
 
