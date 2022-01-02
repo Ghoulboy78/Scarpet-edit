@@ -926,8 +926,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_angel_new' ->       'l Registers held item as angel block item',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
-    'filled_and_entitites' ->     'gi Filled %d blocks and modified %d entities',           //blocks number, entitites number
-    'modified_entities' ->        'gi Modified %d entitites',                               //entitites number
+    'filled_and_entities' ->     'gi Filled %d blocks and modified %d entities',           //blocks number, entities number
+    'modified_entities' ->        'gi Modified %d entities',                               //entities number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
     'many_undo' ->                'w Undo history for player %s is very long, showing only the last ten items', // player
     'entry_undo_1' ->             'w %d: type: %s (dimension: %s):',                        //index, command type, dimension
@@ -935,13 +935,13 @@ global_lang_keys = global_default_lang = {
     'no_undo' ->                  'r No actions to undo for player %s',                     // player
     'more_moves_undo' ->          'w Your number is too high, undoing all moves for %s',    // player
     'success_undo_b' ->           'gi Successfully undid %d operations, filling %d blocks', // moves number, blocks number
-    'success_undo_e' ->           'gi Successfully undid %d operations, affecting %d entitites', // moves number, entitites number
-    'success_undo_b_and_e' ->     'gi Successfully undid %d operations, affecting %d blocks and %d entitites', // moves number, blocks number, entitites number
+    'success_undo_e' ->           'gi Successfully undid %d operations, affecting %d entities', // moves number, entities number
+    'success_undo_b_and_e' ->     'gi Successfully undid %d operations, affecting %d blocks and %d entities', // moves number, blocks number, entities number
     'no_redo' ->                  'r No actions to redo for player %s',                     // player
     'more_moves_redo' ->          'w Your number is too high, redoing all moves for %s',    // player
     'success_redo_b' ->           'gi Successfully redid %d operations, filling %d blocks', // moves number, blocks number
-    'success_redo_e' ->           'gi Successfully redid %d operations, affecting %d entitites', // moves number, entitites number
-    'success_redo_b_and_e' ->     'gi Successfully redid %d operations, affecting %d blocks and %d entitites', // moves number, blocks number, entitites number
+    'success_redo_e' ->           'gi Successfully redid %d operations, affecting %d entities', // moves number, entities number
+    'success_redo_b_and_e' ->     'gi Successfully redid %d operations, affecting %d blocks and %d entities', // moves number, blocks number, entities number
 
 
     'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
@@ -1728,11 +1728,11 @@ add_to_history(function,player)->(
         'old_entities' -> global_removed_entities
     };
     if(l1==0,
-        _print(player,'modified_entities',l2+l3), // modified only entitites
+        _print(player,'modified_entities',l2+l3), // modified only entities
         l2==0 && l3==0,
         _print(player,'filled',l1), //modified only blocks
         // else, modified both
-        _print(player,'filled_and_entitites',l1, l2+l3), 
+        _print(player,'filled_and_entities',l1, l2+l3), 
     );            
         
     global_affected_blocks=[];
@@ -2397,7 +2397,7 @@ move(new_pos,flags)->(
         paste_entities(entities, translation_vector);
         for(entities, 
             global_removed_entities += _;
-            modify( _:'entity', 'remove') // I could TP instead of add and remove, but that would make undoing way harder; this results in wrong message of affected entitites
+            modify( _:'entity', 'remove') // I could TP instead of add and remove, but that would make undoing way harder; this results in wrong message of affected entities
         );
     ); 
 
