@@ -55,7 +55,7 @@
   "entry_undo_2 ": "w     posizioni affette: %s",
   "existing_structure": "r Struttura %s.nbt già esistente, usa 'force' per sovrascriverla",
   "filled": "gi %d blocchi riempiti",
-  "filled_and_entitites": "gi Riempiti %d blocchi e modificate %d entità",
+  "filled_and_entities": "gi Riempiti %d blocchi e modificate %d entità",
   "help_app_lang": "c Lingua dell'app",
   "help_app_lang_selected": "l %s",
   "help_app_lang_tooltip": "g Usa il comando lang per cambiarla",
