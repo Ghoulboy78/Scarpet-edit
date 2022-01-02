@@ -55,7 +55,7 @@
   "entry_undo_2 ": "w     受影响的范围：%s",
   "existing_structure": "r %s.nbt已存在，用"force"覆盖",
   "filled": "gi 已填充%d个方块",
-  "filled_and_entitites": "gi 已填充%d个方块并修改了%d个实体",
+  "filled_and_entities": "gi 已填充%d个方块并修改了%d个实体",
   "help_app_lang": "c 语言",
   "help_app_lang_selected": "l %s",
   "help_app_lang_tooltip": "g 使用"lang"命令更改语言",
