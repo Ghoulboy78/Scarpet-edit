@@ -1193,97 +1193,59 @@ _brush_action(pos, brush) -> (
 );
 
 global_brush_shapes={
-    'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
-                [block, size, replacement] = args;
-                flags = _parse_flags(flags);
-
-                if(flags~'h', //hollow is O(n^2) operation, so only need double forloop. Makes it kinda bulky, but worth it tbh
-                    radius = round(size/2);
-                    c_for(a = radius, a<= radius, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
-                        c_for(b = -radius, b <= radius, b+=1,
-                            set_block(pos + [a, b, radius], block, replacement, flags, {});
-                            set_block(pos + [a, b, -radius], block, replacement, flags, {});
-                            set_block(pos + [a, radius, b], block, replacement, flags, {});
-                            set_block(pos + [a, -radius, b], block, replacement, flags, {});
-                            set_block(pos + [radius, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius, a, b], block, replacement, flags, {});
-                        )
-                    ),
-                    scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}))
-                );
-
+    'cube'->_(pos, args, flags)->(
+                _cuboid(pos, args, flags);
                 add_to_history('action_cube',player())
             ),
-    'cuboid'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
-                [block, size, replacement] = args;
-                size = map(size/2, round(_));
-
-                if(flags~'h', // This hollow function is bulkier, cos gotta iterate over all three axes when setting.
-                    [radius_x, radius_y, radius_z]=size;
-
-                    c_for(a = -radius_y, a<= radius_y, a+=1,
-                        c_for(b = -radius_z, b<= radius_z, b+=1,
-                            set_block(pos + [ radius_x, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius_x, a, b], block, replacement, flags, {});
-                        );
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [ b, a, radius_z], block, replacement, flags, {});
-                            set_block(pos + [ b, a,-radius_z], block, replacement, flags, {});
-                        )
-                    );
-                    c_for( a= -radius_x, a<= radius_x, a+=1,
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [ b, radius_y, a], block, replacement, flags, {});
-                            set_block(pos + [ b,-radius_y, a], block, replacement, flags, {});
-                        )
-                    ),
-                    scan(pos,size, set_block(_, block, replacement, flags, {}))
-                );
+    'cuboid'->_(pos, args, flags)->(
+                _cuboid(pos, args, flags);
                 add_to_history('action_cuboid',player())
             ),
     'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
             [block, radii, replacement] = args;
 
-            scan(pos, radii,
-                l = _euclidean_sq((pos(_) - pos)/radii, 0); //cos sqrt() is slow to do, especially for large areas
-                r = 1/_vec_length(radii);
-                if(l<=1+r && (!flags~'h' || l>=1-r),//this algorithm is slow, but works (sorta, i think...)
-                    set_block(pos(_),block, replacement, flags, {})
-                )
-            );
-            add_to_history('action_ellipsoid',player())
+            _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
+            _fill_shape(pos-radii, pos+radii, block, replacement, flags);
+
+            add_to_history('ellipsoid',player())
         ),
     'sphere'->_(pos, args, flags)->(
             [block, radius, replacement] = args;
-            [cx, cy, cz] = pos;
 
-            for(range(-90, 90, 45/radius),
-                cpitch = cos(_);
-                spitch = sin(_);
-                for(range(0, 180, 45/radius),
-                    cyaw = cos(_)*cpitch*radius;
-                    syaw = sin(_)*cpitch*radius;
-                    if(flags ~'h',
-                        set_block(cx+cyaw,cy+spitch*radius,cz+syaw,block,replacement);
-                        set_block(cx+cos(_+180)*cpitch*radius,cy+spitch*radius,cz+sin(_+180)*cpitch*radius,block,replacement),
-                        for(range(-syaw,syaw+1),
-                            set_block([cx+cyaw*cpitch,cy+spitch*radius,cz+_],block,replacement, flags, {})
-                        )
-                    )
-                )
+            if(radius == 1,
+                set_block(pos, block, replacement, flags, {}),
+
+                _is_inside_shape(block, outer(pos), outer(radius)) -> _sq_distance(pos, pos(block)) <= radius*radius;
+                _fill_shape(pos-radius, pos+radius, block, replacement, flags);
             );
-            add_to_history('action_sphere',player())
+
+            add_to_history('sphere',player())
         ),
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
-            flags = _parse_flags(flags);
-            pointup=slice(signed_axis, 0, 1)=='+';
-            loop(height-1,
-                r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
+
+            axis = slice(signed_axis, 1);
+            offset = _define_flat_distance_squared(axis, radius, height);
+            axis_index = ['x', 'y', 'z']~axis;
+
+            // define direction
+            if( slice(signed_axis, 0, 1) == '-',
+                _inside_cone_fun(y, r, outer(height), outer(radius)) -> y <= height/2 - height/radius * r,
+                _inside_cone_fun(y, r, outer(height), outer(radius)) -> y >= -height/2 + height/radius * r,
             );
-            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
-            add_to_history('action_cone',player())
+
+
+            if(radius == 1,
+                set_block(pos, block, replacement, flags, {}),
+
+                _is_inside_shape(block, outer(pos), outer(radius), outer(axis_index)) -> (
+                    r = sqrt( _flat_sq_distance(pos, pos(block)) );
+                    r <= radius && _inside_cone_fun((pos-pos(block)):axis_index, r)
+                );
+                _fill_shape(pos-offset, pos+offset, block, replacement, flags);
+            );
+
+            add_to_history('cone',player())
         ),
     'pyramid'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
@@ -1298,14 +1260,17 @@ global_brush_shapes={
         ),
     'cylinder'->_(pos, args, flags)->(
             [block, radius, height, axis, replacement] = args;
-            flags = _parse_flags(flags);
-            hollow=flags~'h';
-            loop(height,
-                fill_flat_circle(pos, _, radius, orientation, block, flags~'h', replacement, flags)//Always close ends off
+
+            offset = _define_flat_distance_squared(axis, radius, height);
+
+            if(radius == 1,
+                set_block(pos, block, replacement, flags, {}),
+
+                 _is_inside_shape(block, outer(pos), outer(radius)) -> _flat_sq_distance(pos, pos(block)) <= radius*radius;
+                _fill_shape(pos-offset, pos+offset, block, replacement, flags);
             );
-            fill_flat_circle(pos, 0, radius, orientation, block, false, replacement, flags);//Always close ends off
-            fill_flat_circle(pos, height, radius, orientation, block, false, replacement, flags);
-            add_to_history('action_cylinder',player())
+
+            add_to_history('cylinder',player())
         ),
     'paste'->_(pos, args, flags)->(
             paste(pos, flags)
@@ -1519,6 +1484,59 @@ global_brush_shapes={
             plop(pos, feature);
         )
 };
+
+_cuboid(pos, args, flags) -> (
+    [block, size, replacement] = args;
+
+    half_size = (size-1)/2;
+    min_corner = pos-half_size;
+    max_corner = pos+half_size;
+
+    if(flags~'h', 
+        _walls_generic(min_corner, max_corner, 'xyz', block, replacement, flags),
+        volume(min_corner, max_corner, set_block(_, block, replacement, flags, {}))
+    );
+);
+
+_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+
+_fill_shape(from, to, block, replacement, flags) -> (
+    if(flags~'h',
+        // hollow
+        to_set = {};
+        volume(from, to,
+            if( _is_inside_shape(_), to_set += pos(_))
+        );
+        for(keys(to_set),
+            if(!all(neighbours(_), has(to_set, pos(_))),
+                set_block(_, block, replacement, flags, {})
+            )
+        ),
+
+        // not hollow
+        volume(from, to,
+            if( _is_inside_shape(_),
+                set_block(_, block, replacement, flags, {})
+            )
+        )
+    )
+
+);
+
+
+_define_flat_distance_squared(axis, radius, size) -> (
+    if(
+        axis=='x',
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:1*p:1 + p:2*p:2);
+            offset = [(size-1)/2, radius, radius],
+        axis=='y',
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:2*p:2);
+            offset = [radius, (size-1)/2, radius],
+        axis=='z',
+            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:1*p:1);
+            offset = [radius, radius, (size-1)/2]
+    );
+);
 
 fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
     r = floor(dr);
