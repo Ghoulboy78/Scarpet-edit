@@ -1300,7 +1300,7 @@ global_brush_shapes={
             [block, radius, height, axis, replacement] = args;
             flags = _parse_flags(flags);
 
-            for(draw_pyramid([pos, radius, height, axis, flags~'h', false]),
+            for(draw_prism([pos, radius, height, axis, flags~'h', false]),
                 set_block(_,block,replacement, flags, {})
             );
 
