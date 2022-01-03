@@ -1221,53 +1221,89 @@ global_brush_shapes={
 
             add_to_history('sphere',player())
         ),
-    'cone'->_(pos, args, flags)->(
+    '_cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
+            flags = _parse_flags(flags);
+            center = map(pos, floor(_));
 
             axis = slice(signed_axis, 1);
-            offset = _define_flat_distance_squared(axis, radius, height);
-            axis_index = ['x', 'y', 'z']~axis;
-
-            // define direction
-            if( slice(signed_axis, 0, 1) == '-',
-                _inside_cone_fun(y, r, outer(height), outer(radius)) -> y <= height/2 - height/radius * r,
-                _inside_cone_fun(y, r, outer(height), outer(radius)) -> y >= -height/2 + height/radius * r,
+            offset = if(
+                axis=='x', [1, 0, 0],
+                axis=='y', [0, 1, 0],
+                axis=='z', [0, 0, 1],
             );
 
+            point = if(slice(signed_axis, 0, 1)=='+', 1, -1);
+            offset = offset * point;
 
-            if(radius == 1,
-                set_block(pos, block, replacement, flags, {}),
-
-                _is_inside_shape(block, outer(pos), outer(radius), outer(axis_index)) -> (
-                    r = sqrt( _flat_sq_distance(pos, pos(block)) );
-                    r <= radius && _inside_cone_fun((pos-pos(block)):axis_index, r)
+            base = center - offset * (height+1)/2;
+            
+            roh = radius/height; //radius over height
+            loop(height+1,
+                h = _;
+                r = radius - roh*h;
+                inner = if(
+                    !(flags~'h'), //only use discs
+                        null,
+                    radius > height, 
+                        radius - roh*(h+1), 
+                    //else
+                        r-1
                 );
-                _fill_shape(pos-offset, pos+offset, block, replacement, flags);
+                [circ, disc] = _make_circle(r, inner, axis, base);
+                if(h==0 || !(flags~'h'), 
+                    for(disc, set_block(_+offset*h, block, replacement, flags, {})),  //closed bottom
+                    for(circ, set_block(_+offset*h, block, replacement, flags, {}));
+                );
+                if(h==height || r<0.5, set_block(base + offset*(h-1), block, replacement, flags, {})); //manually place point
             );
+
+            add_to_history('cone',player())
+        ),
+    'cone'->_(pos, args, flags)->(
+            [block, radius, height, signed_axis, replacement] = args;
+            roh = radius / height; //radius over height
+            _shape_maker(h, hollow, axis, base, outer(radius), outer(roh), outer(height)) -> (
+                r = radius - roh*h;
+                inner = if(
+                    !hollow, //only use discs
+                        null,
+                    radius > height, 
+                        radius - roh*(h+1), 
+                    //else
+                        r-1
+                );
+                if(r<=0.5,
+                    [[base], [base]],
+                    _make_circle(r, inner, axis, base);
+                );
+            );
+            _pyramid_generic(pos, args, flags);            
 
             add_to_history('cone',player())
         ),
     'pyramid'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
-            pointup=slice(signed_axis, 0, 1)=='+';
-            loop(height-1,
-                r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
-            );
-            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
+            
             add_to_history('action_pyramid',player())
         ),
     'cylinder'->_(pos, args, flags)->(
             [block, radius, height, axis, replacement] = args;
 
-            offset = _define_flat_distance_squared(axis, radius, height);
-
-            if(radius == 1,
-                set_block(pos, block, replacement, flags, {}),
-
-                 _is_inside_shape(block, outer(pos), outer(radius)) -> _flat_sq_distance(pos, pos(block)) <= radius*radius;
-                _fill_shape(pos-offset, pos+offset, block, replacement, flags);
+            center = map(pos, floor(_));
+            flags = _parse_flags(flags);
+            // get points on the circle that inscribes the shape
+            inner = if(flags~'h', radius-1, null);
+            [perimeter, interior] = _make_circle(radius, inner, axis, pos);
+            offset = _get_prism_offset(height, axis);
+            if(flags~'h',
+                for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
+                for(interior,
+                    set_block(_+offset, block, replacement, flags, {});
+                    set_block(_-offset, block, replacement, flags, {});
+                ),
+                for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
             );
 
             add_to_history('cylinder',player())
@@ -1382,7 +1418,7 @@ global_brush_shapes={
             [block, radius, height, n_points, axis, rotation, replacement] = args;
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
-            // get points in inner and pouter radius + interlace them
+            // get points on the circle that inscribes the shape
             points = _get_circle_points(radius, n_points, rotation);
             points:length(points) = points:0; // add first point at the end to close curve
             // get points and draw the connecting lines
@@ -1500,6 +1536,36 @@ _cuboid(pos, args, flags) -> (
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 
+_pyramid_generic(pos, args, flags) -> (
+    [block, radius, height, signed_axis, replacement] = args;
+    flags = _parse_flags(flags);
+    center = map(pos, floor(_));
+
+    axis = slice(signed_axis, 1);
+    offset = if(
+        axis=='x', [1, 0, 0],
+        axis=='y', [0, 1, 0],
+        axis=='z', [0, 0, 1],
+    );
+
+    point = if(slice(signed_axis, 0, 1)=='+', 1, -1);
+    offset = offset * point;
+
+    base = center - offset * (height+1)/2;
+    hollow = flags~'h';
+
+    loop(height,
+        h = _;
+        print(h);
+        [perimeter, interior] = _shape_maker(h, hollow, axis, base);
+        if(h==0 || !hollow, 
+            for(interior, set_block(_+offset*h, block, replacement, flags, {})),  //closed bottom
+            for(perimeter, set_block(_+offset*h, block, replacement, flags, {}));
+        );
+        if(h==height-1, set_block(base + offset*(h), block, replacement, flags, {})); //manually place point
+    );
+);
+
 _fill_shape(from, to, block, replacement, flags) -> (
     if(flags~'h',
         // hollow
@@ -1524,19 +1590,54 @@ _fill_shape(from, to, block, replacement, flags) -> (
 );
 
 
-_define_flat_distance_squared(axis, radius, size) -> (
-    if(
-        axis=='x',
-            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:1*p:1 + p:2*p:2);
-            offset = [(size-1)/2, radius, radius],
-        axis=='y',
-            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:2*p:2);
-            offset = [radius, (size-1)/2, radius],
-        axis=='z',
-            _flat_sq_distance(p1, p2) -> (p = p1-p2; p:0*p:0 + p:1*p:1);
-            offset = [radius, radius, (size-1)/2]
+_make_flat_circle(radius, inner) -> (
+    circle_set = {};
+    disc_set = {};
+    //inefficient but consisten way to make a circle
+    loop(radius+1,
+        x = _;
+        loop(x+1,
+            y = _;
+            if( 
+                x*x+y*y<radius*radius,
+                disc_set += [x, y];
+                disc_set += [y, x];
+                if(x*x+y*y>=inner*inner ,
+                    circle_set += [x, y];
+                    circle_set += [y, x];
+                )
+            )
+        )
     );
+    for(_rotated90(circle_set), circle_set += _);
+    for(_rotated90(_rotated90(circle_set)), circle_set += _);
+
+    for(_rotated90(disc_set), disc_set += _);
+    for(_rotated90(_rotated90(disc_set)), disc_set += _);
+
+    [circle_set, disc_set]
 );
+
+_make_circle(radius, inner, axis, center) -> (
+    //generates a disco with given <radius> and a circle or ring with inner radius <inner>
+    //the face of the disc will point towards <axis> and will be centered in about <center>
+    if( //this takes in a 2-list and returns a 3-list woth a 0 interleaved somewhere depending on axis
+        axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
+        axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
+        axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
+    );
+
+    [circle, disc] = _make_flat_circle(radius, inner);
+    circle = map(circle, center + _2D_to_3D(_:0, _:1, 0));
+    disc = map(disc, center + _2D_to_3D(_:0, _:1, 0));
+
+    [circle, disc]
+);
+
+_rotated90(list_to_rotate) -> ( //rotates 90 degrees
+    map(list_to_rotate, [_:1, -_:0])
+);
+
 
 fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
     r = floor(dr);
