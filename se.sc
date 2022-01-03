@@ -1207,7 +1207,7 @@ global_brush_shapes={
             _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
             _fill_shape(pos-radii, pos+radii, block, replacement, flags);
 
-            add_to_history('ellipsoid',player())
+            add_to_history('action_ellipsoid',player())
         ),
     'sphere'->_(pos, args, flags)->(
             [block, radius, replacement] = args;
@@ -1219,46 +1219,7 @@ global_brush_shapes={
                 _fill_shape(pos-radius, pos+radius, block, replacement, flags);
             );
 
-            add_to_history('sphere',player())
-        ),
-    '_cone'->_(pos, args, flags)->(
-            [block, radius, height, signed_axis, replacement] = args;
-            flags = _parse_flags(flags);
-            center = map(pos, floor(_));
-
-            axis = slice(signed_axis, 1);
-            offset = if(
-                axis=='x', [1, 0, 0],
-                axis=='y', [0, 1, 0],
-                axis=='z', [0, 0, 1],
-            );
-
-            point = if(slice(signed_axis, 0, 1)=='+', 1, -1);
-            offset = offset * point;
-
-            base = center - offset * (height+1)/2;
-            
-            roh = radius/height; //radius over height
-            loop(height+1,
-                h = _;
-                r = radius - roh*h;
-                inner = if(
-                    !(flags~'h'), //only use discs
-                        null,
-                    radius > height, 
-                        radius - roh*(h+1), 
-                    //else
-                        r-1
-                );
-                [circ, disc] = _make_circle(r, inner, axis, base);
-                if(h==0 || !(flags~'h'), 
-                    for(disc, set_block(_+offset*h, block, replacement, flags, {})),  //closed bottom
-                    for(circ, set_block(_+offset*h, block, replacement, flags, {}));
-                );
-                if(h==height || r<0.5, set_block(base + offset*(h-1), block, replacement, flags, {})); //manually place point
-            );
-
-            add_to_history('cone',player())
+            add_to_history('action_sphere',player())
         ),
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
@@ -1280,12 +1241,28 @@ global_brush_shapes={
             );
             _pyramid_generic(pos, args, flags);            
 
-            add_to_history('cone',player())
+            add_to_history('action_cone',player())
         ),
     'pyramid'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
-            flags = _parse_flags(flags);
-            
+            roh = radius / height; //radius over height
+            _shape_maker(h, hollow, axis, base, outer(radius), outer(roh), outer(height)) -> (
+                r = radius - roh*h;
+                inner = if(
+                    !hollow, //only use discs
+                        null,
+                    radius > height, 
+                        radius - roh*(h+1), 
+                    //else
+                        r-1
+                );
+                if(r<=0.5,
+                    [[base], [base]],
+                    _make_circle(r, inner, axis, base);
+                );
+            );
+            _pyramid_generic(pos, args, flags);            
+
             add_to_history('action_pyramid',player())
         ),
     'cylinder'->_(pos, args, flags)->(
@@ -1306,7 +1283,7 @@ global_brush_shapes={
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
             );
 
-            add_to_history('cylinder',player())
+            add_to_history('action_cylinder',player())
         ),
     'paste'->_(pos, args, flags)->(
             paste(pos, flags)
