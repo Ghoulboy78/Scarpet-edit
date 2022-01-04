@@ -117,7 +117,7 @@
   "action_set": "rellenar",
   "action_prism_star": "prisma estrella",
   "help_cmd_outline": "l Crea contorno en torno a la selección con <block>",
-  "help_cmd_copy_tooldtip": "g Usa [pos] o posición del jugador como origen de la estructura",
+  "help_cmd_copy_tooltip": "g Usa [pos] o posición del jugador como origen de la estructura",
   "help_cmd_wand": "l Fija el ítem actual como varita, o entrega varita al jugador si tiene la mano vacía",
   "brush_extra_info": "ig Para información más detallada, cliquea el ícono [i]",
   "help_app_lang_tooltip": "g Usar comando 'lang' para cambiarlo",

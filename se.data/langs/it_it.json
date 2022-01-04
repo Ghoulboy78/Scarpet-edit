@@ -86,7 +86,7 @@
   "help_cmd_brush_star": "l Registra un pennello per creare una stella prismoidale con [vertices] numero di punti",
   "help_cmd_clear_clipboard": "l Pulisce gli appunti correnti",
   "help_cmd_copy": "l Copia la selezione corrente sugli appunti",
-  "help_cmd_copy_tooldtip": "g Usa [pos] o la posizione del giocatore come origine per la struttura copiata",
+  "help_cmd_copy_tooltip": "g Usa [pos] o la posizione del giocatore come origine per la struttura copiata",
   "help_cmd_drain": "l Drena i liquidi su cui stai",
   "help_cmd_drain_tooltip": "g Agisce in un raggio o dentro la selezione",
   "help_cmd_expand": "l Estende la sel [magn] dalla pos",

@@ -66,7 +66,7 @@ base_commands_map = [
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
     ['copy',['_copy',null, false],false],
     ['copy force',['_copy',null, true],false],
-    ['copy <pos>',['_copy', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
+    ['copy <pos>',['_copy', false],[-1,'help_cmd_copy','help_cmd_copy_tooltip',null]],
     ['copy <pos> force',['_copy', true],false],
     ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
     ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
@@ -888,7 +888,7 @@ global_lang_keys = global_default_lang = {
     'help_cmd_outline_tooltip' -> 'g Specify [outline_block] to only outline shapes of that material',
     'help_cmd_clear_clipboard' -> 'l Clears current clipboard',
     'help_cmd_copy' ->            'l Copy current selection to clipboard',
-    'help_cmd_copy_tooldtip' ->   'g Uses [pos] or player position as origin for the copied structure',
+    'help_cmd_copy_tooltip' ->   'g Uses [pos] or player position as origin for the copied structure',
     'help_cmd_paste' ->           'l Paste clipboard',
     'help_cmd_drain' ->           'l Drains liquid you are standing on',
     'help_cmd_drain_tooltip' ->   'g Acts in a radius or withing the selection',

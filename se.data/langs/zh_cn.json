@@ -86,7 +86,7 @@
   "help_cmd_brush_star": "l 注册笔刷，以生成指定顶点数的星形柱",
   "help_cmd_clear_clipboard": "l 清空剪贴板",
   "help_cmd_copy": "l 将当前选区复制到剪切板",
-  "help_cmd_copy_tooldtip": "g 指定坐标或玩家位置，作为被复制的结构的原点",
+  "help_cmd_copy_tooltip": "g 指定坐标或玩家位置，作为被复制的结构的原点",
   "help_cmd_drain": "l 排干你所踩的液体",
   "help_cmd_drain_tooltip": "g 在指定半径内或选区内生效",
   "help_cmd_expand": "l 从指定坐标将选区扩大n倍",

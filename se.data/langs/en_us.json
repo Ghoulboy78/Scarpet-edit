@@ -86,7 +86,7 @@
   "help_cmd_brush_star": "l Register brush to create a star prism with [vertices] ammount of points",
   "help_cmd_clear_clipboard": "l Clears current clipboard",
   "help_cmd_copy": "l Copy current selection to clipboard",
-  "help_cmd_copy_tooldtip": "g Uses [pos] or player position as origin for the copied structure",
+  "help_cmd_copy_tooltip": "g Uses [pos] or player position as origin for the copied structure",
   "help_cmd_drain": "l Drains liquid you are standing on",
   "help_cmd_drain_tooltip": "g Acts in a radius or withing the selection",
   "help_cmd_expand": "l Expands sel [magn] from pos",
