@@ -316,18 +316,18 @@ base_commands_map = [
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
     ['settings max_iterations <int>', _(int) -> global_max_iter = i, false],
 
-    ['structure list',['structure',null,'list',null],false],//todo help for this
-    ['structure load <structure>',['structure','load',null],false],
+    ['structure list',['structure',null,'list',null],[-1,'help_cmd_structure_list', null, null]],//todo help for this
+    ['structure load <structure>',['structure','load',null], false],
     ['structure load <structure> f <flag>',_(s,f)->structure(s, 'load', {'flags'->f}),false],
-    ['structure load <structure> <pos>',_(s,p)->structure(s,'load',{'pos'->p}),false],
+    ['structure load <structure> <pos>',_(s,p)->structure(s,'load',{'pos'->p}),[1,'help_cmd_structure_load', null, null]],
     ['structure load <structure> <pos> f <flag>',_(s,p,f)->structure(s,'load',{'pos'->p,'flags'->f})],
-    ['structure delete <structure>',['structure','delete',null],false],
-    ['structure save <name>',['structure','save',null],false],
-    ['structure save <name> force',['structure','save',{'force'->true}],false],
-    ['structure save <name> entities',['structure','save',{'include_entities'->true}],false],
-    ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],false],
-    ['structure save <name> clipboard',['structure','save_clipboard',{'clipboard'->true}],false],
-    ['structure save <name> clipboard force',['structure','save_clipboard',{'clipboard'->true,'force'->true}],false],
+    ['structure delete <structure>',['structure','delete',null],[-1,'help_cmd_structure_delete', null, null]],
+    ['structure save <name>',['structure','save',null],[-1,'help_cmd_structure_save', null, null]],
+    ['structure save <name> force',['structure','save',{'force'->true}],[-1,'help_cmd_structure_save_f', null, null]],
+    ['structure save <name> entities',['structure','save',{'include_entities'->true}],[-1,'help_cmd_structure_save_e', null, null]],
+    ['structure save <name> entities force',['structure','save',{'force'->true,'include_entities'->true}],[-1,'help_cmd_structure_save_f_e', null, null]],
+    ['structure save <name> clipboard',['structure','save_clipboard',{'clipboard'->true}],[-1,'help_cmd_structure_save_clipboard', null, null]],
+    ['structure save <name> clipboard force',['structure','save_clipboard',{'clipboard'->true,'force'->true}],[-1,'help_cmd_structure_save_clipboard_f', null, null]],
     ['structure copy <name>',['structure','copy',null],false],
     ['structure copy <name> force',['structure','copy',{'force'->true}],false],
 ];
@@ -924,9 +924,18 @@ global_lang_keys = global_default_lang = {
     'help_cmd_angel_give' ->      'l Gives player the current angel block item',
     'help_cmd_angel_clear' ->     'l Clears item currently registered as angel block',
     'help_cmd_angel_new' ->       'l Registers held item as angel block item',
+    'help_cmd_structure_list' ->  'l Lists all structures currently in \'structures/\' subfolder',
+    'help_cmd_structure_load' ->  'l Loads a .nbt structure from the \'structures/\' subfolder',
+    'help_cmd_structure_delete' ->'l Deletes a .nbt structure in the \'structures/\' subfolder',
+    'help_cmd_structure_save' ->  'l Saves the current selection to the \'structures/\' subfolder',
+    'help_cmd_structure_save_f' ->'l Saves the current selection to the \'structures/\' subfolder, overwriting any existing file with the same name',
+    'help_cmd_structure_save_e' ->'l Saves the current selection to the \'structures/\' subfolder, including entities',
+    'help_cmd_structure_save_f_e' ->         'l Saves the current selection to the \'structures/\' subfolder, including entities and overwriting any existing file with the same name',
+    'help_cmd_structure_save_clipboard' ->   'l Saves the contents of the clipboard to the \'structures/\' subfolder',
+    'help_cmd_structure_save_clipboard_f' -> 'l Saves the contents of the clipboard to the \'structures/\' subfolder, overwriting any existing file with the same name',
 
     'filled' ->                   'gi Filled %d blocks',                                    // blocks number
-    'filled_and_entities' ->     'gi Filled %d blocks and modified %d entities',           //blocks number, entities number
+    'filled_and_entities' ->      'gi Filled %d blocks and modified %d entities',           //blocks number, entities number
     'modified_entities' ->        'gi Modified %d entities',                               //entities number
     'no_undo_history' ->          'w No undo history to show for player %s',                // player
     'many_undo' ->                'w Undo history for player %s is very long, showing only the last ten items', // player
@@ -2059,7 +2068,7 @@ structure(name, action, args)->(
         write_file('structures/'+name,'nbt',encode_nbt(data));
         _print(p,'saved_structure',name),
 
-        action=='copy',
+        action=='copy', //todo make into /structure load clipboard or smth
         if(!(file=read_file('structures/'+name,'nbt')),
             _error(p,'structure_load_fail',name)
         );
