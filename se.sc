@@ -104,7 +104,8 @@ base_commands_map = [
     ['drain <radius> f <flag>', '_drain', false],
     ['up', ['tp_up', 0], [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
     ['up <amount>', 'tp_up', [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
-    ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
+    ['brush clear', ['brush', 'clear', null], false],
+    ['brush clear <brush>', _(brush)-> brush('clear', null, brush), [0, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
 	['brush info', ['brush', 'info', null], false],
     ['brush info <brush>', _(brush)-> brush('info', null, brush), [0, 'help_cmd_brush_info', null, null]],
@@ -1003,7 +1004,8 @@ global_lang_keys = global_default_lang = {
 
    
     'brush_item_tooltip' ->		'^g Click to get one!',
-    'brush_more_info_tooltip' ->        'Click for more info on %s brush',                          // brush
+    'brush_more_info_tooltip' ->        'Click for more info on %s brush',                          // brush item
+    'brush_clear_tooltip' ->            'Click to unregister %s as a brush',
     'brush_info_title' ->               'y Brush registered to ',
     'brush_info_action' ->		'b \ Action: ',
     'brush_info_params' ->		'b \ Parameters: ',
@@ -1014,11 +1016,11 @@ global_lang_keys = global_default_lang = {
     'brush_new' ->			'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
+    'brush_extra_clear' ->               'ig To unregister an item as a brush, click the [X] icon',
     'brush_empty_list' ->               'ig You don\'t have any brushes registered',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks', // reach
-	'no_brush_error'->					'r %s in not a brush', //item
-    'no_longer_brush' -> 				'w %s is no longer a brush',
+    'no_longer_brush' -> 				'w %s is no longer a brush', //item
 
 
     'structure_list' ->                'w List of structures:',
@@ -1165,10 +1167,11 @@ brush(action, flags, ...args) -> (
 
     if(
         action=='clear',
-        remove_action_item(held_item, 'brush');
+        remove_action_item(held_item, 'brush'); //this errors out if item is not a brush
         delete(global_brushes, held_item);
-        delete(global_liquid_brush, held_item),
-        
+        delete(global_liquid_brush, held_item);
+        _print(player, 'no_longer_brush', held_item),
+
         action=='list',
         if(global_brushes,
         	print(player, '');
@@ -1179,14 +1182,21 @@ brush(action, flags, ...args) -> (
 					_translate('brush_item_tooltip'), 
 					str('!/give %s %s',player, item),
 					str('w %s ', _:1:0),
-					'db [i]',
+					
+                    'db [i] ',
 					'^g '+ _translate('brush_more_info_tooltip', item),
-					str('!/se brush info %s', item)
+					str('!/se brush info %s', item),
+
+                    'rb [X]',
+                    '^g '+ _translate('brush_clear_tooltip', item),
+                    str('!/se brush clear %s', item)
 				));
             );
-            _print(player, 'brush_extra_info'),
+            _print(player, 'brush_extra_info');
+            _print(player, 'brush_extra_clear'),
             _print(player, 'brush_empty_list')
         ),
+
         action=='info',
         if(args, held_item=args:0);
         if(has(global_brushes, held_item),
@@ -1202,7 +1212,7 @@ brush(action, flags, ...args) -> (
 			);
 			print(player, format( _translate('brush_info_flags'), if(params:2, str('w %s', params:2), _translate('brush_info_no_flags') ) )),
 			// if it's not a brush
-            _error(player, 'no_brush_error', held_item)
+            _error(player, 'action_item_not_existing_error', held_item, 'brush')
         ),
         action=='reach',
         if(args,
