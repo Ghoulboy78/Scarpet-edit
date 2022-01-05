@@ -1329,6 +1329,10 @@ global_brush_shapes={
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             roh = radius / height; //radius over height
+        
+            // define the function that generates the circles for each layer, taken care to have a thicc ring
+            // if the shape is hollow and the radius is bigger than the height. That function will be used by 
+            // _pyramid_generic later, see that for signature.
             _shape_maker(h, hollow, axis, base, previous, outer(radius), outer(roh), outer(height)) -> (
                 r = radius - roh*h;
                 inner = if(
@@ -1340,7 +1344,7 @@ global_brush_shapes={
                         r-1
                 );
                 if(r<=1,
-                    [[base], [base]],
+                    [[base], [base]], // if radius is too small, no need to make circles
                     _make_circle(r, inner, axis, base);
                 );
             );
@@ -1350,19 +1354,23 @@ global_brush_shapes={
         ),
     'pyramid'->_(pos, args, flags)->(
             [block, sidelength, height, signed_axis, replacement] = args;
-            roh = sidelength / height; //radius over height
+            roh = sidelength / height; //diameter over height
+            
+            // define the function that generates the squares for each layer, taken care to have a square "ring"
+            // if the shape is hollow and the "radius" is bigger than the height. That function will be used by 
+            // _pyramid_generic later, see that for signature.
             _shape_maker(h, hollow, axis, base, previous, outer(sidelength), outer(roh), outer(height)) -> (
                 r = sidelength - roh*h;
                 inner = if(
-                    !hollow, //only use discs
+                    !hollow, //only use squares
                         null,
                     sidelength > 2*height, 
                         floor(sidelength) - roh*(h+1), 
                     //else
-                        floor(r)-2
+                        floor(r)-2 
                 );
                 if(r<=1,
-                    [[base], [base]],
+                    [[base], [base]],// if radius is too small, no need to make squares
                     _make_square(r, inner, axis, base);
                 );
             );
@@ -1377,26 +1385,27 @@ global_brush_shapes={
             half_size = (size+1)/2;
             c = map(pos, floor(_));
             offset = half_size%1;
-
-            print([size, half_size, offset, c]);
-
-            loop(half_size,
-                z = _ + offset; print('z = '+_);
+            
+            // generate each z layer of the diamond separately. Each layer spans all values in the x directoin
+            // and adds all y values such that y=l-x or y<=l-x, depending on if the shape is hollow or not. Here
+            // l is half the diagonal on that given layer (half_size in the central layer).
+            loop(half_size, //loop over z (levles)
+                z = _ + offset;
                 level = {};
                 hd = half_size - _; //half diagonal on that level
-                loop(hd,
+                loop(hd, //loop over x (one direction)
                     x = _ + offset;
                     if(flags~'h',
-                        y = hd - x - offset - !bool(offset); print([x, y]);
+                        y = hd - x - offset - !bool(offset); //this is the formula for the line that defines the perimeter of the diamon on that level
                         for(_all_axis_reflections(x, y), level += _ ),
                     //else, solid
-                        loop(hd - x,
-                            y = _ + offset; print(y);
+                        loop(hd - x, //this is the formula for the line that defines the perimeter of the diamon on that level
+                            y = _ + offset;
                             for(_all_axis_reflections(x, y), level += _ );
                         )
                     )
                 );
-
+		//pace the level generated at the given z value and mirror it for the oposite value
                 for(level, set_block(c + [..._, z], block, replacement, flags, {}));
                 if(z != 0, //don't place the middle slice twice
                     for(level, set_block(c + [..._, -z], block, replacement, flags, {}));
@@ -1410,16 +1419,22 @@ global_brush_shapes={
 
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
-            // get points on the circle that inscribes the shape
-            inner = if(flags~'h', radius-1, null);
+            
+            //generate a disc and a circle of given radius
+            //if the shape is not hollow, the circle is not needed, passing null as inner
+            //will prevent it from being calculated
+            inner = if(flags~'h', radius-1, null); //inner radius for the circle maker
             [perimeter, interior] = _make_circle(radius, inner, axis, pos);
             offset = _get_prism_offset(height, axis);
+	    
             if(flags~'h',
+	        //place two discs for the caps and go around the perimeter placing columns of blocks for the walls
                 for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
                 for(interior,
                     set_block(_+offset, block, replacement, flags, {});
                     set_block(_-offset, block, replacement, flags, {});
                 ),
+		    //place a column of blocks for each point in the disc
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
             );
 
@@ -1459,11 +1474,12 @@ global_brush_shapes={
     'hollow'->_(pos, args, flags) -> (
             [radius] = args;
             origin = pos;
-
-            interior_set = {};
-            visited = {origin->null};
-            interior = block(origin);
-            queue = [origin];
+            
+            // the following is a flood fill implementation doing BFS
+            interior_set = {}; //here I'll store the blocks to hollow out
+            visited = {origin->null}; //here I'll store the blocks I've visited already
+            interior = block(origin); //block type to hollow out
+            queue = [origin]; //these will be the next blocks to check
 
             while(length(queue)>0, global_max_iter,
                 current_pos = queue:(-1);
@@ -1473,7 +1489,8 @@ global_brush_shapes={
                 for(neighbours(current_pos),
                     current_neighbour = _;
                     cn_pos = pos(current_neighbour);
-                    if(!has(visited, cn_pos) && _euclidean_sq(origin, cn_pos)<=radius*radius,
+                    //the euclidean check is expensive, but I have to limit the action somehow. Could replace this with max for a sqaure
+                    if(!has(visited, cn_pos) && _euclidean_sq(origin, cn_pos)<=radius*radius, 
                         if(current_neighbour==interior,
                             visited += cn_pos;
                             queue += cn_pos,
@@ -1493,12 +1510,15 @@ global_brush_shapes={
     'outline'->_(pos, args, flags) -> (
             [block, radius, force] = args;
             origin = pos;
-
+            
+            // the following is a flood fill implementation doing BFS
             outline_set = {};
             visited = {origin->null};
-            interior = block(origin);
+            interior = block(origin); //block type to outline
             queue = [origin];
-
+            
+            // define a function to check if a block on the putside will be replaced
+            // air is always replaced, greenery is only replaced with -g, other blocks are replaced only if force==true
             flags = _parse_flags(flags);
             if(flags~'g',
                 _check_fun(block, outer(force), outer(interior)) -> (air(block) || (force && block!=interior)) || has(global_air_greenery, str(block)),
@@ -1536,21 +1556,24 @@ global_brush_shapes={
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
 
-            // get points on the circle that inscribes the shape
+            // get 2D points on the circle that inscribes the shape
             points = _get_circle_points(radius, n_points, rotation);
             points:length(points) = points:0; // add first point at the end to close curve
 
-            // get points and draw the connecting lines
+            // project points to 3D according to axis and draw the connecting lines
             perimeter = _connect_with_lines(points, center, axis);
+            // fill the interior of the perimeter to get a solid cap
             interior = _flood_fill_shape(perimeter, center, axis, {});
-
+            
             offset = _get_prism_offset(height, axis);
             if(flags~'h',
+            //place two solid polygons for the caps and go around the perimeter placing columns of blocks for the walls
                 for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
                 for(interior,
                     set_block(_+offset, block, replacement, flags, {});
                     set_block(_-offset, block, replacement, flags, {});
                 ),
+            //place a column of blocks for each point in the (solid) polygon
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
             );
             add_to_history('action_prism_polygon',player());
@@ -1560,25 +1583,31 @@ global_brush_shapes={
             [block, radius, height, n_points, signed_axis, rotation, replacement] = args;
             
             roh = radius / height; //radius over height
+        
+            // define the function that generates the polygons for each layer. The polygons are generated as above, each layer
+            // with a different radius given by roh. This function will be used by _pyramid_generic later, see that for signature.
             _shape_maker(h, hollow, axis, base, previous, outer(radius), outer(roh), outer(n_points), outer(rotation)) -> (
                 r = radius - roh*h;
-                // get points on the circle that inscribes the shape
+                
                 if(r>1,
+                    // get points on the circle that inscribes the shape
                     points = _get_circle_points(r, n_points, rotation);
                     points:length(points) = points:0; // add first point at the end to close curve
 
-                    // get points and draw the connecting lines
+                    // project the points to 3D and connect with lines to get the perimeter, fill it in to get a solid polygon
                     perimeter = _connect_with_lines(points, base, axis);
                     interior = _flood_fill_shape(perimeter, base, axis, {});
+                    // if the shape is hollow and a block was in the previous layer, it doesn't need to be in the current one
                     if(hollow && h!=0,
                         perimeter = _flood_fill_shape(perimeter, base, axis, previous);
                     ),
-                //else
+                //else, no need to actually generate the polygon
                     perimeter = {base->null};
                     interior =  {base->null};
                 );
                 [perimeter, interior]
             );
+            // _generic_pyramid doesn't need the ammount of sides of the polygon or the rotation
             newargs = [block, radius, height, signed_axis, replacement];
             _pyramid_generic(pos, newargs, flags);   
 
@@ -1593,22 +1622,26 @@ global_brush_shapes={
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
 
-            // get points in inner and pouter radius + interlace them
+            // get points in inner and outer circles and interlace them
             inner_points = _get_circle_points(inner_radius, n_points, rotation);
             outer_points = _get_circle_points(outer_radius, n_points, rotation + 360/n_points/2);
             interlaced_list = _interlace_lists(inner_points, outer_points);
             interlaced_list += inner_points:0; // add first point at the end to close curve
 
-            // get points and draw the connecting lines
+            // project points to 3D according to axis and draw the connecting lines
             perimeter = _connect_with_lines(interlaced_list, center, axis);
+            // fill the interior of the perimeter to get a solid cap
             interior = _flood_fill_shape(perimeter, center, axis, {});
+        
             offset = _get_prism_offset(height, axis);
             if(flags~'h',
+            //place two solid stars for the caps and go around the perimeter placing columns of blocks for the walls
                 for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
                 for(interior,
                     set_block(_+offset, block, replacement, flags, {});
                     set_block(_-offset, block, replacement, flags, {});
                 ),
+            //place a column of blocks for each point in the (solid) star
                 for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
             );
             add_to_history('action_prism_polygon',player())
@@ -1619,29 +1652,34 @@ global_brush_shapes={
             
             oroh = outer_radius / height; //outer radius over height
             iroh = inner_radius / height; //inner radius over height
+        
+            // define the function that generates the stars for each layer. The stars are generated as above, each layer with 
+            // a different radii given by oroh and iroh. This function will be used by _pyramid_generic later, see that for signature.
             _shape_maker(h, hollow, axis, base, previous, outer(outer_radius), outer(inner_radius), outer(oroh), outer(iroh), outer(n_points), outer(rotation)) -> (
                 or = outer_radius - oroh*h;
                 ir = inner_radius - iroh*h;
                 
-                // get points on the circle that inscribes the shape
                 if(ir>1,
+                    // get points in inner and outer circles and interlace them
                     inner_points = _get_circle_points(ir, n_points, rotation);
                     outer_points = _get_circle_points(or, n_points, rotation + 360/n_points/2);
                     interlaced_list = _interlace_lists(inner_points, outer_points);
                     interlaced_list += inner_points:0; // add first point at the end to close curve
                     
-                    // get points and draw the connecting lines
+                    // project the points to 3D and connect with lines to get the perimeter, fill it in to get a solid polygon
                     perimeter = _connect_with_lines(interlaced_list, base, axis);
                     interior = _flood_fill_shape(perimeter, base, axis, {});
+                    // if the shape is hollow and a block was in the previous layer, it doesn't need to be in the current one
                     if(hollow && h!=0,
                         perimeter = _flood_fill_shape(perimeter, base, axis, previous);
                     ),
-                //else
+                //else, no need to actually generate the star
                     perimeter = {base->null};
                     interior =  {base->null};
                 );
                 [perimeter, interior]
             );
+            // _generic_pyramid doesn't need the ammount of points of the star or the rotation
             newargs = [block, radius, height, signed_axis, replacement];
             _pyramid_generic(pos, newargs, flags);   
 
@@ -1712,6 +1750,8 @@ global_brush_shapes={
         )
 };
 
+// generate a cuboid with sidelengths defined in size. if size is a number, generate a cube
+// to handle hollow shape,s it makes use of the already written walls function
 _cuboid(pos, args, flags) -> (
     [block, size, replacement] = args;
 
@@ -1727,31 +1767,44 @@ _cuboid(pos, args, flags) -> (
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 
+// generate a pyramid of arbitrary base shape (so cones, pyramids, whatever you like)
+// to use this function, a pyramid-maker function needs to define _shape_maker, which
+// should generate the shape to place on each layer (squares, circles, polygons, etc)
+// in the form of a perimeter of the shape and a filled in version of the shape in their
+// actual position in the world.
+// _shape_maker should take in a height value, a bool indicating if the shape is hollow,
+// the axis the shape is pointo towards, the point at the base of the pyramid and the previous 
+// layer.
+// _generic_pyramid will place one layer at a time, from the point to the base
 _pyramid_generic(pos, args, flags) -> (
+    //radius is not used, but it's leftover from the signature of the functions that use this function
     [block, radius, height, signed_axis, replacement] = args;
     flags = _parse_flags(flags);
-    center = map(pos, floor(_));
+    base = map(pos, floor(_)); // make sure we are on a block, no decimals allowed here
 
+    // get the direction into which the pyramid grows
     axis = slice(signed_axis, 1);
     offset = if(
         axis=='x', [1, 0, 0],
         axis=='y', [0, 1, 0],
         axis=='z', [0, 0, 1],
     );
-
+    
+    // get the pointing direction of the pyramid
     point = if(slice(signed_axis, 0, 1)=='+', 1, -1);
     offset = offset * point;
 
-    base = center;
     hollow = flags~'h';
 
     previous = {};
-    loop(height,
+    loop(height, //loop over the layers
         h = height - 1 -_;
         [perimeter, interior] = _shape_maker(h, hollow, axis, base, previous);
 
+        // place a solid shape (interior) if the pyramid is solid or if it's the last layer
+        // for hollow pyramids, place just perimeters, these should be thick rings if radius>height
         if(h==0 || !hollow, 
-            for(interior, set_block(_+offset*h;, block, replacement, flags, {})),  //closed bottom
+            for(interior, set_block(_+offset*h;, block, replacement, flags, {})),  
             for(perimeter, set_block(_+offset*h;, block, replacement, flags, {}))
         );
         if(h==height-1, set_block(base + offset*(h), block, replacement, flags, {})); //manually place point
@@ -1760,6 +1813,11 @@ _pyramid_generic(pos, args, flags) -> (
     );
 );
 
+// VERY inefficient way to fill up a volume of arbitrary shape. Any shape using this function
+// should define _is_inside_shape, which takes in a position and returns a bool. _fill_shape
+// will check every block in the cuboid that inscribes the shape and palce a block if it's part 
+// of the shape as per _is_inside_shape. For hollow shapes, it generates the solid shape and 
+// then discards any block that's surrounded by blocks inside the shape.
 _fill_shape(from, to, block, replacement, flags) -> (
     if(flags~'h',
         // hollow
@@ -1767,6 +1825,7 @@ _fill_shape(from, to, block, replacement, flags) -> (
         volume(from, to,
             if( _is_inside_shape(_), to_set += pos(_))
         );
+        // discard interior
         for(keys(to_set),
             if(!all(neighbours(_), has(to_set, pos(_))),
                 set_block(_, block, replacement, flags, {})
@@ -1783,18 +1842,25 @@ _fill_shape(from, to, block, replacement, flags) -> (
 
 );
 
+// generate a disc and a ring in 2D. Ring will have inner radius <inner> and outer radius <radius>
+// this function checks all the blocks in an eighth of the circle to check if they are inside or not
+// then reflects that pizza slice arround to get the whole shape.
 _make_flat_circle(radius, inner) -> (
-    circle_set = {};
+    circle_set = {}; //circle will be an empoty set if inner==null
     disc_set = {};
-    //inefficient but consisten way to make a circle
+    //inefficient but consisten way to make a circle that looks good
+    //loop over an eight of the plane: 0<=x<=r, y<=x
+    r2 = radius*radius;
+    i2 = inner*inner;
     loop(radius+1,
         x = _;
         loop(x+1,
             y = _;
-            if( 
-                x*x+y*y<radius*radius,
+            if( //first, see if a point is inside the disc
+                x*x+y*y<r2,
                 for(_all_reflections(x, y), disc_set += _);
-                if(inner!=null && x*x+y*y>=inner*inner ,
+                //next, check if it falls in the ring, only if inner was given
+                if(inner!=null && x*x+y*y>=i2 ,
                     for(_all_reflections(x, y), circle_set += _);
                 )
             )
@@ -1805,13 +1871,14 @@ _make_flat_circle(radius, inner) -> (
 
 _make_circle(radius, inner, axis, center) -> (
     //generates a disc with given <radius> and a circle or ring with inner radius <inner>
-    //the face of the disc will point towards <axis> and will be centered in about <center>
-    if( //this takes in a 2-list and returns a 3-list woth a 0 interleaved somewhere depending on axis
+    //the face of the disc will point towards <axis> and will be centered about <center>
+    if( //this takes in a 2-list and returns a 3-list with a 0 interleaved somewhere depending on axis
         axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
         axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
         axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
     );
-
+    
+    //generate the disc and ring in 2D and project them to 3D in the proper axis
     [circle, disc] = _make_flat_circle(radius, inner);
     circle = map(circle, center + _2D_to_3D(_:0, _:1, 0));
     disc = map(disc, center + _2D_to_3D(_:0, _:1, 0));
@@ -1819,18 +1886,27 @@ _make_circle(radius, inner, axis, center) -> (
     [circle, disc]
 );
 
+                                                                                   
+// generate a square and a square "ring" in 2D. The ring is a square with <sidelength> that has another
+// square of size <inner> cut out from it.
+// this function loops over the points in the first quadrant under x=y and stores them in a set, while also
+// storing all the reflections ab out the axes and the x=y line to get the full square
 _make_flat_square(sidelength, inner) -> (
     interior = {};
     perimeter = {};
 
     hl = (sidelength+1)/2; //half side length
     hi = (inner+1)/2; //half inner side length
-    loop(round(hl),
+    loop(round(hl), //loop over x
         x = _;
-        loop(x+1,
+        // assuming that if I need the perimeter, I don't need the full shape, we could improve
+        // this a tiny bit by not iterating over the y values we know we don't need. That assumption
+        // holds right now, but would make this function less useful. It could be implemented.
+        loop(x+1, // x<=y
             y = _;
             for(_all_reflections(x, y), interior += _);
-            if(inner!=null && x>=hi, //y <= x always hold, because I'm only looking at an eight of the square
+            // generate the perimeter only if it's needed
+            if(inner!=null && x>=hi, //y <= x always holds, because I'm only looking at an eight of the square
                 for(_all_reflections(x, y), perimeter += _)
             )
         )
@@ -1839,16 +1915,19 @@ _make_flat_square(sidelength, inner) -> (
 );
 
 _make_square(sidelength, inner, axis, center) -> (
-
+    //generates a square with given <sidelength> and a square "ring" with inner side length <inner>
+    //the face of the square will point towards <axis> and will be centered about <center>
     if( //this takes in a 2-list and returns a 3-list woth a 0 interleaved somewhere depending on axis
         axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
         axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
         axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
     );
-    [interior, perimeter] = _make_flat_square(sidelength, inner);
     
+    //generate the disc and ring in 2D and project them to 3D in the proper axis
+    [interior, perimeter] = _make_flat_square(sidelength, inner);
     perimeter = map(perimeter, center + _2D_to_3D(_:0, _:1, 0));
     interior = map(interior, center + _2D_to_3D(_:0, _:1, 0));
+    
     [perimeter, interior]
 );
 
@@ -1948,6 +2027,7 @@ _get_prism_offset(height, axis) -> (
 
 _flood_fill_shape(perimeter, center, axis, exclude) ->(
     // returns blocks corresponding to the interior of the shape defined by <perimeter>
+    // it excludes from the returned set the the positions in <exclude> (should be a set)
     // should work in 3D too giving a close surphase and passing null as <axis>
     
     max_iter = global_max_iter;
