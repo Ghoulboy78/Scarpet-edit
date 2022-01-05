@@ -1065,7 +1065,7 @@ global_lang_keys = global_default_lang = {
     'brush_new' ->			'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
-    'brush_extra_clear' ->               'ig To unregister an item as a brush, click the [X] icon',
+    'brush_extra_clear' ->              'ig To unregister an item as a brush, click the [X] icon',
     'brush_empty_list' ->               'ig You don\'t have any brushes registered',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks', // reach
@@ -1095,7 +1095,7 @@ global_lang_keys = global_default_lang = {
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
-    'action_diamond' ->             'diamond',
+    'action_diamond' ->            'diamond',
     'action_ellipsoid' ->          'ellipsoid',
     'action_sphere' ->             'sphere',
     'action_cylinder' ->           'cylinder',
