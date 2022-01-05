@@ -1427,17 +1427,7 @@ global_brush_shapes={
             [perimeter, interior] = _make_circle(radius, inner, axis, pos);
             offset = _get_prism_offset(height, axis);
 	    
-            if(flags~'h',
-	        //place two discs for the caps and go around the perimeter placing columns of blocks for the walls
-                for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-                for(interior,
-                    set_block(_+offset, block, replacement, flags, {});
-                    set_block(_-offset, block, replacement, flags, {});
-                ),
-		    //place a column of blocks for each point in the disc
-                for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-            );
-
+            _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
             add_to_history('action_cylinder',player())
         ),
     'paste'->_(pos, args, flags)->(
@@ -1565,17 +1555,7 @@ global_brush_shapes={
             // fill the interior of the perimeter to get a solid cap
             interior = _flood_fill_shape(perimeter, center, axis, {});
             
-            offset = _get_prism_offset(height, axis);
-            if(flags~'h',
-            //place two solid polygons for the caps and go around the perimeter placing columns of blocks for the walls
-                for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-                for(interior,
-                    set_block(_+offset, block, replacement, flags, {});
-                    set_block(_-offset, block, replacement, flags, {});
-                ),
-            //place a column of blocks for each point in the (solid) polygon
-                for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-            );
+            _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
             add_to_history('action_prism_polygon',player());
         ),
 
@@ -1607,7 +1587,7 @@ global_brush_shapes={
                 );
                 [perimeter, interior]
             );
-            // _generic_pyramid doesn't need the ammount of sides of the polygon or the rotation
+            // _pyramid_generic doesn't need the ammount of sides of the polygon or the rotation
             newargs = [block, radius, height, signed_axis, replacement];
             _pyramid_generic(pos, newargs, flags);   
 
@@ -1633,17 +1613,7 @@ global_brush_shapes={
             // fill the interior of the perimeter to get a solid cap
             interior = _flood_fill_shape(perimeter, center, axis, {});
         
-            offset = _get_prism_offset(height, axis);
-            if(flags~'h',
-            //place two solid stars for the caps and go around the perimeter placing columns of blocks for the walls
-                for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-                for(interior,
-                    set_block(_+offset, block, replacement, flags, {});
-                    set_block(_-offset, block, replacement, flags, {});
-                ),
-            //place a column of blocks for each point in the (solid) star
-                for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-            );
+            _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
             add_to_history('action_prism_polygon',player())
         ),
 
@@ -1679,7 +1649,7 @@ global_brush_shapes={
                 );
                 [perimeter, interior]
             );
-            // _generic_pyramid doesn't need the ammount of points of the star or the rotation
+            // _pyramid_generic doesn't need the ammount of points of the star or the rotation
             newargs = [block, radius, height, signed_axis, replacement];
             _pyramid_generic(pos, newargs, flags);   
 
@@ -1766,6 +1736,23 @@ _cuboid(pos, args, flags) -> (
 );
 
 _sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+
+// generate a prism with caps given by <interior>. If the prism is hollow, it uses <perimeter> to
+// generate the walls.
+_prism_generic(perimeter, interior, height, axis, block, replacement, flags) -> (
+    offset = _get_prism_offset(height, axis);
+    if(flags~'h',
+    //place two solid polygons for the caps and go around the perimeter placing columns of blocks for the walls
+        for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
+        for(interior,
+            set_block(_+offset, block, replacement, flags, {});
+            set_block(_-offset, block, replacement, flags, {});
+        ),
+    //place a column of blocks for each point in the (solid) polygon
+        for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
+    );
+
+);
 
 // generate a pyramid of arbitrary base shape (so cones, pyramids, whatever you like)
 // to use this function, a pyramid-maker function needs to define _shape_maker, which
@@ -2016,7 +2003,7 @@ _interlace_lists(l1, l2) -> (
 );
 
 _get_prism_offset(height, axis) -> (
-    // returns offset half column given axis
+    // returns an offset of half height given axis
     halfheight = (height-1)/2;
     if(
         axis=='x', [halfheight, 0, 0],
