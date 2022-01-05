@@ -121,6 +121,11 @@ base_commands_map = [
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
+    ['brush diamond <block> <size>', _(block, size_int) -> brush('diamond', null, block, size_int, null), false],
+    ['brush diamond <block> <size> f <flag>', _(block, size_int, flags) -> brush('diamond', flags, block, size_int, null), false],
+    ['brush diamond <block> <size> <replacement>', _(block, size_int, replacement) -> brush('diamond', null, block, size_int, replacement),
+        [2, 'help_cmd_brush_diamond', 'help_cmd_brush_generic', null]],
+    ['brush diamond <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> brush('diamond', flags, block, size_int, replacement), false],
     ['brush sphere <block> <radius>', _(block, radius) -> brush('sphere', null, block, radius, null), false],
     ['brush sphere <block> <radius> f <flag>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
     ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement),
@@ -281,13 +286,17 @@ base_commands_map = [
     ['shape cube <pos> <block> <size>', _(pos, block, size_int) -> shape('cube', pos, [block, size_int, null], null), false],
     ['shape cube <pos> <block> <size> f <flag>', _(pos, block, size_int, flags) -> shape('cube', pos, [block, size_int, null], flags), false],
     ['shape cube <pos> <block> <size> <replacement>', _(pos, block, size_int, replacement) -> shape('cube', pos, [block, size_int, replacement], null),
-        [2, 'help_cmd_shape_cube', null, null]],
+        [2, 'help_cmd_brush_cube', null, null]],
     ['shape cube <pos> <block> <size> <replacement> f <flag>', _(pos, block, size_int, replacement, flags) -> shape('cube', pos, [block, size_int, replacement], flags), false],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size>', _(pos, block, x_int, y_int, z_int) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], null], null), false],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size> f <flag>', _(pos, block, x_int, y_int, z_int, flags) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], null], flags), false],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size> <replacement>', _(pos, block, x_int, y_int, z_int, replacement) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], replacement], null),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(pos, block, x_int, y_int, z_int, replacement, flags) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], replacement], flags), false],
+    ['shape diamond <pos> <block> <size>', _(pos, block, size_int) -> shape('diamond', pos, [block, size_int, null], null), false],
+    ['shape diamond <pos> <block> <size> f <flag>', _(pos, block, size_int, flags) -> shape('diamond', pos, [block, size_int, null], flags), false],
+    ['shape diamond <pos> <block> <size> <replacement>', _(pos, block, size_int, replacement) -> shape('diamond', pos, [block, size_int, replacement], null),
+        [2, 'help_cmd_brush_diamond', null, null]],
     ['shape sphere <pos> <block> <radius>', _(pos, block, radius) -> shape('sphere', pos, [block, radius, null], null), false],
     ['shape sphere <pos> <block> <radius> f <flag>', _(pos, block, radius, flags) -> shape('sphere', pos, [block, radius, null], flags), false],
     ['shape sphere <pos> <block> <radius> <replacement>', _(pos, block, radius, replacement) -> shape('sphere', pos, [block, radius, replacement], null),
@@ -986,6 +995,7 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_outline_force'-> 'l Register brush to outline replacing non air too',
     'help_cmd_brush_cube' ->      'l Register brush to create a cube of side length [size] out of [block]',
     'help_cmd_brush_cuboid' ->    'l Register brush to create a cuboid of dimensions [x] [y] and [z] out of [block]',
+    'help_cmd_brush_diamond' ->   'l Register brush to create a diamond with diagonal [size] out of [block]',
     'help_cmd_brush_sphere' ->    'l Register brush to create a sphere of radius [size] out of [block]',
     'help_cmd_brush_ellipsoid' -> 'l Register brush to create a ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
     'help_cmd_brush_cylinder' ->  'l Register brush to create a cylinder with [radius] and [height] along [axis] out of [block]',
@@ -1085,6 +1095,7 @@ global_lang_keys = global_default_lang = {
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
+    'action_diamond' ->             'diamond',
     'action_ellipsoid' ->          'ellipsoid',
     'action_sphere' ->             'sphere',
     'action_cylinder' ->           'cylinder',
@@ -1186,13 +1197,16 @@ global_brush_reach = 100;
 global_brushes_parameters_map = {
 	'cube'-> ['block', 'size', 'replace'],
 	'cuboid'-> ['block', 'size', 'replace'],
+    'diamond'-> ['block', 'size', 'replace'],
 	'shpere' -> ['block', 'radius', 'replace'],
 	'ellipsoid' -> ['block', 'radii', 'replace'],
 	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replace'],
 	'cone' -> ['block', 'radius', 'height', 'saxis', 'replace'],
     'pyramid' -> ['block', 'radius', 'height', 'saxis', 'replace'],
 	'prism_polygon' -> ['block', 'radius', 'height', 'points', 'axis', 'rotation', 'replace'],
+    'pyramid_polygon' -> ['block', 'radius', 'height', 'points', 'saxis', 'rotation', 'replace'],
 	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'points', 'axis', 'rotation', 'replace'],
+    'pyramid_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'points', 'saxis', 'rotation', 'replace'],
 	'line' -> ['block', 'length', 'replace'],
 	'flood' -> ['block', 'radius', 'axis'],
     'drain' -> ['radius'],
@@ -1356,6 +1370,41 @@ global_brush_shapes={
 
             add_to_history('action_pyramid',player())
         ),
+    'diamond'->_(pos, args, flags)->(
+            [block, size, replacement] = args;
+            flags = _parse_flags(flags);
+
+            half_size = (size+1)/2;
+            c = map(pos, floor(_));
+            offset = half_size%1;
+
+            print([size, half_size, offset, c]);
+
+            loop(half_size,
+                z = _ + offset; print('z = '+_);
+                level = {};
+                hd = half_size - _; //half diagonal on that level
+                loop(hd,
+                    x = _ + offset;
+                    if(flags~'h',
+                        y = hd - x - offset - !bool(offset); print([x, y]);
+                        for(_all_axis_reflections(x, y), level += _ ),
+                    //else, solid
+                        loop(hd - x,
+                            y = _ + offset; print(y);
+                            for(_all_axis_reflections(x, y), level += _ );
+                        )
+                    )
+                );
+
+                for(level, set_block(c + [..._, z], block, replacement, flags, {}));
+                if(z != 0, //don't place the middle slice twice
+                    for(level, set_block(c + [..._, -z], block, replacement, flags, {}));
+                )
+            );
+            add_to_history('action_diamond',player())
+        ),
+
     'cylinder'->_(pos, args, flags)->(
             [block, radius, height, axis, replacement] = args;
 
@@ -1693,7 +1742,7 @@ _pyramid_generic(pos, args, flags) -> (
     point = if(slice(signed_axis, 0, 1)=='+', 1, -1);
     offset = offset * point;
 
-    base = center - offset * (height+1)/2;
+    base = center;
     hollow = flags~'h';
 
     previous = {};
@@ -1803,14 +1852,17 @@ _make_square(sidelength, inner, axis, center) -> (
     [perimeter, interior]
 );
 
-_all_reflections(x, y) -> ( 
+_all_reflections(x, y) -> [ 
     //this takes in a point in the first quarter plane under the x=y line and reflects it about
     //that line, and reflects the resulting pair of points about all axes, resulting in 8 points
-    [
-        [x,y], [x,-y], [-x,y], [-x,-y],
-        [y,x], [y,-x], [-y,x], [-y,-x]
-    ]
-);
+    [x,y], [x,-y], [-x,y], [-x,-y],
+    [y,x], [y,-x], [-y,x], [-y,-x]
+];
+
+_all_axis_reflections(x, y) -> [
+    //this takes in a point and returns all possible reflections about the two axes
+    [x,y], [x,-y], [-x,y], [-x,-y]
+];
 
 fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
     r = floor(dr);
