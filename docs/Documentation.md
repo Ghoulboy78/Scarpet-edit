@@ -110,6 +110,8 @@ The available actions for brushes are:
     that match `replacement` (block or tag), if given.
 - `cuboid <block> <x> <y> <z> [replacement]` -> creates a cuboid out of `block` and with side lengths `x`, `y` and `z`, 
     replacing only blocks that match `replacement` (block or tag), if given.
+- `diamond <block> <diagonal_size> [replacement]` -> creates a regular diamond (octahedron) out of `block` and with diagonals
+    given by `diagonal_size`, replacing only blocks that match `replacement` (block or tag), if given.
 - `sphere <block> <radius> [replacement]` -> creates a sphere out of `block` and with `radius`, replacing only blocks that
     match `replacement` (block or tag), if given.
 - `ellipsoid <block> <x_radius> <y_radius> <z_radius> [replacement]` -> creates an ellipsoid with different radii on each
@@ -118,14 +120,22 @@ The available actions for brushes are:
     `height` along `axis` (if given; else, defaults to `y` for a vertical cylinder), replacing only blocks that match 
     `replacement` (block or tag), if given.
 - `cone <block> <radius> <height> [signed_axis] [replacement]` -> creates a cone out of `block` and with `radius` and 
-    `height` along `signed_axis` (if given; else, defaults to `+y` for a vertical cone pointing up), replacing only blocks
-    that match `replacement` (block or tag), if given.
-- `prism_polygon <block> <radius> <height> <points> [axis] [rotation] [replacement]` -> generates a prism with the base
+    `height` with its point pointing into `signed_axis` (if given; else, defaults to `+y` for a vertical cone pointing up),
+    replacing only blocks that match `replacement` (block or tag), if given.
+- `cone <block> <side_length> <height> [signed_axis] [replacement]` -> creates an pyramid out of `block` with square base
+    with the given `side_length`. `signed_axis` and `replacement` work as above.
+- `polygon prism <block> <radius> <height> <points> [axis] [rotation] [replacement]` -> generates a prism with the base
     of a regular polygon inscribed in a circle of `radius` with `points` amount of sides and height `height` along `axis`.
     Optionally, it can be rotated from its base orientation.
-- `prism_star <block> <outer_radius> <inner_radius> <height> <points> [axis] [rotation] [replacement]` -> generates a 
+- `polygon pyramid <block> <radius> <height> <points> [signed_axis] [rotation] [replacement]` -> generates a pyramid with
+    the base in the shape of a regular polygon and the point pointing into `signed_axis`. All polygon parameters work as 
+    above.
+- `star prism <block> <outer_radius> <inner_radius> <height> <points> [axis] [rotation] [replacement]` -> generates a 
     star whose points touch a circle of radius `outer_radius` with `points` amount of points. Said star is the base 
     for a prism of height `height` along `axis`. Optionally, it can be rotated from its base orientation.
+- `star pyramid <block> <outer_radius> <inner_radius> <height> <points> [axis] [rotation] [replacement]` -> generates a 
+    pyramid with the base in the shape of a regular star and the point pointing into `signed_axis`. All star parameters
+    work as above.
 - `line <block> [length] [replacement]` -> creates a line out of `block` between the player and the clicked block, replacing
     only blocks that match `replacement` (block or tag), if given. If `length` is given, the length of the line is fixed,
     and it only uses the clicked block to get the direction of the line.
