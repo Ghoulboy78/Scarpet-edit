@@ -1336,7 +1336,7 @@ global_brush_shapes={
             _shape_maker(h, hollow, axis, base, previous, outer(radius), outer(roh), outer(height)) -> (
                 r = radius - roh*h;
                 inner = if(
-                    !hollow, //only use discs
+                    !hollow || h==0, //only use discs if solid of bottom layer
                         null,
                     radius > height, 
                         radius - roh*(h+1), 
@@ -1360,18 +1360,17 @@ global_brush_shapes={
             // if the shape is hollow and the "radius" is bigger than the height. That function will be used by 
             // _pyramid_generic later, see that for signature.
             _shape_maker(h, hollow, axis, base, previous, outer(sidelength), outer(roh), outer(height)) -> (
-                r = sidelength - roh*h;
-                inner = if(
-                    !hollow, //only use squares
-                        null,
-                    sidelength > 2*height, 
-                        floor(sidelength) - roh*(h+1), 
-                    //else
-                        floor(r)-2 
+                outer = _get_level_sidelength(sidelength, height, h) || 2; //the ||2 is there to ensure proper height with even sided pyramids
+                inner = if(!hollow || h==0,
+                    null,
+                sidelength > 2*height,
+                    _get_level_sidelength(sidelength, height, h+1),
+                //else
+                    outer-2
                 );
-                if(r<=1,
+                if(outer<=1,
                     [[base], [base]],// if radius is too small, no need to make squares
-                    _make_square(r, inner, axis, base);
+                    _make_square(outer, inner, axis, base);
                 );
             );
             _pyramid_generic(pos, args, flags);   
@@ -1879,26 +1878,20 @@ _make_circle(radius, inner, axis, center) -> (
 // this function loops over the points in the first quadrant under x=y and stores them in a set, while also
 // storing all the reflections ab out the axes and the x=y line to get the full square
 _make_flat_square(sidelength, inner) -> (
-    interior = {};
-    perimeter = {};
+    hl = (sidelength+1)/2;
+    offset = hl%1;
+    hi = if(inner!=null, (inner-1)/2, null);
+    level = {};
 
-    hl = (sidelength+1)/2; //half side length
-    hi = (inner+1)/2; //half inner side length
-    loop(round(hl), //loop over x
-        x = _;
-        // assuming that if I need the perimeter, I don't need the full shape, we could improve
-        // this a tiny bit by not iterating over the y values we know we don't need. That assumption
-        // holds right now, but would make this function less useful. It could be implemented.
-        loop(x+1, // x<=y
-            y = _;
-            for(_all_reflections(x, y), interior += _);
-            // generate the perimeter only if it's needed
-            if(inner!=null && x>=hi, //y <= x always holds, because I'm only looking at an eight of the square
-                for(_all_reflections(x, y), perimeter += _)
-            )
+    loop(hl,
+        x = floor(hl-1) - _ + offset; //loop form the outside in
+        if(x<=hi && inner!=0, break()); //don't need to check blocks once I'm past inner radius
+        loop(x+1,
+            y=_+offset;
+            for(_all_reflections(x, y), level  += _), //solid
         )
     );
-    [interior, perimeter]
+    level
 );
 
 _make_square(sidelength, inner, axis, center) -> (
@@ -1911,11 +1904,29 @@ _make_square(sidelength, inner, axis, center) -> (
     );
     
     //generate the disc and ring in 2D and project them to 3D in the proper axis
-    [interior, perimeter] = _make_flat_square(sidelength, inner);
-    perimeter = map(perimeter, center + _2D_to_3D(_:0, _:1, 0));
-    interior = map(interior, center + _2D_to_3D(_:0, _:1, 0));
-    
-    [perimeter, interior]
+    square = _make_flat_square(sidelength, inner);
+    square = map(square, center + _2D_to_3D(_:0, _:1, 0));
+        
+    [square, square]
+);
+
+
+_get_level_sidelength(side, height, h) -> (
+    // get the side of the square in a pyramid at a given height
+    // making sure that the parity doesn't change
+
+    slope = side/height;
+    oddness = side%2;
+
+    new_side = side - slope * h; 
+    rs = round(new_side);
+
+    // make sure the new side has alwas the same parity as the original one
+    if(rs%2 != oddness, 
+        cs = ceil(new_side);
+        rs = if(rs==cs, cs-1, cs)
+    );
+    rs
 );
 
 _all_reflections(x, y) -> [ 
