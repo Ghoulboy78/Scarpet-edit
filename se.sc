@@ -56,6 +56,7 @@ base_commands_map = [
     ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', false],//will replace old stuff if need be
     ['mirror <pos> <sides>', ['mirror', null], [2, 'help_cmd_mirror', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
     ['mirror <pos> <sides> f <flag>', 'mirror', false],//will replace old stuff if need be
+    ['mirrorc <sides>', 'mirrorc', false],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
@@ -947,7 +948,7 @@ global_lang_keys = global_default_lang = {
     'success_redo_e' ->           'gi Successfully redid %d operations, affecting %d entities', // moves number, entities number
     'success_redo_b_and_e' ->     'gi Successfully redid %d operations, affecting %d blocks and %d entities', // moves number, blocks number, entities number
 
-
+    'mirrored_clipboard' ->       'gi Mirrored clipboard',
     'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
     'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
     'copy_force' ->               'ri Overwriting previous clipboard selection with new one',
@@ -2408,6 +2409,20 @@ mirror(centre, axis, flags) -> (
     );
 
     add_to_history('action_mirror', player)
+);
+
+mirrorc(axis) -> (
+
+    for(slice(global_clipboard, 1),
+        pos = _:0;
+        _mirror_pos(axis, pos) //mirrors the position in-place
+    );
+
+    for(global_clipboard:0, //mirror entities
+        _:'pos' = _mirror_pos(axis, _:'pos');
+    );
+
+    _print(player(), 'mirrored_clipboard')
 );
 
 _mirror_pos(axis, pos) -> (
