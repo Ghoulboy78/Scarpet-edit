@@ -54,9 +54,11 @@ base_commands_map = [
     ['rotate <pos> <degrees> f <flag>', _(pos, deg, flag) -> rotate(pos, deg, 'y', flag), false],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis>', ['rotate', null], [2, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', false],//will replace old stuff if need be
-    ['mirror <pos> <sides>', ['mirror', null], [2, 'help_cmd_mirror', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
+    ['rotatec <degrees>', ['rotate_clipboard', 'y'], false],//will replace old stuff if need be
+    ['rotatec <degrees> <axis>', 'rotate_clipboard', [1, 'help_cmd_rotatec', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['mirror <pos> <sides>', ['mirror', null], [-1, 'help_cmd_mirror', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
     ['mirror <pos> <sides> f <flag>', 'mirror', false],//will replace old stuff if need be
-    ['mirrorc <sides>', 'mirrorc', false],//will replace old stuff if need be
+    ['mirrorc <sides>', 'mirror_clipboard', [-1, 'help_cmd_mirrorc', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
@@ -877,10 +879,12 @@ global_lang_keys = global_default_lang = {
     'help_cmd_redo_all' ->        'l Redoes the entire undo history',
     'help_cmd_wand' ->            'l Sets held item as wand or gives it if hand is empty',
     'help_cmd_wand_2' ->          'l Changes the current wand item',
-    'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
+    'help_cmd_rotate' ->          'l Rotates the selection [deg] about [pos]',
     'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z, defaults to y',
-    'help_cmd_mirror' ->          'l Mirrors the given axes of the selection',
-    'help_cmd_mirror_tooltip' ->  'g Axes can be any combination of x y and z',
+    'help_cmd_rotatec' ->         'l Rotates the clipboard [deg] about [pos]',
+    'help_cmd_mirror' ->          'l Mirrors the given axes of the selection about <pos>',
+    'help_cmd_mirror_tooltip' ->  'g Axes can be any combination of x, y and z',
+    'help_cmd_mirrorc' ->         'l Mirrors the given axes of the clibpoard',
     'help_cmd_stack' ->           'l Stacks selection n times in dir',
     'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\'s view direction by default',
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
@@ -948,6 +952,7 @@ global_lang_keys = global_default_lang = {
     'success_redo_e' ->           'gi Successfully redid %d operations, affecting %d entities', // moves number, entities number
     'success_redo_b_and_e' ->     'gi Successfully redid %d operations, affecting %d blocks and %d entities', // moves number, blocks number, entities number
 
+    'rotated_clipboard' ->        'gi Rotated clipboard',
     'mirrored_clipboard' ->       'gi Mirrored clipboard',
     'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
     'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
@@ -2346,24 +2351,7 @@ rotate(centre, degrees, axis, flags)->(
     [pos1,pos2]=_get_current_selection(player);
 
     rotation_map={};
-    if( axis=='x',
-        rotation_matrix=[
-            [1,0,0],
-            [0,cos(degrees),-sin(degrees)],
-            [0,sin(degrees),cos(degrees)]
-        ],
-        axis=='y',
-        rotation_matrix=[
-            [cos(degrees),0,sin(degrees)],
-            [0,1,0],
-            [-sin(degrees),0,cos(degrees)]
-        ],//axis=='z'
-        rotation_matrix=[
-            [cos(degrees),-sin(degrees),0],
-            [sin(degrees),cos(degrees),0]
-            [0,0,1],
-        ]
-    );
+    rotation_matrix = _make_rotation_matrix(axis, degrees);
 
     volume(pos1,pos2,
         block=block(_);//todo rotating stairs etc.
@@ -2383,6 +2371,46 @@ rotate(centre, degrees, axis, flags)->(
     );
 
     add_to_history('action_rotate', player)
+);
+
+rotate_clipboard(degrees, axis) -> (
+
+    rotation_matrix = _make_rotation_matrix(axis, degrees);
+    //rotate blocks
+    for(slice(global_clipboard, 1),
+        pos = _:0;
+        new_pos = _mat_mul_vec(rotation_matrix, pos);
+        _:0 = new_pos; //store new pos
+    );
+
+    //rotate entities
+    for(global_clipboard:0, 
+        _:'pos' = _mat_mul_vec(rotation_matrix, _:'pos');
+    );
+
+    _print(player(), 'rotated_clipboard');
+
+);
+
+_make_rotation_matrix(axis, degrees) -> (
+    if( axis=='x',
+        rotation_matrix=[
+            [1,0,0],
+            [0,cos(degrees),-sin(degrees)],
+            [0,sin(degrees),cos(degrees)]
+        ],
+        axis=='y',
+        rotation_matrix=[
+            [cos(degrees),0,sin(degrees)],
+            [0,1,0],
+            [-sin(degrees),0,cos(degrees)]
+        ],//axis=='z'
+        rotation_matrix=[
+            [cos(degrees),-sin(degrees),0],
+            [sin(degrees),cos(degrees),0]
+            [0,0,1],
+        ]
+    )
 );
 
 mirror(centre, axis, flags) -> (
@@ -2411,14 +2439,16 @@ mirror(centre, axis, flags) -> (
     add_to_history('action_mirror', player)
 );
 
-mirrorc(axis) -> (
+mirror_clipboard(axis) -> (
 
+    //mirror blocks
     for(slice(global_clipboard, 1),
         pos = _:0;
         _mirror_pos(axis, pos) //mirrors the position in-place
     );
 
-    for(global_clipboard:0, //mirror entities
+    //mirror entities
+    for(global_clipboard:0, 
         _:'pos' = _mirror_pos(axis, _:'pos');
     );
 
