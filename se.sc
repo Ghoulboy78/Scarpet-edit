@@ -54,6 +54,8 @@ base_commands_map = [
     ['rotate <pos> <degrees> f <flag>', _(pos, deg, flag) -> rotate(pos, deg, 'y', flag), false],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis>', ['rotate', null], [2, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', false],//will replace old stuff if need be
+    ['mirror <pos> <sides>', ['mirror', null], [2, 'help_cmd_mirror', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
+    ['mirror <pos> <sides> f <flag>', 'mirror', false],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
@@ -876,6 +878,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_wand_2' ->          'l Changes the current wand item',
     'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
     'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z, defaults to y',
+    'help_cmd_mirror' ->          'l Mirrors the given axes of the selection',
+    'help_cmd_mirror_tooltip' ->  'g Axes can be any combination of x y and z',
     'help_cmd_stack' ->           'l Stacks selection n times in dir',
     'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\'s view direction by default',
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
@@ -1015,6 +1019,7 @@ global_lang_keys = global_default_lang = {
     'action_set' ->                'set',
     'action_flood' ->              'flood',
     'action_rotate' ->             'rotate',
+    'action_mirror' ->             'mirror',
     'action_move' ->               'move',
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
@@ -1797,7 +1802,7 @@ remove_action_item(item, action) -> (
 get_entities(pos1, pos2, origin) -> (
     // this function expects pos1 and pos2 to be the negative- and positive-most corners of the areas
     // get_selection() returns postiions in this format already!
-    // origin is a vector to translate the entitie spsitions with; use 0 if not needed
+    // origin is a vector to translate the entity position with; use 0 if not needed
 
     center = (pos2 + pos1)/2;
     halfsize = (pos2 +1 - pos1)/2;
@@ -2377,6 +2382,41 @@ rotate(centre, degrees, axis, flags)->(
     );
 
     add_to_history('action_rotate', player)
+);
+
+mirror(centre, axis, flags) -> (
+    player=player();
+    [pos1,pos2]=_get_current_selection(player);
+
+    mirror_map = {};
+    volume(pos1, pos2, 
+        //block = block(_);//todo rotating stairs etc.
+        block = _;
+        new_pos = _mirror_pos(axis, pos(_) - centre);
+        new_pos = new_pos + centre;
+        mirror_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
+    );
+
+    for(mirror_map,
+        set_block(_, mirror_map:_, null, flags, {})
+    );
+
+    if(flags~'e', 
+        entities = get_entities(pos1, pos2, map(centre, floor(_)));
+        for(entities, _:'pos' = _mirror_pos(axis, _:'pos'));
+        paste_entities(entities, map(centre, floor(_)));
+    );
+
+    add_to_history('action_mirror', player)
+);
+
+_mirror_pos(axis, pos) -> (
+    axes = ['x', 'y', 'z'];
+    for(split(axis),
+        index = axes~_;
+        pos:index = -(pos:index);
+    );
+    pos
 );
 
 move(new_pos,flags)->(
