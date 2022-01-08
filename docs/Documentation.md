@@ -31,7 +31,7 @@ Left clicking again will reselect the whole box.
    behind by 1 diagonal position each time
  - `/se selection move [amount] [direction]` -> Moves the selection by `amount` blocks (1 if unspecified) in the direction
    `direction` (player's main facing direction if unspecified)
- - `/se fill <block> [replacement]` -> Fills selection with `<block>`. If `[replacement]` is given, it only fills
+ - `/se set <block> [replacement]` -> Fills selection with `<block>`. If `[replacement]` is given, it only fills
     replacing that block or block tag.
  - `/se undo [moves]` -> Undoes last move performed by player or as many as specified by `[moves]`. This can be
     redone with `/se redo`.
@@ -44,17 +44,23 @@ Left clicking again will reselect the whole box.
     argument, it sets wand to specified item
  - `/se rotate <pos> <degrees> [axis]` -> Rotates selection `degrees` degrees about point `pos`. Axis must be `x`,
     `y` or `z`, defaults to `y`. NB: This will look funky if you do not use multiples of 45 or 90.
+ - `/se mirror <pos> <axes>` -> Mirrors requested `axes` of the selection with respect to `pos`. For instance, if
+    `axes` is `xz`, it will mirror the x xoordinate and the z coordinate (aka mirror with respect to the yz plane and 
+    the yx plane, respectively).
+ - `/se rotatec <degrees> [axis]` -> Rotates the clipboard by `degrees` about `axis`.
+ - `/se mirrorc <axes>` -> Mirrors the given `axes` of the clipboard. See above for more information.
  - `/se stack [stackcount] [direction]` -> Stacks selection in the direction the player is looking if not otherwise
     specfied. By defaults, it stacks one time.
  - `/se expand <pos> <magnitude>` -> Expands selection by whatever magnitude specified by player, from pos `pos`
  - `/se move <pos>` -> Moves selection to `pos`
- - `/se copy` -> Copies selection to clipboard. By default, will not override the existing clipboard (can be changed
-    by adding keyword `force`), and will also take the positions relative to position of player.
- - `/se copy <pos>` -> Copies selection to clipboard, with positions relative to `pos`. This is significant when 
-    pasting blocks, in terms of how it is pasted.
- - `/se paste` -> Pastes selection relative to player position. Be careful in case you didn't choose a wise spot
-    when making the selection.
- - `/se paste <pos>` -> Pastes selection relative to `pos`
+ - `/se copy [pos]` -> Copies selection to clipboard (including entities) setting the origin of the structure at `[pos]`, if given, or
+    the curren player position, if not. By default, will not override the existing clipboard, but you can add the keyword 
+    `froce` to repalce it.
+ - `/se cut [pos]` -> Shorthand for `copy` and the `set air`. It accepts `force` like `copy` and `flags` like `set`.
+ - `/se paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase 
+    you didnt' choose a wise spot making the selection.
+ - `/se revolution paste <pos> <count> [axis]` -> Pastes the clipboard `count` times. Each successive paste operation is 
+    rotated about `axis` (default `y`) with `pos` as origin by an angle α such that α×`count` = 360º.
  - `/se flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
     player's position. Can both "fill"
     what used to be air or replace some other block.
@@ -71,11 +77,6 @@ Left clicking again will reselect the whole box.
     structure blocks.`force` will override an existing structure with the same name. Gives an error if no clipboard is 
     present. Will also copy entities.
  - `/se structure delete <name>` -> Deletes a structure file called `name`.
- - `/se copy [pos]` -> Copies selection to clipboard setting the origin of the structure at `[pos]`, if given, or
-    the curren player position, if not. By default, will not override the existing clipboard (can be changed by adding
-    keyword `force`), and will also take the positions relative to position of player.
- - `/se paste [pos]` -> Pastes selection relative to player position or to `[pos]`, if given. Be careful incase 
-    you didnt' choose a wise spot making the selection.
  - `/se flood <block>` -> Performs a flood fill (fill connex volume) within the selection and starting at the 
     player's position. Can both "fill" used to be air or replace some other block.
  - `/se flood <block> [axis]` -> Flood fill will happen only perpendicular to iven axis. Setting axis to `y`, for
@@ -161,7 +162,7 @@ Available flags:
  - `-w` -> Water-logs blocks placed in water or in other waterlogged blocks, air included
  - `-d` -> Removes water and waterlogged state from placed blocks. Applies before `-w`
  - `-p` -> Only replaces air blocks when setting an area
- - `-e` -> Copies/moves entities from old location to new location. Technically, a new entity is generated with same data
+ - `-e` -> Command will affect entities (move, copy-paste, cut, etc.). Technically, a new entity is generated with same data
     and position within the structure as the old one, so all that changes is UUID. Undoing will not remove these entities
  - `-b` -> Copies old biomes to new location.
  - `-a` -> Pasting a structure will not paste the air blocks within the structure.
@@ -170,3 +171,4 @@ Available flags:
  - `-h` -> When creating a shape, makes it hollow
  - `-l` -> When used to register a brush, the brush will targer liquids as well as blocks, instead of going right through
    them to the block behind.
+ - `-r` -> Removes blocks after mirroring or rotating them. Same as doing `cut`, `mirrorc` or `rotatec` and then `paste`

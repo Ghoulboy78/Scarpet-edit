@@ -85,6 +85,10 @@ base_commands_map = [
     ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
     ['paste <pos>',['paste', null],false],
     ['paste <pos> f <flag>','paste',false],//todo last flags help
+    ['revolution paste <pos> <count>', ['revolution_paste', 'y', null], false],
+    ['revolution paste <pos> <count> f <flags>', _(pos, count, flags) -> revolution_paste(pos, count, 'y', flags), false],
+    ['revolution paste <pos> <count> <axis>', ['revolution_paste', null], [2, 'help_cmd_revolution_paste', 'help_cmd_revolution_paste_tltp', null] ],
+    ['revolution paste <pos> <count> <axis> f <flags>', 'revolution_paste', false],
     ['selection clear', 'clear_selection', false], //TODO help for this and below
     ['selection expand', _()->selection_expand(1), false],
     ['selection expand <amount>', 'selection_expand', false],
@@ -909,6 +913,8 @@ global_lang_keys = global_default_lang = {
     'help_cmd_copy_tooldtip' ->   'g Uses [pos] or player position as origin for the copied structure',
     'help_cmd_cut' ->             'l Copy current selection to clipboard and delete the region',
     'help_cmd_paste' ->           'l Paste clipboard',
+    'help_cmd_revolution_paste' ->'l Paste clipboard multiple times rotating it <count> times',
+    'help_cmd_revolution_paste_tltp' -> 'l use <axis> to seat which axis to rotate about',
     'help_cmd_drain' ->           'l Drains liquid you are standing on',
     'help_cmd_drain_tooltip' ->   'g Acts in a radius or withing the selection',
     'help_cmd_flood' ->           'l Perferoms a 3D flood fill out of [block]',
@@ -1042,6 +1048,7 @@ global_lang_keys = global_default_lang = {
     'action_expand' ->             'expand',
     'action_cut' ->                'cut',
     'action_paste' ->              'paste',
+    'action_revolution_paste' ->   'revolution paste',
     'action_hollow' ->             'hollow',
     'action_drain' ->              'drain',
     'action_angel' ->              'angel block',
@@ -2645,6 +2652,43 @@ paste(pos, flags)->(
         set_block(relative_pos + pos, old_block, null, flags, {'biome'->old_biome})
     );
     add_to_history('action_paste',player)
+);
+
+revolution_paste(origin, count, axis, flags) -> (
+    player = player();
+    if(!origin, origin = pos(player));
+    if(!global_clipboard, _error(player, 'paste_no_clipboard', player));
+    flags = _parse_flags(flags);
+
+    degrees = 360/count;
+
+    rotation_matrix = _make_rotation_matrix(axis, degrees);
+    temp_clipboard = copy(global_clipboard);
+
+    //iterate over blocks, rotate and palce them <count> times
+    for(slice(temp_clipboard, 1),
+        
+        [new_pos, old_block, old_biome] = _;
+        loop(count,
+            new_pos = _mat_mul_vec(rotation_matrix, new_pos);
+            set_block(new_pos + origin, old_block, null, flags, {'biome'->old_biome})
+        )
+    );
+
+    //rotate entities
+    if( flags~'e',
+        for(temp_clipboard:0, //the entities
+            e = _;
+            new_pos = e:'pos';
+            loop(count,
+                new_pos = _mat_mul_vec(rotation_matrix, new_pos);
+                new_e = spawn(e:'type', new_pos + origin, encode_nbt(e:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
+                global_added_entities += new_e~'uuid';
+            )
+        )
+    );
+
+    add_to_history('action_revolution_paste', player)
 );
 
 tp_up(distance)-> (
