@@ -69,10 +69,18 @@ base_commands_map = [
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
     ['move <pos> f <flag>', 'move', false], //TODO flags help
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
-    ['copy',['_copy',null, false],false],
-    ['copy force',['_copy',null, true],false],
-    ['copy <pos>',['_copy', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
-    ['copy <pos> force',['_copy', true],false],
+    ['copy',['copy_sel',null, false],false],
+    ['copy force',['copy_sel',null, true],false],
+    ['copy <pos>',['copy_sel', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
+    ['copy <pos> force',['copy_sel', true],false],
+    ['cut',['cut',null, false, null],false],
+    ['cut force',['cut',null, true, null],false],
+    ['cut <pos>',['cut', false, null],[-1,'help_cmd_cut','help_cmd_copy_tooldtip',null]],
+    ['cut <pos> force',['cut', true, null],false],
+    ['cut f <flag>',_(flag) -> cut(null, false, flag), false],
+    ['cut force f <flag>',_(flag) -> cut(null, true, flag), false],
+    ['cut <pos> f <flag>',_(pos, flag) -> cut(pos, false, flag), [-1,'help_cmd_cut','help_cmd_copy_tooldtip',null]],
+    ['cut <pos> force f <flag>',_(pos, flag) -> cut(pos, true, flag), false],
     ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
     ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
     ['paste <pos>',['paste', null],false],
@@ -898,6 +906,7 @@ global_lang_keys = global_default_lang = {
     'help_cmd_clear_clipboard' -> 'l Clears current clipboard',
     'help_cmd_copy' ->            'l Copy current selection to clipboard',
     'help_cmd_copy_tooldtip' ->   'g Uses [pos] or player position as origin for the copied structure',
+    'help_cmd_cut' ->             'l Copy current selection to clipboard and delete the region',
     'help_cmd_paste' ->           'l Paste clipboard',
     'help_cmd_drain' ->           'l Drains liquid you are standing on',
     'help_cmd_drain_tooltip' ->   'g Acts in a radius or withing the selection',
@@ -958,6 +967,7 @@ global_lang_keys = global_default_lang = {
     'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
     'copy_force' ->               'ri Overwriting previous clipboard selection with new one',
     'copy_success' ->             'gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+    'cut_success' ->             'gi Successfully cut %s blocks and %s entities to clipboard',//blocks number, entity number
     'paste_no_clipboard' ->       'ri Cannot complete action, clipboard for player %s is empty',//player
 
     'langs_changed' ->            'gi Language changed to %s.',                             //language we changed to
@@ -1029,6 +1039,7 @@ global_lang_keys = global_default_lang = {
     'action_move' ->               'move',
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
+    'action_cut' ->                'cut',
     'action_paste' ->              'paste',
     'action_hollow' ->             'hollow',
     'action_drain' ->              'drain',
@@ -2546,8 +2557,33 @@ _copy(origin, force)->(
     volume(pos1,pos2,
         global_clipboard+=[pos(_)-origin, block(_), biome(_)]//all the important stuff, can add more if the flags require it
     );
+);
 
-    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
+copy_sel(origin, force) -> (
+    _copy(origin, force);
+
+    _print(player(),'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
+);
+
+cut(origin, force, flags) -> (
+    _copy(origin, force);
+
+    //delete copied region after copying
+    player = player();
+    if(!origin,origin=pos(player));
+    [pos1,pos2]=_get_current_selection(player);
+
+    volume(pos1,pos2,set_block(_, 'air', null , null,{}));
+
+    if(flags~'e',
+        for(get_entities(pos1, pos2, origin),
+            global_removed_entities += _; //save for the undo fucntion
+            modify( _:'entity', 'remove') 
+        );
+    );
+
+    _print(player,'cut_success',length(global_clipboard)-1,length(global_clipboard:0));
+    add_to_history('action_cut', player)
 );
 
 paste(pos, flags)->(
