@@ -797,7 +797,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p','d','s','g','l'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g','l','r'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -811,6 +811,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g','l'];
 //s     keep block states of replaced block, if new block matches
 //g     when replacing air or water, some greenery gets repalced too
 //l 	when used in a brush, the brush will trace for liquids as well as blocks
+//r     remove the selection after rotating or mirroring it
 
 _parse_flags(flags) ->(
     if(!flags, return({}));
@@ -1677,7 +1678,8 @@ global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-	if( (flags~'a' && block!='air')|| !(flags~'a' && flags~'g' && has(global_air_greenery, str(block))),
+    //print([block, flags, (flags~'a' && block!='air'), (flags~'a' && flags~'g' && !has(global_air_greenery, str(block)))]);
+	if( (flags~'a' && block!='air') || !(flags~'a' && flags~'g' && has(global_air_greenery, str(block))),
         success=null;
         existing = block(pos);
         // undo expects positions (i.e triplets of positions), not blocks
@@ -2152,6 +2154,7 @@ set_in_selection(block,replacement,flags)->
 (
     player=player();
     [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
     add_to_history('action_set', player)
 );
@@ -2360,6 +2363,16 @@ _outline(block, block_to_outline, force, flags) -> (
 rotate(centre, degrees, axis, flags)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
+
+    r_flag = flags~'r';
+    replace_flags = if( 
+        r_flag && flags~'a', //make a copy of flags that doesn't have 'p'
+            replace_flags = copy(flags);
+            delete(replace_flags, 'a'),
+        //else, original flags is okay
+            flags
+    );
 
     rotation_map={};
     rotation_matrix = _make_rotation_matrix(axis, degrees);
@@ -2369,6 +2382,10 @@ rotate(centre, degrees, axis, flags)->(
         new_pos = _mat_mul_vec(rotation_matrix, pos(_) - centre);
         new_pos = new_pos + centre;
         rotation_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
+
+        if(r_flag,
+            set_block(_, 'air', null , replace_flags, {});
+        );
     );
 
     for(rotation_map,
@@ -2379,6 +2396,14 @@ rotate(centre, degrees, axis, flags)->(
         entities = get_entities(pos1, pos2, map(centre, floor(_)));
         for(entities, _:'pos' = _mat_mul_vec(rotation_matrix, _:'pos'));
         paste_entities(entities, map(centre, floor(_)));
+
+        //remove entities if flag requires it
+        if(r_flag,
+            for(entities,
+                global_removed_entities += _; //save for the undo fucntion
+                modify( _:'entity', 'remove') 
+            )
+        )
     );
 
     add_to_history('action_rotate', player)
@@ -2427,14 +2452,27 @@ _make_rotation_matrix(axis, degrees) -> (
 mirror(centre, axis, flags) -> (
     player=player();
     [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
+
+    r_flag = flags~'r';
+    replace_flags = if( 
+        r_flag && flags~'a', //make a copy of flags that doesn't have 'p'
+            replace_flags = copy(flags);
+            delete(replace_flags, 'a'),
+        //else, original flags is okay
+            flags
+    );
 
     mirror_map = {};
     volume(pos1, pos2, 
-        //block = block(_);//todo rotating stairs etc.
-        block = _;
+        block = block(_);//todo rotating stairs etc.
         new_pos = _mirror_pos(axis, pos(_) - centre);
         new_pos = new_pos + centre;
         mirror_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
+
+        if(r_flag,
+            set_block(_, 'air', null , replace_flags, {});
+        );
     );
 
     for(mirror_map,
@@ -2445,6 +2483,14 @@ mirror(centre, axis, flags) -> (
         entities = get_entities(pos1, pos2, map(centre, floor(_)));
         for(entities, _:'pos' = _mirror_pos(axis, _:'pos'));
         paste_entities(entities, map(centre, floor(_)));
+
+        //remove entities if flag requires it
+        if(r_flag,
+            for(entities,
+                global_removed_entities += _; //save for the undo fucntion
+                modify( _:'entity', 'remove') 
+            )
+        )
     );
 
     add_to_history('action_mirror', player)
@@ -2573,7 +2619,7 @@ cut(origin, force, flags) -> (
     if(!origin,origin=pos(player));
     [pos1,pos2]=_get_current_selection(player);
 
-    volume(pos1,pos2,set_block(_, 'air', null , null,{}));
+    volume(pos1,pos2,set_block(_, 'air', null , flags,{}));
 
     if(flags~'e',
         for(get_entities(pos1, pos2, origin),
