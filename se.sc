@@ -1,6 +1,7 @@
 //ScarpetEdit
 
 import('math','_round', '_euclidean_sq', '_vec_length');
+import('shapes', 'draw_sphere', 'draw_pyramid', 'draw_prism');
 
 //# New commands format:
 //#   [command_for_carpet, interpretation_for_carpet, false] (will hide it from help menu)
@@ -1194,53 +1195,59 @@ _brush_action(pos, brush) -> (
 
 global_brush_shapes={
     'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
-                [block, size, replacement] = args;
-                flags = _parse_flags(flags);
+            [block, size, replacement] = args;
+            flags = _parse_flags(flags);
 
-                if(flags~'h', //hollow is O(n^2) operation, so only need double forloop. Makes it kinda bulky, but worth it tbh
-                    radius = round(size/2);
-                    c_for(a = radius, a<= radius, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
-                        c_for(b = -radius, b <= radius, b+=1,
-                            set_block(pos + [a, b, radius], block, replacement, flags, {});
-                            set_block(pos + [a, b, -radius], block, replacement, flags, {});
-                            set_block(pos + [a, radius, b], block, replacement, flags, {});
-                            set_block(pos + [a, -radius, b], block, replacement, flags, {});
-                            set_block(pos + [radius, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius, a, b], block, replacement, flags, {});
-                        )
-                    ),
-                    scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}))
-                );
+            if(flags~'h', //hollow is O(n^2) operation, so only need double forloop. Makes it kinda bulky, but worth it tbh
+                radius = round(size/2);
+                c_for(a = radius, a<= radius, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
+                    c_for(b = -radius, b <= radius, b+=1,
+                        set_block(pos + [a, b, radius], block, replacement, flags, {});
+                        set_block(pos + [a, b, -radius], block, replacement, flags, {});
+                        set_block(pos + [a, radius, b], block, replacement, flags, {});
+                        set_block(pos + [a, -radius, b], block, replacement, flags, {});
+                        set_block(pos + [radius, a, b], block, replacement, flags, {});
+                        set_block(pos + [-radius, a, b], block, replacement, flags, {});
+                    )
+                ),
+                scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}))
+            );
 
-                add_to_history('action_cube',player())
-            ),
+            add_to_history('action_cube',player())
+        ),
     'cuboid'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
-                [block, size, replacement] = args;
-                size = map(size/2, round(_));
+            [block, size, replacement] = args;
+            flags = _parse_flags(flags);
 
-                if(flags~'h', // This hollow function is bulkier, cos gotta iterate over all three axes when setting.
-                    [radius_x, radius_y, radius_z]=size;
-
-                    c_for(a = -radius_y, a<= radius_y, a+=1,
-                        c_for(b = -radius_z, b<= radius_z, b+=1,
-                            set_block(pos + [ radius_x, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius_x, a, b], block, replacement, flags, {});
-                        );
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [ b, a, radius_z], block, replacement, flags, {});
-                            set_block(pos + [ b, a,-radius_z], block, replacement, flags, {});
-                        )
+            [px, py, pz] = map(size, round(_/2-0.5));
+            [nx, ny, nz] = map(size, round(-_/2+0.5));
+            if(flags~'h',
+                for(range(nx, px+1),
+                    x = _;
+                    for(range(ny, py+1),
+                        y=_;
+                        set_block(pos+[x,y,pz], block, replacement, flags, {});
+                        set_block(pos+[x,y,nz], block, replacement, flags, {})
                     );
-                    c_for( a= -radius_x, a<= radius_x, a+=1,
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [ b, radius_y, a], block, replacement, flags, {});
-                            set_block(pos + [ b,-radius_y, a], block, replacement, flags, {});
-                        )
-                    ),
-                    scan(pos,size, set_block(_, block, replacement, flags, {}))
+                    for(range(nz, pz+1),
+                        z=_;
+                        set_block(pos+[x,py,z], block, replacement, flags, {});
+                        set_block(pos+[x,ny,z], block, replacement, flags, {})
+                    )
                 );
-                add_to_history('action_cuboid',player())
-            ),
+                for(range(ny, py+1),
+                    y = _;
+                    for(range(nz, pz+1),
+                        z=_;
+                        set_block(pos+[px,y,z], block, replacement, flags, {});
+                        set_block(pos+[nx,y,z], block, replacement, flags, {})
+                    )
+                ),
+                scan(pos, size, set_block(_, block, replacement, flags, {}))
+            );
+
+            add_to_history('action_cuboid',player())
+        ),
     'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
             [block, radii, replacement] = args;
 
@@ -1255,56 +1262,48 @@ global_brush_shapes={
         ),
     'sphere'->_(pos, args, flags)->(
             [block, radius, replacement] = args;
-            [cx, cy, cz] = pos;
+            flags = _parse_flags(flags);
 
-            for(range(-90, 90, 45/radius),
-                cpitch = cos(_);
-                spitch = sin(_);
-                for(range(0, 180, 45/radius),
-                    cyaw = cos(_)*cpitch*radius;
-                    syaw = sin(_)*cpitch*radius;
-                    if(flags ~'h',
-                        set_block(cx+cyaw,cy+spitch*radius,cz+syaw,block,replacement);
-                        set_block(cx+cos(_+180)*cpitch*radius,cy+spitch*radius,cz+sin(_+180)*cpitch*radius,block,replacement),
-                        for(range(-syaw,syaw+1),
-                            set_block([cx+cyaw*cpitch,cy+spitch*radius,cz+_],block,replacement, flags, {})
-                        )
-                    )
-                )
+            for(draw_sphere([pos, radius, flags~'h']),
+                set_block(_,block,replacement, flags, {})
             );
             add_to_history('action_sphere',player())
         ),
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
-            pointup=slice(signed_axis, 0, 1)=='+';
-            loop(height-1,
-                r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
+
+            pointing = if(signed_axis ~ '\\+', 'up', 'down');
+            orientation = split(signed_axis):1;
+            fill_type = if(flags~'h', 'hollow', 'filled');
+
+            for(draw_pyramid([pos, radius, height, pointing, orientation, fill_type, false]),
+                set_block(_,block,replacement, flags, {})
             );
-            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
+
             add_to_history('action_cone',player())
         ),
     'pyramid'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
             flags = _parse_flags(flags);
-            pointup=slice(signed_axis, 0, 1)=='+';
-            loop(height-1,
-                r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
+
+            pointing = if(signed_axis ~ '\\+', 'up', 'down');
+            orientation = split(signed_axis):1;
+            fill_type = if(flags~'h', 'hollow', 'filled');
+
+            for(draw_pyramid([pos, radius, height, pointing, orientation, fill_type, true]),
+                set_block(_,block,replacement, flags, {})
             );
-            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
             add_to_history('action_pyramid',player())
         ),
     'cylinder'->_(pos, args, flags)->(
             [block, radius, height, axis, replacement] = args;
             flags = _parse_flags(flags);
-            hollow=flags~'h';
-            loop(height,
-                fill_flat_circle(pos, _, radius, orientation, block, flags~'h', replacement, flags)//Always close ends off
+
+            for(draw_prism([pos, radius, height, axis, flags~'h', false]),
+                set_block(_,block,replacement, flags, {})
             );
-            fill_flat_circle(pos, 0, radius, orientation, block, false, replacement, flags);//Always close ends off
-            fill_flat_circle(pos, height, radius, orientation, block, false, replacement, flags);
+
             add_to_history('action_cylinder',player())
         ),
     'paste'->_(pos, args, flags)->(
@@ -1480,7 +1479,7 @@ global_brush_shapes={
             id3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
             u = _normalize(_cross_prod([0, 0, 1], dir));
             angle = acos(_dot_prod(dir, [0, 0, 1]));
-            rot_matrix = cos(angle) * id3 + sin(angle) * _corss_matrix(u) + (1-cos(angle)) * _outer_prod(u, u);
+            rot_matrix = cos(angle) * id3 + sin(angle) * _cross_matrix(u) + (1-cos(angle)) * _outer_prod(u, u);
 
             loop(count,
                 
@@ -1519,33 +1518,6 @@ global_brush_shapes={
             plop(pos, feature);
         )
 };
-
-fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
-    r = floor(dr);
-    drsq = dr^2;
-    if(orientation~'x',
-        scan(pos,0,-r,-r,
-            if((!hollow && (_y^2 + _z^2 <= drsq))||
-                (hollow && (_y^2 + _z^2 <= drsq && (abs(_y)+1)^ 2 + (abs(_z)+1)^2 >= drsq)),
-                set_block([_x+offset,_y,_z],block, replacement, flags, {})
-            )
-        ),
-    orientation ~ 'y',
-        scan(pos,-r,0,-r,
-            if((!hollow && (_x^2 + _z^2 <= drs/q))||
-                (hollow && (_x^2 + _z^2 <= drsq && (abs(_x)+1)^ 2 + (abs(_z)+1)^2 >= drsq)),
-                set_block([_x,_y+offset,_z],block, replacement, flags, {})
-            )
-        ),
-    orientation ~ 'z',
-        scan(pos,-r,-r,0,
-            if((!hollow && (_y^2 + _x^2 <= drsq))||
-                (hollow && (_y^2 + _x^2 <= drsq && (abs(_y)+1)^ 2 + (abs(_x)+1)^2 >= drsq)),
-                set_block([_x,_y,_z+offset],block, replacement, flags, {})
-            )
-        )
-    );
-);
 
 _get_circle_points(R, n, phase) -> (
     // retunrs <n> equidistant points on a circle
@@ -1642,7 +1614,7 @@ _normalize(vec) -> vec / sqrt(reduce(vec, _a + _*_, 0));
 _dot_prod(v, w) -> reduce(v*w, _a + _, 0);
 _cross_prod(v, w) -> [v:1*w:2 - v:2*w:1, v:2*w:0 - v:0*w:2, v:0*w:1 - v:1*w:0];
 _outer_prod(v, w) -> map(w, v*_);
-_corss_matrix(vec) -> (
+_cross_matrix(vec) -> (
 	[x, y, z] = vec;
 	[[0, -z, y], [z, 0, -x], [-y, x, 0]]
 );
