@@ -104,7 +104,8 @@ base_commands_map = [
     ['drain <radius> f <flag>', '_drain', false],
     ['up', ['tp_up', 0], [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
     ['up <amount>', 'tp_up', [-1,'help_cmd_up', 'help_cmd_up_tooltip', null]],
-    ['brush clear', ['brush', 'clear', null], [-1, 'help_cmd_brush_clear', null, null]],
+    ['brush clear', ['brush', 'clear', null], false],
+    ['brush clear <brush>', _(brush)-> brush('clear', null, brush), [0, 'help_cmd_brush_clear', null, null]],
     ['brush list', ['brush', 'list', null], [-1, 'help_cmd_brush_list', null, null]],
 	['brush info', ['brush', 'info', null], false],
     ['brush info <brush>', _(brush)-> brush('info', null, brush), [0, 'help_cmd_brush_info', null, null]],
@@ -120,6 +121,11 @@ base_commands_map = [
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement>', _(block, x_int, y_int, z_int, replacement) -> brush('cuboid', null, block, [x_int, y_int, z_int], replacement),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['brush cuboid <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(block, x_int, y_int, z_int, replacement, flags) -> brush('cuboid', flags, block, [x_int, y_int, z_int], replacement), false],
+    ['brush diamond <block> <size>', _(block, size_int) -> brush('diamond', null, block, size_int, null), false],
+    ['brush diamond <block> <size> f <flag>', _(block, size_int, flags) -> brush('diamond', flags, block, size_int, null), false],
+    ['brush diamond <block> <size> <replacement>', _(block, size_int, replacement) -> brush('diamond', null, block, size_int, replacement),
+        [2, 'help_cmd_brush_diamond', 'help_cmd_brush_generic', null]],
+    ['brush diamond <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> brush('diamond', flags, block, size_int, replacement), false],
     ['brush sphere <block> <radius>', _(block, radius) -> brush('sphere', null, block, radius, null), false],
     ['brush sphere <block> <radius> f <flag>', _(block, radius, flags) -> brush('sphere', flags, block, radius, null), false],
     ['brush sphere <block> <radius> <replacement>', _(block, radius, replacement) -> brush('sphere', null, block, radius, replacement),
@@ -145,13 +151,13 @@ base_commands_map = [
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['brush cone <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
 
-    ['brush pyramid <block> <radius> <height>', _(block, radius, height) -> brush('cone', null, block, radius, height, '+y', null), false],
-    ['brush pyramid <block> <radius> <height> f <flag>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
-    ['brush pyramid <block> <radius> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
-    ['brush pyramid <block> <radius> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
-    ['brush pyramid <block> <radius> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
+    ['brush pyramid <block> <side_size> <height>', _(block, radius, height) -> brush('cone', null, block, radius, height, '+y', null), false],
+    ['brush pyramid <block> <side_size> <height> f <flag>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
+    ['brush pyramid <block> <side_size> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
+    ['brush pyramid <block> <side_size> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
+    ['brush pyramid <block> <side_size> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
-    ['brush pyramid <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
+    ['brush pyramid <block> <side_size> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
     ['brush flood <block>', _(block) -> brush('flood', null, block, null, null), false],
     ['brush flood <block> f <flag>', _(block, flags) -> brush('flood', flags, block, null, null), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
@@ -182,40 +188,79 @@ base_commands_map = [
     ['brush line <block> <length> <replacement> f <flag>', _(block, length, replacement, flags) -> brush('line', flags, block, length, replacement), false],
     ['brush paste ', _() -> brush('paste_brush', null), [-1, 'help_cmd_brush_paste', 'help_cmd_brush_generic', null]],
     ['brush paste f <flag>',  _(flags) -> brush('paste_brush', flags), false],
-    ['brush prism_polygon <block> <radius> <height> <points>', 
+        
+    ['brush polygon prism <block> <radius> <height> <points>', 
         _(block, radius, height, n_points) -> brush('prism_polygon', null, block, radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <points> f <flag>',
+    ['brush polygon prism <block> <radius> <height> <points> f <flag>',
        _(block, radius, height, n_points, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <points> <axis>', 
+    ['brush polygon prism <block> <radius> <height> <points> <axis>', 
        _(block, radius, height, n_points, axis) -> brush('prism_polygon', null, block, radius, height, n_points, axis, 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <points> <axis> f <flag>',
+    ['brush polygon prism <block> <radius> <height> <points> <axis> f <flag>',
        _(block, radius, height, n_points, axis, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, 0, null), false],
-    ['brush prism_polygon <block> <radius> <height> <points> <axis> <degrees>',
+    ['brush polygon prism <block> <radius> <height> <points> <axis> <degrees>',
        _(block, radius, height, n_points, axis, rotation) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_polygon <block> <radius> <height> <points> <axis> <degrees> f <flag>',
+    ['brush polygon prism <block> <radius> <height> <points> <axis> <degrees> f <flag>',
        _(block, radius, height, n_points, axis, rotation, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_polygon <block> <radius> <height> <points> <axis> <degrees> <replacement>',
+    ['brush polygon prism <block> <radius> <height> <points> <axis> <degrees> <replacement>',
        _(block, radius, height, n_points, axis, rotation, replacement) -> brush('prism_polygon', null, block, radius, height, n_points, axis, rotation, replacement), 
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['brush prism_polygon <block> <radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
+    ['brush polygon prism <block> <radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
        _(block, radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_polygon', flags, block, radius, height, n_points, axis, rotation, replacement), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points>',
+
+    ['brush polygon pyramid <block> <radius> <height> <points>',
+       _(block, radius, height, n_points) -> brush('pyramid_polygon', null, block, radius, height, n_points, '+y', 0, null), false],
+    ['brush polygon pyramid <block> <radius> <height> <points> f <flag>',
+       _(block, radius, height, n_points, flags) -> brush('pyramid_polygon', flags, block, radius, height, n_points, '+y', 0, null), false],
+    ['brush polygon pyramid <block> <radius> <height> <points> <saxis>', 
+       _(block, radius, height, n_points, saxis) -> brush('pyramid_polygon', null, block, radius, height, n_points, saxis, 0, null), false],
+    ['brush polygon pyramid <block> <radius> <height> <points> <saxis> f <flag>',
+       _(block, radius, height, n_points, saxis, flags) -> brush('pyramid_polygon', flags, block, radius, height, n_points, saxis, 0, null), false],
+    ['brush polygon pyramid <block> <radius> <height> <points> <saxis> <degrees>',
+       _(block, radius, height, n_points, saxis, rotation) -> brush('pyramid_polygon', null, block, radius, height, n_points, saxis, rotation, null), false],
+    ['brush polygon pyramid <block> <radius> <height> <points> <saxis> <degrees> f <flag>',
+       _(block, radius, height, n_points, saxis, rotation, flags) -> brush('pyramid_polygon', flags, block, radius, height, n_points, saxis, rotation, null), false],
+    ['brush polygon pyramid <block> <radius> <height> <points> <saxis> <degrees> <replacement>',
+       _(block, radius, height, n_points, saxis, rotation, replacement) -> brush('pyramid_polygon', null, block, radius, height, n_points, saxis, rotation, replacement), 
+       [4, 'help_cmd_brush_polygon_pyramid', 'help_cmd_brush_generic', null]],
+    ['brush polygon pyramid <block> <radius> <height> <points> <saxis> <degrees> <replacement> f <flag>',
+       _(block, radius, height, n_points, saxis, rotation, replacement, flags) -> brush('pyramid_polygon', flags, block, radius, height, n_points, saxis, rotation, replacement), false],
+        
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points>',
         _(block, outer_radius, inner_radius, height, n_points) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> f <flag>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, 'y', 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> <axis>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> <axis>',
        _(block, outer_radius, inner_radius, height, n_points, axis) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> <axis> f <flag>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> <axis> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, 0, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> f <flag>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, null), false],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) -> brush('prism_star', null, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), 
        [5, 'help_cmd_brush_star', 'help_cmd_brush_generic', null]],
-    ['brush prism_star <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
+    ['brush star prism <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
        _(block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> brush('prism_star', flags, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement), false],
+    
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points>',
+        _(block, outer_radius, inner_radius, height, n_points) -> brush('pyramid_star', null, block, outer_radius, inner_radius, height, n_points, '+y', 0, null), false],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> f <flag>',
+       _(block, outer_radius, inner_radius, height, n_points, flags) -> brush('pyramid_star', flags, block, outer_radius, inner_radius, height, n_points, '+y', 0, null), false],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> <saxis>',
+       _(block, outer_radius, inner_radius, height, n_points, saxis) -> brush('pyramid_star', null, block, outer_radius, inner_radius, height, n_points, saxis, 0, null), false],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> <saxis> f <flag>',
+       _(block, outer_radius, inner_radius, height, n_points, saxis, flags) -> brush('pyramid_star', flags, block, outer_radius, inner_radius, height, n_points, saxis, 0, null), false],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees>',
+       _(block, outer_radius, inner_radius, height, n_points, saxis, rotation) -> brush('pyramid_star', null, block, outer_radius, inner_radius, height, n_points, saxis, rotation, null), false],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees> f <flag>',
+       _(block, outer_radius, inner_radius, height, n_points, saxis, rotation, flags) -> brush('pyramid_star', flags, block, outer_radius, inner_radius, height, n_points, saxis, rotation, null), false],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees> <replacement>',
+       _(block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement) -> brush('pyramid_star', null, block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement), 
+       [5, 'help_cmd_brush_star_pyramid', 'help_cmd_brush_generic', null]],
+    ['brush star pyramid <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees> <replacement> f <flag>',
+       _(block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement, flags) -> brush('pyramid_star', flags, block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement), false],
+   
     ['brush feature <feature> ', _(feature) -> brush('feature', null, feature), [-1, 'help_cmd_brush_feature', 'help_cmd_brush_generic', null]],
     ['brush drain', _()->brush('drain', null, 30), false],
 	['brush drain <radius>', _(radius)->brush('drain', null, radius), [0, 'help_cmd_brush_drain', 'help_cmd_brush_generic', null]],
@@ -241,13 +286,17 @@ base_commands_map = [
     ['shape cube <pos> <block> <size>', _(pos, block, size_int) -> shape('cube', pos, [block, size_int, null], null), false],
     ['shape cube <pos> <block> <size> f <flag>', _(pos, block, size_int, flags) -> shape('cube', pos, [block, size_int, null], flags), false],
     ['shape cube <pos> <block> <size> <replacement>', _(pos, block, size_int, replacement) -> shape('cube', pos, [block, size_int, replacement], null),
-        [2, 'help_cmd_shape_cube', null, null]],
+        [2, 'help_cmd_brush_cube', null, null]],
     ['shape cube <pos> <block> <size> <replacement> f <flag>', _(pos, block, size_int, replacement, flags) -> shape('cube', pos, [block, size_int, replacement], flags), false],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size>', _(pos, block, x_int, y_int, z_int) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], null], null), false],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size> f <flag>', _(pos, block, x_int, y_int, z_int, flags) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], null], flags), false],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size> <replacement>', _(pos, block, x_int, y_int, z_int, replacement) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], replacement], null),
         [4, 'help_cmd_brush_cuboid', 'help_cmd_brush_generic', null]],
     ['shape cuboid <pos> <block> <x_size> <y_size> <z_size> <replacement> f <flag>', _(pos, block, x_int, y_int, z_int, replacement, flags) -> shape('cuboid', pos, [block, [x_int, y_int, z_int], replacement], flags), false],
+    ['shape diamond <pos> <block> <size>', _(pos, block, size_int) -> shape('diamond', pos, [block, size_int, null], null), false],
+    ['shape diamond <pos> <block> <size> f <flag>', _(pos, block, size_int, flags) -> shape('diamond', pos, [block, size_int, null], flags), false],
+    ['shape diamond <pos> <block> <size> <replacement>', _(pos, block, size_int, replacement) -> shape('diamond', pos, [block, size_int, replacement], null),
+        [2, 'help_cmd_brush_diamond', null, null]],
     ['shape sphere <pos> <block> <radius>', _(pos, block, radius) -> shape('sphere', pos, [block, radius, null], null), false],
     ['shape sphere <pos> <block> <radius> f <flag>', _(pos, block, radius, flags) -> shape('sphere', pos, [block, radius, null], flags), false],
     ['shape sphere <pos> <block> <radius> <replacement>', _(pos, block, radius, replacement) -> shape('sphere', pos, [block, radius, replacement], null),
@@ -271,47 +320,85 @@ base_commands_map = [
     ['shape cone <pos> <block> <radius> <height> <saxis> f <flag>', _(pos, block, radius, height, axis, flags) -> shape('cone', pos, [block, radius, height, axis, null], flags), false],
     ['shape cone <pos> <block> <radius> <height> <saxis> <replacement>', _(pos, block, radius, height, axis, replacement) -> shape('cone', pos, [block, radius, height, axis, replacement], null),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
-    ['shape pyramid <pos> <block> <radius> <height>', _(pos, block, radius, height) -> shape('pyramid', pos, [block, radius, height, '+y', null], null), false],
-    ['shape pyramid <pos> <block> <radius> <height> f <flag>', _(pos, block, radius, height, flags) -> shape('pyramid', pos, [block, radius, height, '+y', null], flags), false],
-    ['shape pyramid <pos> <block> <radius> <height> <saxis>', _(pos, block, radius, height, axis) -> shape('pyramid', pos, [block, radius, height, axis, null], null), false],
-    ['shape pyramid <pos> <block> <radius> <height> <saxis> f <flag>', _(pos, block, radius, height, axis, flags) -> shape('pyramid', pos, [block, radius, height, axis, null], flags), false],
-    ['shape pyramid <pos> <block> <radius> <height> <saxis> <replacement>', _(pos, block, radius, height, axis, replacement) -> shape('pyramid', pos, [block, radius, height, axis, replacement], null),
+    ['shape pyramid <pos> <block> <side_size> <height>', _(pos, block, radius, height) -> shape('pyramid', pos, [block, radius, height, '+y', null], null), false],
+    ['shape pyramid <pos> <block> <side_size> <height> f <flag>', _(pos, block, radius, height, flags) -> shape('pyramid', pos, [block, radius, height, '+y', null], flags), false],
+    ['shape pyramid <pos> <block> <side_size> <height> <saxis>', _(pos, block, radius, height, axis) -> shape('pyramid', pos, [block, radius, height, axis, null], null), false],
+    ['shape pyramid <pos> <block> <side_size> <height> <saxis> f <flag>', _(pos, block, radius, height, axis, flags) -> shape('pyramid', pos, [block, radius, height, axis, null], flags), false],
+    ['shape pyramid <pos> <block> <side_size> <height> <saxis> <replacement>', _(pos, block, radius, height, axis, replacement) -> shape('pyramid', pos, [block, radius, height, axis, replacement], null),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points>',
+    
+    ['shape polygon prism <pos> <block> <radius> <height> <points>',
         _(pos, block, radius, height, n_points) -> shape('prism_polygon', pos, [block, radius, height, n_points, 'y', 0, null], null), false],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> f <flag>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> f <flag>',
        _(pos, block, radius, height, n_points, flags) -> shape('prism_polygon', pos, [block, radius, height, n_points, 'y', 0, null], flags), false],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> <axis>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> <axis>',
        _(pos, block, radius, height, n_points, axis) -> shape('prism_polygon', pos, [block, radius, height, n_points, axis, 0, null], null), false],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> <axis> f <flag>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> <axis> f <flag>',
        _(pos, block, radius, height, n_points, axis, flags) -> shape('prism_polygon', pos, [block, radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> <axis> <degrees>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> <axis> <degrees>',
        _(pos, block, radius, height, n_points, axis, rotation) -> shape('prism_polygon', pos, [block, radius, height, n_points, axis, rotation, null], null), false],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> <axis> <degrees> f <flag>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> <axis> <degrees> f <flag>',
        _(pos, block, radius, height, n_points, axis, rotation, flags) -> shape('prism_polygon', pos, [block, radius, height, n_points, axis, rotation, null], flags), false],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> <axis> <degrees> <replacement>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> <axis> <degrees> <replacement>',
        _(pos, block, radius, height, n_points, axis, rotation, replacement) ->shape('prism_polygon', pos, [block, radius, height, n_points, axis, rotation, replacement], null),
        [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['shape prism_polygon <pos> <block> <radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
+    ['shape polygon prism <pos> <block> <radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
        _(pos, block, radius, height, n_points, axis, rotation, replacement, flags) -> shape('prism_polygon', pos, [block, radius, height, n_points, axis, rotation, replacement], flags), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points>',
+        
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points>',
+        _(pos, block, radius, height, n_points) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, '+y', 0, null], null), false],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> f <flag>',
+       _(pos, block, radius, height, n_points, flags) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, '+y', 0, null], flags), false],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> <saxis>',
+       _(pos, block, radius, height, n_points, saxis) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, saxis, 0, null], null), false],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> <saxis> f <flag>',
+       _(pos, block, radius, height, n_points, saxis, flags) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, saxis, 0, null], flags), false],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> <saxis> <degrees>',
+       _(pos, block, radius, height, n_points, saxis, rotation) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, saxis, rotation, null], null), false],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> <saxis> <degrees> f <flag>',
+       _(pos, block, radius, height, n_points, saxis, rotation, flags) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, saxis, rotation, null], flags), false],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> <saxis> <degrees> <replacement>',
+       _(pos, block, radius, height, n_points, saxis, rotation, replacement) ->shape('pyramid_polygon', pos, [block, radius, height, n_points, saxis, rotation, replacement], null),
+       [4, 'help_cmd_brush_polygon_pyramid', 'help_cmd_brush_generic', null]],
+    ['shape polygon pyramid <pos> <block> <radius> <height> <points> <saxis> <degrees> <replacement> f <flag>',
+       _(pos, block, radius, height, n_points, saxis, rotation, replacement, flags) -> shape('pyramid_polygon', pos, [block, radius, height, n_points, saxis, rotation, replacement], flags), false],
+
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points>',
         _(pos, block, outer_radius, inner_radius, height, n_points) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], null), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> f <flag>',
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> f <flag>',
        _(pos, block, outer_radius, inner_radius, height, n_points, flags) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, 'y', 0, null], flags), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis>',
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis>',
        _(pos, block, outer_radius, inner_radius, height, n_points, axis) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, axis, 0, null], null), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> f <flag>',
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> f <flag>',
        _(pos, block, outer_radius, inner_radius, height, n_points, axis, flags) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, axis, 0, null], flags), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees>',
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees>',
        _(pos, block, outer_radius, inner_radius, height, n_points, axis, rotation) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, axis, rotation, null], null), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> f <flag>',
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> f <flag>',
        _(pos, block, outer_radius, inner_radius, height, n_points, axis, rotation, flags) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, axis, rotation, null], flags), false],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement>',
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement>',
        _(pos, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement) ->shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], null),
-       [4, 'help_cmd_brush_polygon', 'help_cmd_brush_generic', null]],
-    ['shape prism_star <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
+       [4, 'help_cmd_brush_star', 'help_cmd_brush_generic', null]],
+    ['shape star prism <pos> <block> <outer_radius> <inner_radius> <height> <points> <axis> <degrees> <replacement> f <flag>',
        _(pos, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags) -> shape('prism_star', pos, [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement], flags), false],
 
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points>',
+        _(pos, block, outer_radius, inner_radius, height, n_points) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, '+y', 0, null], null), false],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> f <flag>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, flags) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, '+y', 0, null], flags), false],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> <saxis>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, saxis) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, saxis, 0, null], null), false],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> <saxis> f <flag>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, saxis, flags) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, saxis, 0, null], flags), false],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, saxis, rotation) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, saxis, rotation, null], null), false],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees> f <flag>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, saxis, rotation, flags) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, saxis, rotation, null], flags), false],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees> <replacement>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement) ->shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement], null),
+       [4, 'help_cmd_brush_star_pyramid', 'help_cmd_brush_generic', null]],
+    ['shape star pyramid <pos> <block> <outer_radius> <inner_radius> <height> <points> <saxis> <degrees> <replacement> f <flag>',
+       _(pos, block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement, flags) -> shape('pyramid_star', pos, [block, outer_radius, inner_radius, height, n_points, saxis, rotation, replacement], flags), false],
+        
     // we need a better way of changing 'settings'
     ['settings quick_select <bool>', _(b) -> global_quick_select = b, false],
     ['settings max_iterations <int>', _(int) -> global_max_iter = i, false],
@@ -366,7 +453,7 @@ __config()->{
     'arguments'->{
         'replacement'->{'type'->'blockpredicate'},
         'moves'->{'type'->'int','min'->1,'suggest'->[1]},//todo decide on whether or not to add max undo limit
-        'degrees'->{'type'->'int','suggest'->[0,90]},
+        'degrees'->{'type'->'float','suggest'->[0,90]},
         'axis'->{'type'->'term','options'->['x','y','z']},
         'saxis'->{'type'->'term', 'options'->['+x', '-x', '+y', '-y', '+z', '-z']},
         'sides'->{'type'->'term', 'options'->['x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz']},
@@ -908,13 +995,16 @@ global_lang_keys = global_default_lang = {
     'help_cmd_brush_outline_force'-> 'l Register brush to outline replacing non air too',
     'help_cmd_brush_cube' ->      'l Register brush to create a cube of side length [size] out of [block]',
     'help_cmd_brush_cuboid' ->    'l Register brush to create a cuboid of dimensions [x] [y] and [z] out of [block]',
+    'help_cmd_brush_diamond' ->   'l Register brush to create a diamond with diagonal [size] out of [block]',
     'help_cmd_brush_sphere' ->    'l Register brush to create a sphere of radius [size] out of [block]',
     'help_cmd_brush_ellipsoid' -> 'l Register brush to create a ellipsoid with radii [x_radius], [y_radius] and [z_radius] out of [block]',
     'help_cmd_brush_cylinder' ->  'l Register brush to create a cylinder with [radius] and [height] along [axis] out of [block]',
     'help_cmd_brush_cone' ->      'l Register brush to create a cone with [radius] and [height] along [axis] in the direciton given by the sign',
-    'help_cmd_brush_pyramid' ->   'l Register brush to create a pyramid with [radius] and [height] along [axis] in the direciton given by the sign',
+    'help_cmd_brush_pyramid' ->   'l Register brush to create a pyramid with [side_size] and [height] along [axis] in the direciton given by the sign',
     'help_cmd_brush_polygon' ->   'l Register brush to create a polygon prism with [points] ammount of sides',
+    'help_cmd_brush_polygon_pyramid' -> 'l Register brush to create a polygon pyramid with [points] ammount of sides',
     'help_cmd_brush_star' ->      'l Register brush to create a star prism with [points] ammount of points',
+    'help_cmd_brush_star_pyramid' -> 'l Register brush to create a star pyramid with [points] ammount of points',
     'help_cmd_brush_line' ->      'l Register brush to create a line from player to where you click of [length], if given',
     'help_cmd_brush_flood' ->     'l Register brush to perform flood fill out of [block] starting on right clicked block',
     'help_cmd_brush_paste' ->     'l Register brush to paste current clipboard with origin on targeted block',
@@ -963,7 +1053,8 @@ global_lang_keys = global_default_lang = {
 
    
     'brush_item_tooltip' ->		'^g Click to get one!',
-    'brush_more_info_tooltip' ->        'Click for more info on %s brush',                          // brush
+    'brush_more_info_tooltip' ->        'Click for more info on %s brush',                          // brush item
+    'brush_clear_tooltip' ->            'Click to unregister %s as a brush',
     'brush_info_title' ->               'y Brush registered to ',
     'brush_info_action' ->		'b \ Action: ',
     'brush_info_params' ->		'b \ Parameters: ',
@@ -974,10 +1065,11 @@ global_lang_keys = global_default_lang = {
     'brush_new' ->			'w Registerd new %s brush to %s', //item, action
     'brush_list_header' ->              'bc === Current brushes are ===',
     'brush_extra_info' ->               'ig For detailed info on a brush click the [i] icon',
+    'brush_extra_clear' ->              'ig To unregister an item as a brush, click the [X] icon',
+    'brush_empty_list' ->               'ig You don\'t have any brushes registered',
     'brush_new_reach' ->                'w Brush reach was set to %d blocks',
     'brush_reach' ->                    'w Brush reach is currently %d blocks', // reach
-	'no_brush_error'->					'r %s in not a brush', //item
-    'no_longer_brush' -> 				'w %s is no longer a brush',
+    'no_longer_brush' -> 				'w %s is no longer a brush', //item
 
 
     'structure_list' ->                'w List of structures:',
@@ -1003,6 +1095,7 @@ global_lang_keys = global_default_lang = {
     //Block-setting actions
     'action_cube'->                'cube',
     'action_cuboid' ->             'cuboid',
+    'action_diamond' ->            'diamond',
     'action_ellipsoid' ->          'ellipsoid',
     'action_sphere' ->             'sphere',
     'action_cylinder' ->           'cylinder',
@@ -1010,7 +1103,9 @@ global_lang_keys = global_default_lang = {
     'action_pyramid' ->            'pyramid',
     'action_line' ->               'line',
     'action_prism_polygon' ->      'polygon prism',
+    'action_pyramid_polygon' ->    'polygon pyramid',
     'action_prism_star' ->         'star prism',
+    'action_pyramid_star' ->       'star pyramid',
     'action_structure_paste' ->    'structure paste',
     'action_set' ->                'set',
     'action_flood' ->              'flood',
@@ -1102,17 +1197,20 @@ global_brush_reach = 100;
 global_brushes_parameters_map = {
 	'cube'-> ['block', 'size', 'replace'],
 	'cuboid'-> ['block', 'size', 'replace'],
+    'diamond'-> ['block', 'size', 'replace'],
 	'shpere' -> ['block', 'radius', 'replace'],
 	'ellipsoid' -> ['block', 'radii', 'replace'],
 	'cylinder' -> ['block', 'radius', 'height', 'axis', 'replace'],
 	'cone' -> ['block', 'radius', 'height', 'saxis', 'replace'],
     'pyramid' -> ['block', 'radius', 'height', 'saxis', 'replace'],
 	'prism_polygon' -> ['block', 'radius', 'height', 'points', 'axis', 'rotation', 'replace'],
+    'pyramid_polygon' -> ['block', 'radius', 'height', 'points', 'saxis', 'rotation', 'replace'],
 	'prism_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'points', 'axis', 'rotation', 'replace'],
+    'pyramid_star' -> ['block', 'outer_radius', 'inner_radius', 'height', 'points', 'saxis', 'rotation', 'replace'],
 	'line' -> ['block', 'length', 'replace'],
 	'flood' -> ['block', 'radius', 'axis'],
     'drain' -> ['radius'],
-    'hollow' -> ['block'],
+    'hollow' -> ['radius'],
     'outline'-> ['block', 'outline block', 'force'],
 	'feature' -> ['what'],
 	'spray' -> ['block', 'size', 'count', 'replace'],
@@ -1124,10 +1222,11 @@ brush(action, flags, ...args) -> (
 
     if(
         action=='clear',
-        remove_action_item(held_item, 'brush');
+        remove_action_item(held_item, 'brush'); //this errors out if item is not a brush
         delete(global_brushes, held_item);
-        delete(global_liquid_brush, held_item),
-        
+        delete(global_liquid_brush, held_item);
+        _print(player, 'no_longer_brush', held_item),
+
         action=='list',
         if(global_brushes,
         	print(player, '');
@@ -1138,14 +1237,21 @@ brush(action, flags, ...args) -> (
 					_translate('brush_item_tooltip'), 
 					str('!/give %s %s',player, item),
 					str('w %s ', _:1:0),
-					'db [i]',
+					
+                    'db [i] ',
 					'^g '+ _translate('brush_more_info_tooltip', item),
-					str('!/se brush info %s', item)
+					str('!/se brush info %s', item),
+
+                    'rb [X]',
+                    '^g '+ _translate('brush_clear_tooltip', item),
+                    str('!/se brush clear %s', item)
 				));
             );
-            _print(player, 'brush_extra_info'),
+            _print(player, 'brush_extra_info');
+            _print(player, 'brush_extra_clear'),
             _print(player, 'brush_empty_list')
         ),
+
         action=='info',
         if(args, held_item=args:0);
         if(has(global_brushes, held_item),
@@ -1161,7 +1267,7 @@ brush(action, flags, ...args) -> (
 			);
 			print(player, format( _translate('brush_info_flags'), if(params:2, str('w %s', params:2), _translate('brush_info_no_flags') ) )),
 			// if it's not a brush
-            _error(player, 'no_brush_error', held_item)
+            _error(player, 'action_item_not_existing_error', held_item, 'brush')
         ),
         action=='reach',
         if(args,
@@ -1188,123 +1294,139 @@ shape(action, pos, args, flags)->
 
 _brush_action(pos, brush) -> (
     [action, args, flags] = global_brushes:brush;
-    if(action == 'feature', print(player(), format('d Beware, placing features is very experimental and doesn\'t have support for the undo function')));
     shape(action,pos, args, flags)
 );
 
 global_brush_shapes={
-    'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
-                [block, size, replacement] = args;
-                flags = _parse_flags(flags);
-
-                if(flags~'h', //hollow is O(n^2) operation, so only need double forloop. Makes it kinda bulky, but worth it tbh
-                    radius = round(size/2);
-                    c_for(a = radius, a<= radius, a+=1,//removing useless iterations for max efficiency (cos if not Im setting blocks twice)
-                        c_for(b = -radius, b <= radius, b+=1,
-                            set_block(pos + [a, b, radius], block, replacement, flags, {});
-                            set_block(pos + [a, b, -radius], block, replacement, flags, {});
-                            set_block(pos + [a, radius, b], block, replacement, flags, {});
-                            set_block(pos + [a, -radius, b], block, replacement, flags, {});
-                            set_block(pos + [radius, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius, a, b], block, replacement, flags, {});
-                        )
-                    ),
-                    scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}))
-                );
-
+    'cube'->_(pos, args, flags)->(
+                _cuboid(pos, args, flags);
                 add_to_history('action_cube',player())
             ),
-    'cuboid'->_(pos, args, flags)->(//always gonna use these three args, in all-capturing lambda function
-                [block, size, replacement] = args;
-                size = map(size/2, round(_));
-
-                if(flags~'h', // This hollow function is bulkier, cos gotta iterate over all three axes when setting.
-                    [radius_x, radius_y, radius_z]=size;
-
-                    c_for(a = -radius_y, a<= radius_y, a+=1,
-                        c_for(b = -radius_z, b<= radius_z, b+=1,
-                            set_block(pos + [ radius_x, a, b], block, replacement, flags, {});
-                            set_block(pos + [-radius_x, a, b], block, replacement, flags, {});
-                        );
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [ b, a, radius_z], block, replacement, flags, {});
-                            set_block(pos + [ b, a,-radius_z], block, replacement, flags, {});
-                        )
-                    );
-                    c_for( a= -radius_x, a<= radius_x, a+=1,
-                        c_for(b = -radius_x, b<= radius_x, b+=1,
-                            set_block(pos + [ b, radius_y, a], block, replacement, flags, {});
-                            set_block(pos + [ b,-radius_y, a], block, replacement, flags, {});
-                        )
-                    ),
-                    scan(pos,size, set_block(_, block, replacement, flags, {}))
-                );
+    'cuboid'->_(pos, args, flags)->(
+                _cuboid(pos, args, flags);
                 add_to_history('action_cuboid',player())
             ),
     'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
             [block, radii, replacement] = args;
 
-            scan(pos, radii,
-                l = _euclidean_sq((pos(_) - pos)/radii, 0); //cos sqrt() is slow to do, especially for large areas
-                r = 1/_vec_length(radii);
-                if(l<=1+r && (!flags~'h' || l>=1-r),//this algorithm is slow, but works (sorta, i think...)
-                    set_block(pos(_),block, replacement, flags, {})
-                )
-            );
+            _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
+            _fill_shape(pos-radii, pos+radii, block, replacement, flags);
+
             add_to_history('action_ellipsoid',player())
         ),
     'sphere'->_(pos, args, flags)->(
             [block, radius, replacement] = args;
-            [cx, cy, cz] = pos;
 
-            for(range(-90, 90, 45/radius),
-                cpitch = cos(_);
-                spitch = sin(_);
-                for(range(0, 180, 45/radius),
-                    cyaw = cos(_)*cpitch*radius;
-                    syaw = sin(_)*cpitch*radius;
-                    if(flags ~'h',
-                        set_block(cx+cyaw,cy+spitch*radius,cz+syaw,block,replacement);
-                        set_block(cx+cos(_+180)*cpitch*radius,cy+spitch*radius,cz+sin(_+180)*cpitch*radius,block,replacement),
-                        for(range(-syaw,syaw+1),
-                            set_block([cx+cyaw*cpitch,cy+spitch*radius,cz+_],block,replacement, flags, {})
-                        )
-                    )
-                )
+            if(radius == 1,
+                set_block(pos, block, replacement, flags, {}),
+
+                _is_inside_shape(block, outer(pos), outer(radius)) -> _sq_distance(pos, pos(block)) <= radius*radius;
+                _fill_shape(pos-radius, pos+radius, block, replacement, flags);
             );
+
             add_to_history('action_sphere',player())
         ),
     'cone'->_(pos, args, flags)->(
             [block, radius, height, signed_axis, replacement] = args;
-            flags = _parse_flags(flags);
-            pointup=slice(signed_axis, 0, 1)=='+';
-            loop(height-1,
-                r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
+            roh = radius / height; //radius over height
+        
+            // define the function that generates the circles for each layer, taken care to have a thicc ring
+            // if the shape is hollow and the radius is bigger than the height. That function will be used by 
+            // _pyramid_generic later, see that for signature.
+            _shape_maker(h, hollow, axis, base, previous, outer(radius), outer(roh), outer(height)) -> (
+                r = radius - roh*h;
+                inner = if(
+                    !hollow || h==0, //only use discs if solid of bottom layer
+                        null,
+                    radius > height, 
+                        radius - roh*(h+1), 
+                    //else
+                        r-1
+                );
+                if(r<=1,
+                    [[base], [base]], // if radius is too small, no need to make circles
+                    _make_circle(r, inner, axis, base);
+                );
             );
-            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
+            _pyramid_generic(pos, args, flags);            
+
             add_to_history('action_cone',player())
         ),
     'pyramid'->_(pos, args, flags)->(
-            [block, radius, height, signed_axis, replacement] = args;
-            flags = _parse_flags(flags);
-            pointup=slice(signed_axis, 0, 1)=='+';
-            loop(height-1,
-                r = if(pointup, radius * ( 1- _ / height) -1, radius * _ / height);
-                fill_flat_circle(pos, _, r, signed_axis, block, flags~'h',replacement, flags)
+            [block, sidelength, height, signed_axis, replacement] = args;
+            roh = sidelength / height; //diameter over height
+            
+            // define the function that generates the squares for each layer, taken care to have a square "ring"
+            // if the shape is hollow and the "radius" is bigger than the height. That function will be used by 
+            // _pyramid_generic later, see that for signature.
+            _shape_maker(h, hollow, axis, base, previous, outer(sidelength), outer(roh), outer(height)) -> (
+                outer = _get_level_sidelength(sidelength, height, h) || 2; //the ||2 is there to ensure proper height with even sided pyramids
+                inner = if(!hollow || h==0,
+                    null,
+                sidelength > 2*height,
+                    _get_level_sidelength(sidelength, height, h+1),
+                //else
+                    outer-2
+                );
+                if(outer<=1,
+                    [[base], [base]],// if radius is too small, no need to make squares
+                    _make_square(outer, inner, axis, base);
+                );
             );
-            fill_flat_circle(pos, (!pointup)*height, radius, signed_axis, block, false ,replacement, flags);//Always close bottom off
+            _pyramid_generic(pos, args, flags);   
+
             add_to_history('action_pyramid',player())
         ),
+    'diamond'->_(pos, args, flags)->(
+            [block, size, replacement] = args;
+            flags = _parse_flags(flags);
+
+            half_size = (size+1)/2;
+            c = map(pos, floor(_));
+            offset = half_size%1;
+            
+            // generate each z layer of the diamond separately. Each layer spans all values in the x directoin
+            // and adds all y values such that y=l-x or y<=l-x, depending on if the shape is hollow or not. Here
+            // l is half the diagonal on that given layer (half_size in the central layer).
+            loop(half_size, //loop over z (levles)
+                z = _ + offset;
+                level = {};
+                hd = half_size - _; //half diagonal on that level
+                loop(hd, //loop over x (one direction)
+                    x = _ + offset;
+                    if(flags~'h',
+                        y = hd - x - offset - !bool(offset); //this is the formula for the line that defines the perimeter of the diamon on that level
+                        for(_all_axis_reflections(x, y), level += _ ),
+                    //else, solid
+                        loop(hd - x, //this is the formula for the line that defines the perimeter of the diamon on that level
+                            y = _ + offset;
+                            for(_all_axis_reflections(x, y), level += _ );
+                        )
+                    )
+                );
+		//pace the level generated at the given z value and mirror it for the oposite value
+                for(level, set_block(c + [..._, z], block, replacement, flags, {}));
+                if(z != 0, //don't place the middle slice twice
+                    for(level, set_block(c + [..._, -z], block, replacement, flags, {}));
+                )
+            );
+            add_to_history('action_diamond',player())
+        ),
+
     'cylinder'->_(pos, args, flags)->(
             [block, radius, height, axis, replacement] = args;
+
+            center = map(pos, floor(_));
             flags = _parse_flags(flags);
-            hollow=flags~'h';
-            loop(height,
-                fill_flat_circle(pos, _, radius, orientation, block, flags~'h', replacement, flags)//Always close ends off
-            );
-            fill_flat_circle(pos, 0, radius, orientation, block, false, replacement, flags);//Always close ends off
-            fill_flat_circle(pos, height, radius, orientation, block, false, replacement, flags);
+            
+            //generate a disc and a circle of given radius
+            //if the shape is not hollow, the circle is not needed, passing null as inner
+            //will prevent it from being calculated
+            inner = if(flags~'h', radius-1, null); //inner radius for the circle maker
+            [perimeter, interior] = _make_circle(radius, inner, axis, pos);
+            offset = _get_prism_offset(height, axis);
+	    
+            _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
             add_to_history('action_cylinder',player())
         ),
     'paste'->_(pos, args, flags)->(
@@ -1341,11 +1463,12 @@ global_brush_shapes={
     'hollow'->_(pos, args, flags) -> (
             [radius] = args;
             origin = pos;
-
-            interior_set = {};
-            visited = {origin->null};
-            interior = block(origin);
-            queue = [origin];
+            
+            // the following is a flood fill implementation doing BFS
+            interior_set = {}; //here I'll store the blocks to hollow out
+            visited = {origin->null}; //here I'll store the blocks I've visited already
+            interior = block(origin); //block type to hollow out
+            queue = [origin]; //these will be the next blocks to check
 
             while(length(queue)>0, global_max_iter,
                 current_pos = queue:(-1);
@@ -1355,7 +1478,8 @@ global_brush_shapes={
                 for(neighbours(current_pos),
                     current_neighbour = _;
                     cn_pos = pos(current_neighbour);
-                    if(!has(visited, cn_pos) && _euclidean_sq(origin, cn_pos)<=radius*radius,
+                    //the euclidean check is expensive, but I have to limit the action somehow. Could replace this with max for a sqaure
+                    if(!has(visited, cn_pos) && _euclidean_sq(origin, cn_pos)<=radius*radius, 
                         if(current_neighbour==interior,
                             visited += cn_pos;
                             queue += cn_pos,
@@ -1375,12 +1499,15 @@ global_brush_shapes={
     'outline'->_(pos, args, flags) -> (
             [block, radius, force] = args;
             origin = pos;
-
+            
+            // the following is a flood fill implementation doing BFS
             outline_set = {};
             visited = {origin->null};
-            interior = block(origin);
+            interior = block(origin); //block type to outline
             queue = [origin];
-
+            
+            // define a function to check if a block on the putside will be replaced
+            // air is always replaced, greenery is only replaced with -g, other blocks are replaced only if force==true
             flags = _parse_flags(flags);
             if(flags~'g',
                 _check_fun(block, outer(force), outer(interior)) -> (air(block) || (force && block!=interior)) || has(global_air_greenery, str(block)),
@@ -1404,7 +1531,6 @@ global_brush_shapes={
                             visited += cn_pos;
                             queue += cn_pos
                         );
-                        print([current_neighbour, cf]);
                     )
                 );
             );
@@ -1413,50 +1539,123 @@ global_brush_shapes={
             add_to_history('action_outline', player())
         ),
 
+
     'prism_polygon'->_(pos, args, flags)->(
             [block, radius, height, n_points, axis, rotation, replacement] = args;
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
-            // get points in inner and pouter radius + interlace them
+
+            // get 2D points on the circle that inscribes the shape
             points = _get_circle_points(radius, n_points, rotation);
             points:length(points) = points:0; // add first point at the end to close curve
-            // get points and draw the connecting lines
+
+            // project points to 3D according to axis and draw the connecting lines
             perimeter = _connect_with_lines(points, center, axis);
-            interior = _flood_fill_shape(perimeter, center, axis);
-            offset = _get_prism_offset(height, axis);
-            if(flags~'h',
-                for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-                for(interior,
-                    set_block(_+offset, block, replacement, flags, {});
-                    set_block(_-offset, block, replacement, flags, {});
-                ),
-                for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
+            // fill the interior of the perimeter to get a solid cap
+            interior = _flood_fill_shape(perimeter, center, axis, {});
+            
+            _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
+            add_to_history('action_prism_polygon',player());
+        ),
+
+    'pyramid_polygon'->_(pos, args, flags)->(
+            [block, radius, height, n_points, signed_axis, rotation, replacement] = args;
+            
+            roh = radius / height; //radius over height
+        
+            // define the function that generates the polygons for each layer. The polygons are generated as above, each layer
+            // with a different radius given by roh. This function will be used by _pyramid_generic later, see that for signature.
+            _shape_maker(h, hollow, axis, base, previous, outer(radius), outer(roh), outer(n_points), outer(rotation)) -> (
+                r = radius - roh*h;
+                
+                if(r>1,
+                    // get points on the circle that inscribes the shape
+                    points = _get_circle_points(r, n_points, rotation);
+                    points:length(points) = points:0; // add first point at the end to close curve
+
+                    // project the points to 3D and connect with lines to get the perimeter, fill it in to get a solid polygon
+                    perimeter = _connect_with_lines(points, base, axis);
+                    interior = _flood_fill_shape(perimeter, base, axis, {});
+                    // if the shape is hollow and a block was in the previous layer, it doesn't need to be in the current one
+                    if(hollow && h!=0,
+                        perimeter = _flood_fill_shape(perimeter, base, axis, previous);
+                    ),
+                //else, no need to actually generate the polygon
+                    perimeter = {base->null};
+                    interior =  {base->null};
+                );
+                [perimeter, interior]
             );
-            add_to_history('action_prism_polygon',player())
+            // _pyramid_generic doesn't need the ammount of sides of the polygon or the rotation
+            newargs = [block, radius, height, signed_axis, replacement];
+            _pyramid_generic(pos, newargs, flags);   
+
+            flags = _parse_flags(flags);
+            if(flags~'h', print(player(), format('d Hollow polygon pyramids are experimental. Use solid pyramids and a hollow brush if you encounter issues.')));
+
+            add_to_history('action_pyramid_polygon',player())
         ),
 
     'prism_star'->_(pos, args, flags)->(
             [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement] = args;
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
-            // get points in inner and pouter radius + interlace them
-            inner_points = _get_circle_points(inner_radius, n_points, phase);
-            outer_points = _get_circle_points(outer_radius, n_points, phase + 360/n_points/2);
+
+            // get points in inner and outer circles and interlace them
+            inner_points = _get_circle_points(inner_radius, n_points, rotation);
+            outer_points = _get_circle_points(outer_radius, n_points, rotation + 360/n_points/2);
             interlaced_list = _interlace_lists(inner_points, outer_points);
             interlaced_list += inner_points:0; // add first point at the end to close curve
-            // get points and draw the connecting lines
+
+            // project points to 3D according to axis and draw the connecting lines
             perimeter = _connect_with_lines(interlaced_list, center, axis);
-            interior = _flood_fill_shape(perimeter, center, axis);
-            offset = _get_prism_offset(height, axis);
-            if(flags~'h',
-                for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
-                for(interior,
-                    set_block(_+offset, block, replacement, flags, {});
-                    set_block(_-offset, block, replacement, flags, {});
-                ),
-                for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
-            );
+            // fill the interior of the perimeter to get a solid cap
+            interior = _flood_fill_shape(perimeter, center, axis, {});
+        
+            _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
             add_to_history('action_prism_polygon',player())
+        ),
+
+    'pyramid_star'->_(pos, args, flags)->(
+            [block, outer_radius, inner_radius, height, n_points, signed_axis, rotation, replacement] = args;
+            
+            oroh = outer_radius / height; //outer radius over height
+            iroh = inner_radius / height; //inner radius over height
+        
+            // define the function that generates the stars for each layer. The stars are generated as above, each layer with 
+            // a different radii given by oroh and iroh. This function will be used by _pyramid_generic later, see that for signature.
+            _shape_maker(h, hollow, axis, base, previous, outer(outer_radius), outer(inner_radius), outer(oroh), outer(iroh), outer(n_points), outer(rotation)) -> (
+                or = outer_radius - oroh*h;
+                ir = inner_radius - iroh*h;
+                
+                if(ir>1,
+                    // get points in inner and outer circles and interlace them
+                    inner_points = _get_circle_points(ir, n_points, rotation);
+                    outer_points = _get_circle_points(or, n_points, rotation + 360/n_points/2);
+                    interlaced_list = _interlace_lists(inner_points, outer_points);
+                    interlaced_list += inner_points:0; // add first point at the end to close curve
+                    
+                    // project the points to 3D and connect with lines to get the perimeter, fill it in to get a solid polygon
+                    perimeter = _connect_with_lines(interlaced_list, base, axis);
+                    interior = _flood_fill_shape(perimeter, base, axis, {});
+                    // if the shape is hollow and a block was in the previous layer, it doesn't need to be in the current one
+                    if(hollow && h!=0,
+                        perimeter = _flood_fill_shape(perimeter, base, axis, previous);
+                    ),
+                //else, no need to actually generate the star
+                    perimeter = {base->null};
+                    interior =  {base->null};
+                );
+                [perimeter, interior]
+            );
+            // _pyramid_generic doesn't need the ammount of points of the star or the rotation
+            newargs = [block, radius, height, signed_axis, replacement];
+            _pyramid_generic(pos, newargs, flags);   
+
+            flags = _parse_flags(flags);
+            if(flags~'h', print(player(), format('d Hollow star pyramids are experimental. Use solid pyramids and a hollow brush if you encounter issues.')));
+
+            add_to_history('action_pyramid_star',player())
         ),
 
     'spray'->_(pos, args, flags)->(
@@ -1519,6 +1718,228 @@ global_brush_shapes={
             plop(pos, feature);
         )
 };
+
+// generate a cuboid with sidelengths defined in size. if size is a number, generate a cube
+// to handle hollow shape,s it makes use of the already written walls function
+_cuboid(pos, args, flags) -> (
+    [block, size, replacement] = args;
+
+    half_size = (size-1)/2;
+    min_corner = pos-half_size;
+    max_corner = pos+half_size;
+
+    if(flags~'h', 
+        _walls_generic(min_corner, max_corner, 'xyz', block, replacement, flags),
+        volume(min_corner, max_corner, set_block(_, block, replacement, flags, {}))
+    );
+);
+
+_sq_distance(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
+
+// generate a prism with caps given by <interior>. If the prism is hollow, it uses <perimeter> to
+// generate the walls.
+_prism_generic(perimeter, interior, height, axis, block, replacement, flags) -> (
+    offset = _get_prism_offset(height, axis);
+    if(flags~'h',
+    //place two solid polygons for the caps and go around the perimeter placing columns of blocks for the walls
+        for(perimeter, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {}) ));
+        for(interior,
+            set_block(_+offset, block, replacement, flags, {});
+            set_block(_-offset, block, replacement, flags, {});
+        ),
+    //place a column of blocks for each point in the (solid) polygon
+        for(interior, volume(_+offset, _-offset, set_block(_, block, replacement, flags, {})))
+    );
+
+);
+
+// generate a pyramid of arbitrary base shape (so cones, pyramids, whatever you like)
+// to use this function, a pyramid-maker function needs to define _shape_maker, which
+// should generate the shape to place on each layer (squares, circles, polygons, etc)
+// in the form of a perimeter of the shape and a filled in version of the shape in their
+// actual position in the world.
+// _shape_maker should take in a height value, a bool indicating if the shape is hollow,
+// the axis the shape is pointo towards, the point at the base of the pyramid and the previous 
+// layer.
+// _generic_pyramid will place one layer at a time, from the point to the base
+_pyramid_generic(pos, args, flags) -> (
+    //radius is not used, but it's leftover from the signature of the functions that use this function
+    [block, radius, height, signed_axis, replacement] = args;
+    flags = _parse_flags(flags);
+    base = map(pos, floor(_)); // make sure we are on a block, no decimals allowed here
+
+    // get the direction into which the pyramid grows
+    axis = slice(signed_axis, 1);
+    offset = if(
+        axis=='x', [1, 0, 0],
+        axis=='y', [0, 1, 0],
+        axis=='z', [0, 0, 1],
+    );
+    
+    // get the pointing direction of the pyramid
+    point = if(slice(signed_axis, 0, 1)=='+', 1, -1);
+    offset = offset * point;
+
+    hollow = flags~'h';
+
+    previous = {};
+    loop(height, //loop over the layers
+        h = height - 1 -_;
+        [perimeter, interior] = _shape_maker(h, hollow, axis, base, previous);
+
+        // place a solid shape (interior) if the pyramid is solid or if it's the last layer
+        // for hollow pyramids, place just perimeters, these should be thick rings if radius>height
+        if(h==0 || !hollow, 
+            for(interior, set_block(_+offset*h;, block, replacement, flags, {})),  
+            for(perimeter, set_block(_+offset*h;, block, replacement, flags, {}))
+        );
+        if(h==height-1, set_block(base + offset*(h), block, replacement, flags, {})); //manually place point
+
+        previous = interior;
+    );
+);
+
+// VERY inefficient way to fill up a volume of arbitrary shape. Any shape using this function
+// should define _is_inside_shape, which takes in a position and returns a bool. _fill_shape
+// will check every block in the cuboid that inscribes the shape and palce a block if it's part 
+// of the shape as per _is_inside_shape. For hollow shapes, it generates the solid shape and 
+// then discards any block that's surrounded by blocks inside the shape.
+_fill_shape(from, to, block, replacement, flags) -> (
+    if(flags~'h',
+        // hollow
+        to_set = {};
+        volume(from, to,
+            if( _is_inside_shape(_), to_set += pos(_))
+        );
+        // discard interior
+        for(keys(to_set),
+            if(!all(neighbours(_), has(to_set, pos(_))),
+                set_block(_, block, replacement, flags, {})
+            )
+        ),
+
+        // not hollow
+        volume(from, to,
+            if( _is_inside_shape(_),
+                set_block(_, block, replacement, flags, {})
+            )
+        )
+    )
+
+);
+
+// generate a disc and a ring in 2D. Ring will have inner radius <inner> and outer radius <radius>
+// this function checks all the blocks in an eighth of the circle to check if they are inside or not
+// then reflects that pizza slice arround to get the whole shape.
+_make_flat_circle(radius, inner) -> (
+    circle_set = {}; //circle will be an empoty set if inner==null
+    disc_set = {};
+    //inefficient but consisten way to make a circle that looks good
+    //loop over an eight of the plane: 0<=x<=r, y<=x
+    r2 = radius*radius;
+    i2 = inner*inner;
+    loop(radius+1,
+        x = _;
+        loop(x+1,
+            y = _;
+            if( //first, see if a point is inside the disc
+                x*x+y*y<r2,
+                for(_all_reflections(x, y), disc_set += _);
+                //next, check if it falls in the ring, only if inner was given
+                if(inner!=null && x*x+y*y>=i2 ,
+                    for(_all_reflections(x, y), circle_set += _);
+                )
+            )
+        )
+    );
+    [circle_set, disc_set]
+);
+
+_make_circle(radius, inner, axis, center) -> (
+    //generates a disc with given <radius> and a circle or ring with inner radius <inner>
+    //the face of the disc will point towards <axis> and will be centered about <center>
+    if( //this takes in a 2-list and returns a 3-list with a 0 interleaved somewhere depending on axis
+        axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
+        axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
+        axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
+    );
+    
+    //generate the disc and ring in 2D and project them to 3D in the proper axis
+    [circle, disc] = _make_flat_circle(radius, inner);
+    circle = map(circle, center + _2D_to_3D(_:0, _:1, 0));
+    disc = map(disc, center + _2D_to_3D(_:0, _:1, 0));
+
+    [circle, disc]
+);
+
+                                                                                   
+// generate a square and a square "ring" in 2D. The ring is a square with <sidelength> that has another
+// square of size <inner> cut out from it.
+// this function loops over the points in the first quadrant under x=y and stores them in a set, while also
+// storing all the reflections ab out the axes and the x=y line to get the full square
+_make_flat_square(sidelength, inner) -> (
+    hl = (sidelength+1)/2;
+    offset = hl%1;
+    hi = if(inner!=null, (inner-1)/2, null);
+    level = {};
+
+    loop(hl,
+        x = floor(hl-1) - _ + offset; //loop form the outside in
+        if(x<=hi && inner!=0, break()); //don't need to check blocks once I'm past inner radius
+        loop(x+1,
+            y=_+offset;
+            for(_all_reflections(x, y), level  += _), //solid
+        )
+    );
+    level
+);
+
+_make_square(sidelength, inner, axis, center) -> (
+    //generates a square with given <sidelength> and a square "ring" with inner side length <inner>
+    //the face of the square will point towards <axis> and will be centered about <center>
+    if( //this takes in a 2-list and returns a 3-list woth a 0 interleaved somewhere depending on axis
+        axis=='x', _2D_to_3D(u, v, w) -> [w, u, v],
+        axis=='y', _2D_to_3D(u, v, w) -> [u, w, v],
+        axis=='z', _2D_to_3D(u, v, w) -> [u, v, w],
+    );
+    
+    //generate the disc and ring in 2D and project them to 3D in the proper axis
+    square = _make_flat_square(sidelength, inner);
+    square = map(square, center + _2D_to_3D(_:0, _:1, 0));
+        
+    [square, square]
+);
+
+
+_get_level_sidelength(side, height, h) -> (
+    // get the side of the square in a pyramid at a given height
+    // making sure that the parity doesn't change
+
+    slope = side/height;
+    oddness = side%2;
+
+    new_side = side - slope * h; 
+    rs = round(new_side);
+
+    // make sure the new side has alwas the same parity as the original one
+    if(rs%2 != oddness, 
+        cs = ceil(new_side);
+        rs = if(rs==cs, cs-1, cs)
+    );
+    rs
+);
+
+_all_reflections(x, y) -> [ 
+    //this takes in a point in the first quarter plane under the x=y line and reflects it about
+    //that line, and reflects the resulting pair of points about all axes, resulting in 8 points
+    [x,y], [x,-y], [-x,y], [-x,-y],
+    [y,x], [y,-x], [-y,x], [-y,-x]
+];
+
+_all_axis_reflections(x, y) -> [
+    //this takes in a point and returns all possible reflections about the two axes
+    [x,y], [x,-y], [-x,y], [-x,-y]
+];
 
 fill_flat_circle(pos, offset, dr, orientation, block, hollow, replacement, flags)->(
     r = floor(dr);
@@ -1587,13 +2008,13 @@ _interlace_lists(l1, l2) -> (
     out = [];
     for(l1,
         out:length(out) = _;
-        out:length(out) =  l2:_i;
+        out:length(out) = l2:_i;
     );
     return(out);
 );
 
 _get_prism_offset(height, axis) -> (
-    // returns offset half column given axis
+    // returns an offset of half height given axis
     halfheight = (height-1)/2;
     if(
         axis=='x', [halfheight, 0, 0],
@@ -1602,9 +2023,11 @@ _get_prism_offset(height, axis) -> (
     )
 );
 
-_flood_fill_shape(perimeter, center, axis) ->(
+_flood_fill_shape(perimeter, center, axis, exclude) ->(
     // returns blocks corresponding to the interior of the shape defined by <perimeter>
+    // it excludes from the returned set the the positions in <exclude> (should be a set)
     // should work in 3D too giving a close surphase and passing null as <axis>
+    
     max_iter = global_max_iter;
     if(
         axis==null, flood_neighbours(block) -> map(neighbours(block), pos(_)); max_iter = global_max_iter^(2/3),
@@ -1613,9 +2036,16 @@ _flood_fill_shape(perimeter, center, axis) ->(
         axis=='z', flood_neighbours(block) -> [pos_offset(block, 'east'), pos_offset(block, 'west'), pos_offset(block, 'up'), pos_offset(block, 'down')]
     );
 
+    center = map(center, floor(_));
+    interior = {};
 
-    interior = {center->null};
-    map(perimeter,interior:_ = null);
+    map(perimeter, interior:_ = null);
+    if(has(interior, center),
+        // exit early if the shape is too small
+        return(interior),
+        //else, add the center and start
+        if(!has(exclude, center), interior += center);
+    );
     queue = [center];
 
     while(length(queue)>0, max_iter,
@@ -1626,9 +2056,9 @@ _flood_fill_shape(perimeter, center, axis) ->(
         for(flood_neighbours(current_pos),
             current_neighbour = _;
             // check neighbours, add the non visited ones to the visited set
-            if(!has(interior, current_neighbour),
-                interior:current_neighbour = null;
-                queue:length(queue) = current_neighbour;
+            if(!has(exclude, current_neighbour) && !has(interior, current_neighbour),
+                interior += current_neighbour;
+                queue += current_neighbour;
             );
         );
     );

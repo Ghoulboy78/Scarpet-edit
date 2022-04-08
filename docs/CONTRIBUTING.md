@@ -38,7 +38,7 @@ case it was too confusing:
 
     - If you're setting blocks, you need to be able to undo that. Here's how:
         
-      1. When running your function, just use `set_block(pos,block,replacement` to set the block in the world.
+      1. When running your function, just use `set_block(pos, block, replacement, flags, extras)` to set the block in the world.
    
       2. Secondly, you have to save your command to the player history, so they can undo it. This is an O(1) operation, 
          so don't worry about lag (If you don't understand that sentence, then don't worry about it either). To do this,
@@ -68,22 +68,21 @@ case it was too confusing:
    'fill <block> <replacement> f <flag>'
    ```
    Make sure your command processing function accepts a flags argument as the last parameter, and add that in the command
-   syntax. For the versions without the flags, just use `null` as the `flags` argument in
-   the `set_block` function.
+   syntax. For the versions without the flags, pass use `null` as the `flags` argument.
    
    To access the flags as a map, run: `flags = _parse_flags(flags)`. Whenever you use the `set_block()` function, put the
-   flags from your command processing function as the last argument. The following flags currently exist for you to use:
+   flags from your command processing function as the second to last argument. The following flags currently exist for you to use:
    ```
    u     no blockupdates (handled by set_block)
    w     waterlog blocks that get placed inside water (handled by set_block)
    p     only replace air blocks (handled by set_block)
    e     copy/move entities as well
    b     copy/move biomes as well (handled by set_block)
-   a     don't paste air
-   h	   create hollow shapes
-   d     "dry" out the pasted structure (remove water and waterlogged)
-   s     keep block states of replaced block, if new block matches
-   g     when replacing air or water, some greenery gets repalced too
+   a     don't paste air (handled by set_block)
+   h     create hollow shapes
+   d     "dry" out the placed set of blocks (remove water and waterlogged, handled by set_block)
+   s     keep block states of replaced block, if new block matches (handled by set_block)
+   g     when replacing air or water, some greenery gets repalced too (handled by set_block)
    l     when registering a brush with this flag, the brush will trace for liquids as well as blocks
    ```
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
@@ -98,8 +97,7 @@ brush function utility. You must add your new function in the following fashion:
 Add your function as an entry to the `global_brush_shapes` map variable, with the key being the string name of your function,
 and the value being a lambda function with `(pos, args, flags)` as the arguments. This is where you can manipulate the 
 world in whatever way you see fit, and must call the `add_to_history()` function (cos not all brush functions set blocks).
-You can take whichever arguments you need from the args `args` variable as long as you specify them in the input command.
-You must also add a command which takes the correct inputs and passes them to the `shape()` function in the proper manner.
+You can take whichever arguments you need from the `args` variable as long as you specify them in the input command.
 You must also add a translation key for the action to the lang file. Finally, it's encouraged that devs add a list of parameters
 to `global_brushes_parameters_map` to pretify the `brush info` command output. 
 
@@ -123,16 +121,22 @@ cubes:
    `/shape` command.
 
 
-2. We can see that we got three arguments: `[block, size, replacement] = args;`. We can know that we are going to get
-   these arguments when we define the command:
+2. We can see that we got three arguments: `[block, size, replacement] = args;`. What arguments the brush uses are defined
+   in the argument signature. Here we have the default signature that includes the `help` info (see (#command-system)) and
+   the duplicate command accepting flags. In this example `<replacement>` is a mandatory argument.
    ```
    base_commands_map = [
       ... //commands
-      ['cube <block> <size> replace <replacement> f <flags>', _(block, size, replacement, flags)->shape('cube',[block, size, replacement], flags)'']
+      ['brush cube <block> <size> <replacement>', _(block, size_int, replacement) -> 
+          brush('cube', null, block, size_int, replacement),
+          [2, 'help_cmd_brush_cube', 'help_cmd_brush_generic', null]],
+      ['brush cube <block> <size> <replacement> f <flag>', _(block, size_int, replacement, flags) -> 
+          brush('cube', flags, block, size_int, replacement), false],
       ... //more commands
    ]
    ```
-   It is important to use that syntax of calling the `shape()` function to work properly.
+   If your brush can also be called as a shape, like it's the case for `cube`, add the corresponding set of commands by 
+   copying the lines above and replacing `brush` with `shape`.
 
 
 3. We can also see that we ran the `add_to_history` function with `'action_cube'`, not `'cube'`. This is because we need
@@ -147,7 +151,7 @@ cubes:
    }
    ```
 
-4. We finally add a list of the aprameters the brush uses to `global_brushes_parameters_map` to be the display names when
+4. We finally add a list of the parameters the brush uses to `global_brushes_parameters_map` to be the display names when
   calling  `brush info`:
   ```
   global_brushes_parameters_map = {
@@ -179,10 +183,10 @@ in those situations:
 A message added with this method will appear in the default US English translation. If you want to translate to other 
 languages, you just need to create a JSON file with your language's id (e.g. `it_it.json`), and add it into the `se.data/langs`
 folder. When the file is in there, you'll be able to load it by using `/se lang [lang id]` ingame. The app will 
-warn to the console if you try to load an uncomplete language ingame, including all missing keys so it's easier to translate.
+warn to the console if you try to load an incomplete language, including all missing keys so it's easier to translate.
 While those are not available, it will use the default US English values for those.
 
-### Command System
+#### Command System
 
 In order to partially automate the help creation process, the command system in the app is different than the regular 
 Carpet's command system. It is generated in a separate map and pre-proccessed before being passed to Carpet. You have to
@@ -221,7 +225,7 @@ is done).
 
 Some items have built-in functionality, like the wand, but the user has the ability to add more items with actions associated
 with them (like brushes and angel block, for instance). If you want to add a new item functionality (say, building wand, for 
-example), then you need to take care of a few things, to avoid one item having multiple actions associated with it:
+example), then you need to take care of a few things to prevent one item from having multiple actions associated with it:
   * When registering an item for a new action, call `new_action_item(item, action)`. This will check if the item is already 
   registered for another action and call `_error()` if it is. Remember, that `exit`s, so there no need for an extra `return()` 
   call or anything, that function does the check for you.
@@ -235,7 +239,7 @@ example), then you need to take care of a few things, to avoid one item having m
         delete(global_brushes, held_item); // deregister item as brush
         ...
   ```
-  * For these two functions to work properly, you any new action you add needs a few things: 
+  * For these two functions to work properly, any new action you add needs a few things: 
       1. add your action's name to the `global_lang_keys` so it can be translated
       2. add your action's code name to `global_item_action_translation_key` so it can be requested from `global_lang_keys` (for example,
       the angel block's code name is `'angel'`, with a translation key `'action_item_angel'`, which gives the text `'angel block item'`)
