@@ -25,7 +25,7 @@ case it was too confusing:
    This helps with legibility of your code later on.
 2. Add the essential boilerplate code. This is necessary for the undo command to work properly with all commands:
    
-    - Get the player as a variable. `world_edit.sc` is a player_scoped app, but this is necessary for printing messages
+    - Get the player as a variable. `se.sc` is a player_scoped app, but this is necessary for printing messages
       to that specific player.
       
       `player=player()`
