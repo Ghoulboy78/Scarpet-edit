@@ -3,7 +3,7 @@ A helpful app for designing and building. It is inspired by many mods, like Worl
 with any of them.
 
 To install and use, go to the [Github Releases section](https://github.com/Ghoulboy78/Scarpet-Edit/releases), grab
-the latest release (the first zip file, or the `world-edit.sc` file only if you don't care about translations), and unzip
+the latest release (the first zip file, or the `se.sc` file only if you don't care about translations), and unzip
 it either into your world's `scripts` folder if you want it for a single world, or in `.minecraft/config/carpet/scripts`
 to use it in any world (note that languages and structures need to be present per world, Scarpet limitation). Documentation
 and help can be found [here](/docs/Documentation.md), and 
