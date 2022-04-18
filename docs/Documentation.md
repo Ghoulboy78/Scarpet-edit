@@ -15,8 +15,7 @@ The main contributors to this project are:
  - altrisi	 (GitHub: altrisi, Discord: altrisi#9772)
 
 ## How to use
-If you are running an outdated version of fabric-carpet, WorldEdit for scarpet won't work. Currently, the oldest compatible
-version is: carpet 1.4.22
+If you are running an outdated version of fabric-carpet, Scarpet Edit may not work. If it doesn't work on your version, update to the latest version and it should work.
 
 ### Area selection
 

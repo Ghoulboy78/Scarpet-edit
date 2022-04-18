@@ -95,9 +95,8 @@ If you are adding a new brush function, there is a simple syntax to follow to en
 brush function utility. You must add your new function in the following fashion:
 
 Add your function as an entry to the `global_brush_shapes` map variable, with the key being the string name of your function,
-and the value being a lambda function with `(pos, args, flags)` as the arguments. This is where you can manipulate the 
-world in whatever way you see fit, and must call the `add_to_history()` function (cos not all brush functions set blocks).
-You can take whichever arguments you need from the `args` variable as long as you specify them in the input command.
+and the value being a lambda function with `(pos, <arguments>, flags)` as the arguments. In between the `pos` and `flags` arguments you can take whichever arguments you need as long as you specify them in the input command.
+This is where you can manipulate the world in whatever way you see fit, and must call the `add_to_history()` function (cos not all brush functions set blocks).
 You must also add a translation key for the action to the lang file. Finally, it's encouraged that devs add a list of parameters
 to `global_brushes_parameters_map` to pretify the `brush info` command output. 
 
@@ -109,20 +108,19 @@ cubes:
       ```
    global_brush_shapes={
          ... //brush entries
-         'cube'->_(pos, args, flags)->(//this can be like a template for new brushes as it's the simplest
-            [block, size, replacement] = args;
+         'cube'->_(pos, block, size, replacement, flags)->(//this can be like a template for new brushes as it's the simplest
             scan(pos,[size,size,size]/2, set_block(_, block, replacement, flags, {}));
             add_to_history('action_cube',player())
          ),
          ... //more entries
    }
       ```
-   Here, we can see the lambda (`_(pos, args, flags)->`) which is called when you right click with the brush or use the
+   Here, we can see the lambda (`_(pos, <arguments>, flags)->`) which is called when you right click with the brush or use the
    `/shape` command.
 
 
-2. We can see that we got three arguments: `[block, size, replacement] = args;`. What arguments the brush uses are defined
-   in the argument signature. Here we have the default signature that includes the `help` info (see (#command-system)) and
+2. We can see that we got three arguments: `block, size, replacement`. What arguments the brush uses are defined
+   in the function signature. Here we have the default signature that includes the `help` info (see (#command-system)) and
    the duplicate command accepting flags. In this example `<replacement>` is a mandatory argument.
    ```
    base_commands_map = [
@@ -135,7 +133,7 @@ cubes:
       ... //more commands
    ]
    ```
-   If your brush can also be called as a shape, like it's the case for `cube`, add the corresponding set of commands by 
+   If your brush can also be called as a shape, as is the case for `cube`, add the corresponding set of commands by 
    copying the lines above and replacing `brush` with `shape`.
 
 
