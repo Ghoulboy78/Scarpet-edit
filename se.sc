@@ -2574,7 +2574,6 @@ _flood_fill(block, pos, axis, radius, flags) ->
     _flood_generic(block, axis, start,flags);
 );
 
-_euclidean_sq(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 _flood_generic(block, axis, start, flags) -> (
 
     max_iter = global_max_iter;
