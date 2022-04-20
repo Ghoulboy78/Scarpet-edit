@@ -1,5 +1,5 @@
 # Scarpet-Edit
-A helpful app for designing and building. It is inspired by many mods, like World-Edit, but is not directly affiliated
+A helpful app for designing and building. It is inspired by many mods, like World-Edit, but is not affiliated
 with any of them.
 
 To install and use, go to the [Github Releases section](https://github.com/Ghoulboy78/Scarpet-Edit/releases), grab

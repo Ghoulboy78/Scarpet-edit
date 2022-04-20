@@ -151,13 +151,13 @@ base_commands_map = [
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
     ['brush cone <block> <radius> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
 
-    ['brush pyramid <block> <side_size> <height>', _(block, radius, height) -> brush('cone', null, block, radius, height, '+y', null), false],
-    ['brush pyramid <block> <side_size> <height> f <flag>', _(block, radius, height, flags) -> brush('cone', flags, block, radius, height, '+y', null), false],
-    ['brush pyramid <block> <side_size> <height> <saxis>', _(block, radius, height, axis) -> brush('cone', null, block, radius, height, axis, null), false],
-    ['brush pyramid <block> <side_size> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> brush('cone', flags, block, radius, height, axis, null), false],
-    ['brush pyramid <block> <side_size> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('cone', null, block, radius, height, axis, replacement),
+    ['brush pyramid <block> <side_size> <height>', _(block, radius, height) -> brush('pyramid', null, block, radius, height, '+y', null), false],
+    ['brush pyramid <block> <side_size> <height> f <flag>', _(block, radius, height, flags) -> brush('pyramid', flags, block, radius, height, '+y', null), false],
+    ['brush pyramid <block> <side_size> <height> <saxis>', _(block, radius, height, axis) -> brush('pyramid', null, block, radius, height, axis, null), false],
+    ['brush pyramid <block> <side_size> <height> <saxis> f <flag>', _(block, radius, height, axis, flags) -> brush('pyramid', flags, block, radius, height, axis, null), false],
+    ['brush pyramid <block> <side_size> <height> <saxis> <replacement>', _(block, radius, height, axis, replacement) -> brush('pyramid', null, block, radius, height, axis, replacement),
         [2, 'help_cmd_brush_cone', 'help_cmd_brush_generic', null]],
-    ['brush pyramid <block> <side_size> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('cone', flags, block, radius, height, axis, replacement), false],
+    ['brush pyramid <block> <side_size> <height> <saxis> <replacement> f <flag>', _(block, radius, height, axis, replacement, flags) -> brush('pyramid', flags, block, radius, height, axis, replacement), false],
     ['brush flood <block>', _(block) -> brush('flood', null, block, null, null), false],
     ['brush flood <block> f <flag>', _(block, flags) -> brush('flood', flags, block, null, null), false],
     ['brush flood <block> <radius>', _(block, radius) -> brush('flood', null, block, radius, null), false],
@@ -1290,7 +1290,7 @@ brush(action, flags, ...args) -> (
 );
 
 shape(action, pos, args, flags)->
-    call(global_brush_shapes:action, pos, args, flags);
+    call(global_brush_shapes:action, pos, ...args, flags);
 
 _brush_action(pos, brush) -> (
     [action, args, flags] = global_brushes:brush;
@@ -1298,25 +1298,21 @@ _brush_action(pos, brush) -> (
 );
 
 global_brush_shapes={
-    'cube'->_(pos, args, flags)->(
-                _cuboid(pos, args, flags);
+    'cube'->_(pos, block, size, replacement, flags)->(
+                _cuboid(pos, block, size, replacement, flags);
                 add_to_history('action_cube',player())
             ),
-    'cuboid'->_(pos, args, flags)->(
-                _cuboid(pos, args, flags);
+    'cuboid'->_(pos, block, size, replacement, flags)->(
+                _cuboid(pos, block, size, replacement, flags);
                 add_to_history('action_cuboid',player())
             ),
-    'ellipsoid'->_(pos, args, flags)->(//todo better algorithm for this
-            [block, radii, replacement] = args;
-
+    'ellipsoid'->_(pos, block, radii, replacement, flags)->(//todo better algorithm for this
             _is_inside_shape(block, outer(pos), outer(radii)) -> _sq_distance((pos(block)-pos) / radii, 0) <= 1;
             _fill_shape(pos-radii, pos+radii, block, replacement, flags);
 
             add_to_history('action_ellipsoid',player())
         ),
-    'sphere'->_(pos, args, flags)->(
-            [block, radius, replacement] = args;
-
+    'sphere'->_(pos, block, radius, replacement, flags)->(
             if(radius == 1,
                 set_block(pos, block, replacement, flags, {}),
 
@@ -1326,8 +1322,7 @@ global_brush_shapes={
 
             add_to_history('action_sphere',player())
         ),
-    'cone'->_(pos, args, flags)->(
-            [block, radius, height, signed_axis, replacement] = args;
+    'cone'->_(pos, block, radius, height, signed_axis, replacement, flags)->(
             roh = radius / height; //radius over height
         
             // define the function that generates the circles for each layer, taken care to have a thicc ring
@@ -1348,12 +1343,11 @@ global_brush_shapes={
                     _make_circle(r, inner, axis, base);
                 );
             );
-            _pyramid_generic(pos, args, flags);            
+            _pyramid_generic(pos, block, height, signed_axis, replacement, flags);            
 
             add_to_history('action_cone',player())
         ),
-    'pyramid'->_(pos, args, flags)->(
-            [block, sidelength, height, signed_axis, replacement] = args;
+    'pyramid'->_(pos, block, sidelength, height, signed_axis, replacement, flags)->(
             roh = sidelength / height; //diameter over height
             
             // define the function that generates the squares for each layer, taken care to have a square "ring"
@@ -1373,12 +1367,11 @@ global_brush_shapes={
                     _make_square(outer, inner, axis, base);
                 );
             );
-            _pyramid_generic(pos, args, flags);   
+            _pyramid_generic(pos, block, height, signed_axis, replacement, flags);   
 
             add_to_history('action_pyramid',player())
         ),
-    'diamond'->_(pos, args, flags)->(
-            [block, size, replacement] = args;
+    'diamond'->_(pos, block, size, replacement, flags)->(
             flags = _parse_flags(flags);
 
             half_size = (size+1)/2;
@@ -1413,9 +1406,7 @@ global_brush_shapes={
             add_to_history('action_diamond',player())
         ),
 
-    'cylinder'->_(pos, args, flags)->(
-            [block, radius, height, axis, replacement] = args;
-
+    'cylinder'->_(pos, block, radius, height, axis, replacement, flags)->(
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
             
@@ -1429,11 +1420,10 @@ global_brush_shapes={
             _prism_generic(perimeter, interior, height, axis, block, replacement, flags);
             add_to_history('action_cylinder',player())
         ),
-    'paste'->_(pos, args, flags)->(
+    'paste'->_(pos, flags)->(
             paste(pos, flags)
         ),
-    'line'->_(pos, args, flags)->(
-            [block, length, replacement] = args;
+    'line'->_(pos, block, length, replacement, flags)->(
             player = player();
             if(length,
                 final_pos = map(pos(player)+player~'look'*length+[0, player~'eye_height', 0], floor(_)),
@@ -1449,19 +1439,16 @@ global_brush_shapes={
             add_to_history('action_line',player())
         ),
 
-    'flood'->_(pos, args, flags) -> (
-            [block, radius, axis] = args;
+    'flood'->_(pos, block, radius, axis, flags) -> (
             _flood_fill(block, pos, axis, radius, flags);
             add_to_history('action_flood', player())
         ),
 
-    'drain'->_(pos, args, flags) -> (
-            [radius] = args;
+    'drain'->_(pos, radius, flags) -> (
             _drain_generic(pos, radius, flags)
         ),
 
-    'hollow'->_(pos, args, flags) -> (
-            [radius] = args;
+    'hollow'->_(pos, radius, flags) -> (
             origin = pos;
             
             // the following is a flood fill implementation doing BFS
@@ -1496,8 +1483,7 @@ global_brush_shapes={
             add_to_history('action_hollow', player())
         ),
 
-    'outline'->_(pos, args, flags) -> (
-            [block, radius, force] = args;
+    'outline'->_(pos, block, radius, force, flags) -> (
             origin = pos;
             
             // the following is a flood fill implementation doing BFS
@@ -1540,8 +1526,7 @@ global_brush_shapes={
         ),
 
 
-    'prism_polygon'->_(pos, args, flags)->(
-            [block, radius, height, n_points, axis, rotation, replacement] = args;
+    'prism_polygon'->_(pos, block, radius, height, n_points, axis, rotation, replacement, flags)->(
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
 
@@ -1558,9 +1543,7 @@ global_brush_shapes={
             add_to_history('action_prism_polygon',player());
         ),
 
-    'pyramid_polygon'->_(pos, args, flags)->(
-            [block, radius, height, n_points, signed_axis, rotation, replacement] = args;
-            
+    'pyramid_polygon'->_(pos, block, radius, height, n_points, signed_axis, rotation, replacement, flags)->(            
             roh = radius / height; //radius over height
         
             // define the function that generates the polygons for each layer. The polygons are generated as above, each layer
@@ -1586,9 +1569,7 @@ global_brush_shapes={
                 );
                 [perimeter, interior]
             );
-            // _pyramid_generic doesn't need the ammount of sides of the polygon or the rotation
-            newargs = [block, radius, height, signed_axis, replacement];
-            _pyramid_generic(pos, newargs, flags);   
+            _pyramid_generic(pos, block, height, signed_axis, replacement, flags);   
 
             flags = _parse_flags(flags);
             if(flags~'h', print(player(), format('d Hollow polygon pyramids are experimental. Use solid pyramids and a hollow brush if you encounter issues.')));
@@ -1596,8 +1577,7 @@ global_brush_shapes={
             add_to_history('action_pyramid_polygon',player())
         ),
 
-    'prism_star'->_(pos, args, flags)->(
-            [block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement] = args;
+    'prism_star'->_(pos, block, outer_radius, inner_radius, height, n_points, axis, rotation, replacement, flags)->(
             center = map(pos, floor(_));
             flags = _parse_flags(flags);
 
@@ -1616,9 +1596,7 @@ global_brush_shapes={
             add_to_history('action_prism_polygon',player())
         ),
 
-    'pyramid_star'->_(pos, args, flags)->(
-            [block, outer_radius, inner_radius, height, n_points, signed_axis, rotation, replacement] = args;
-            
+    'pyramid_star'->_(pos, block, outer_radius, inner_radius, height, n_points, signed_axis, rotation, replacement, flags)->(            
             oroh = outer_radius / height; //outer radius over height
             iroh = inner_radius / height; //inner radius over height
         
@@ -1648,9 +1626,7 @@ global_brush_shapes={
                 );
                 [perimeter, interior]
             );
-            // _pyramid_generic doesn't need the ammount of points of the star or the rotation
-            newargs = [block, radius, height, signed_axis, replacement];
-            _pyramid_generic(pos, newargs, flags);   
+            _pyramid_generic(pos, block, height, signed_axis, replacement, flags);   
 
             flags = _parse_flags(flags);
             if(flags~'h', print(player(), format('d Hollow star pyramids are experimental. Use solid pyramids and a hollow brush if you encounter issues.')));
@@ -1658,14 +1634,11 @@ global_brush_shapes={
             add_to_history('action_pyramid_star',player())
         ),
 
-    'spray'->_(pos, args, flags)->(
+    'spray'->_(pos, block, size, count, replacement, flags)->(
             
             // because for some reason, the event is called twice
             if(global_sprayed_tick == tick_time(), return());
             global_sprayed_tick = tick_time();
-
-
-            [block, size, count, replacement] = args;
 
             player = player();
             if(block==null, block=query(player, 'holds', 'offhand'):0);
@@ -1713,17 +1686,14 @@ global_brush_shapes={
             add_to_history('action_spray', player);
         ),
 
-    'feature'->_(pos, args, flags)->(
-            [feature] = args;
+    'feature'->_(pos, feature, flags)->(
             plop(pos, feature);
         )
 };
 
 // generate a cuboid with sidelengths defined in size. if size is a number, generate a cube
 // to handle hollow shape,s it makes use of the already written walls function
-_cuboid(pos, args, flags) -> (
-    [block, size, replacement] = args;
-
+_cuboid(pos, block, size, replacement, flags) -> (
     half_size = (size-1)/2;
     min_corner = pos-half_size;
     max_corner = pos+half_size;
@@ -1762,9 +1732,7 @@ _prism_generic(perimeter, interior, height, axis, block, replacement, flags) -> 
 // the axis the shape is pointo towards, the point at the base of the pyramid and the previous 
 // layer.
 // _generic_pyramid will place one layer at a time, from the point to the base
-_pyramid_generic(pos, args, flags) -> (
-    //radius is not used, but it's leftover from the signature of the functions that use this function
-    [block, radius, height, signed_axis, replacement] = args;
+_pyramid_generic(pos, block, height, signed_axis, replacement, flags) -> (
     flags = _parse_flags(flags);
     base = map(pos, floor(_)); // make sure we are on a block, no decimals allowed here
 
@@ -2606,7 +2574,6 @@ _flood_fill(block, pos, axis, radius, flags) ->
     _flood_generic(block, axis, start,flags);
 );
 
-_euclidean_sq(p1, p2) -> reduce(p1-p2, _a + _*_, 0);
 _flood_generic(block, axis, start, flags) -> (
 
     max_iter = global_max_iter;
