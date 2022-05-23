@@ -54,6 +54,11 @@ base_commands_map = [
     ['rotate <pos> <degrees> f <flag>', _(pos, deg, flag) -> rotate(pos, deg, 'y', flag), false],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis>', ['rotate', null], [2, 'help_cmd_rotate', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
     ['rotate <pos> <degrees> <axis> f <flag>', 'rotate', false],//will replace old stuff if need be
+    ['rotatec <degrees>', ['rotate_clipboard', 'y'], false],//will replace old stuff if need be
+    ['rotatec <degrees> <axis>', 'rotate_clipboard', [1, 'help_cmd_rotatec', 'help_cmd_rotate_tooltip', null]],//will replace old stuff if need be
+    ['mirror <pos> <sides>', ['mirror', null], [-1, 'help_cmd_mirror', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
+    ['mirror <pos> <sides> f <flag>', 'mirror', false],//will replace old stuff if need be
+    ['mirrorc <sides>', 'mirror_clipboard', [-1, 'help_cmd_mirrorc', 'help_cmd_mirror_tooltip', null]],//will replace old stuff if need be
     ['stack', ['stack',1,null,null], false],
     ['stack <count>', ['stack',null,null], false],
     ['stack <count> <direction>', ['stack',null], [0, 'help_cmd_stack', 'help_cmd_stack_tooltip', null]],
@@ -64,14 +69,26 @@ base_commands_map = [
     ['move <pos>', ['move',null], [-1, 'help_cmd_move', null, null]],
     ['move <pos> f <flag>', 'move', false], //TODO flags help
     ['copy clear_clipboard',_()->(global_clipboard=[];_print(player(),'clear_clipboard',player())),[-1,'help_cmd_clear_clipboard',null,null]],
-    ['copy',['_copy',null, false],false],
-    ['copy force',['_copy',null, true],false],
-    ['copy <pos>',['_copy', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
-    ['copy <pos> force',['_copy', true],false],
+    ['copy',['copy_sel',null, false],false],
+    ['copy force',['copy_sel',null, true],false],
+    ['copy <pos>',['copy_sel', false],[-1,'help_cmd_copy','help_cmd_copy_tooldtip',null]],
+    ['copy <pos> force',['copy_sel', true],false],
+    ['cut',['cut',null, false, null],false],
+    ['cut force',['cut',null, true, null],false],
+    ['cut <pos>',['cut', false, null],[-1,'help_cmd_cut','help_cmd_copy_tooldtip',null]],
+    ['cut <pos> force',['cut', true, null],false],
+    ['cut f <flag>',_(flag) -> cut(null, false, flag), false],
+    ['cut force f <flag>',_(flag) -> cut(null, true, flag), false],
+    ['cut <pos> f <flag>',_(pos, flag) -> cut(pos, false, flag), [-1,'help_cmd_cut','help_cmd_copy_tooldtip',null]],
+    ['cut <pos> force f <flag>',_(pos, flag) -> cut(pos, true, flag), false],
     ['paste',['paste', null, null],[-1,'help_cmd_paste',null,null]],
     ['paste f <flag>',_(flags)->paste(null, flags),false],//todo flags help
     ['paste <pos>',['paste', null],false],
     ['paste <pos> f <flag>','paste',false],//todo last flags help
+    ['revolution paste <pos> <count>', ['revolution_paste', 'y', null], false],
+    ['revolution paste <pos> <count> f <flags>', _(pos, count, flags) -> revolution_paste(pos, count, 'y', flags), false],
+    ['revolution paste <pos> <count> <axis>', ['revolution_paste', null], [2, 'help_cmd_revolution_paste', 'help_cmd_revolution_paste_tltp', null] ],
+    ['revolution paste <pos> <count> <axis> f <flags>', 'revolution_paste', false],
     ['selection clear', 'clear_selection', false], //TODO help for this and below
     ['selection expand', _()->selection_expand(1), false],
     ['selection expand <amount>', 'selection_expand', false],
@@ -871,7 +888,7 @@ _set_or_give_wand(wand) -> (
     )
 );
 
-global_flags = ['w','a','e','h','u','b','p','d','s','g','l'];
+global_flags = ['w','a','e','h','u','b','p','d','s','g','l','r'];
 
 //FLAGS:
 //w     waterlog block if previous block was water(logged) too
@@ -885,6 +902,7 @@ global_flags = ['w','a','e','h','u','b','p','d','s','g','l'];
 //s     keep block states of replaced block, if new block matches
 //g     when replacing air or water, some greenery gets repalced too
 //l 	when used in a brush, the brush will trace for liquids as well as blocks
+//r     remove the selection after rotating or mirroring it
 
 _parse_flags(flags) ->(
     if(!flags, return({}));
@@ -961,8 +979,12 @@ global_lang_keys = global_default_lang = {
     'help_cmd_redo_all' ->        'l Redoes the entire undo history',
     'help_cmd_wand' ->            'l Sets held item as wand or gives it if hand is empty',
     'help_cmd_wand_2' ->          'l Changes the current wand item',
-    'help_cmd_rotate' ->          'l Rotates [deg] about [pos]',
+    'help_cmd_rotate' ->          'l Rotates the selection [deg] about [pos]',
     'help_cmd_rotate_tooltip' ->  'g Axis must be x, y or z, defaults to y',
+    'help_cmd_rotatec' ->         'l Rotates the clipboard [deg] about [pos]',
+    'help_cmd_mirror' ->          'l Mirrors the given axes of the selection about <pos>',
+    'help_cmd_mirror_tooltip' ->  'g Axes can be any combination of x, y and z',
+    'help_cmd_mirrorc' ->         'l Mirrors the given axes of the clibpoard',
     'help_cmd_stack' ->           'l Stacks selection n times in dir',
     'help_cmd_stack_tooltip' ->   'g If not provided, direction is player\'s view direction by default',
     'help_cmd_expand' ->          'l Expands sel [magn] from pos', //This is not understandable
@@ -976,7 +998,10 @@ global_lang_keys = global_default_lang = {
     'help_cmd_clear_clipboard' -> 'l Clears current clipboard',
     'help_cmd_copy' ->            'l Copy current selection to clipboard',
     'help_cmd_copy_tooldtip' ->   'g Uses [pos] or player position as origin for the copied structure',
+    'help_cmd_cut' ->             'l Copy current selection to clipboard and delete the region',
     'help_cmd_paste' ->           'l Paste clipboard',
+    'help_cmd_revolution_paste' ->'l Paste clipboard multiple times rotating it <count> times',
+    'help_cmd_revolution_paste_tltp' -> 'l use <axis> to seat which axis to rotate about',
     'help_cmd_drain' ->           'l Drains liquid you are standing on',
     'help_cmd_drain_tooltip' ->   'g Acts in a radius or withing the selection',
     'help_cmd_flood' ->           'l Perferoms a 3D flood fill out of [block]',
@@ -1033,11 +1058,13 @@ global_lang_keys = global_default_lang = {
     'success_redo_e' ->           'gi Successfully redid %d operations, affecting %d entities', // moves number, entities number
     'success_redo_b_and_e' ->     'gi Successfully redid %d operations, affecting %d blocks and %d entities', // moves number, blocks number, entities number
 
-
+    'rotated_clipboard' ->        'gi Rotated clipboard',
+    'mirrored_clipboard' ->       'gi Mirrored clipboard',
     'clear_clipboard' ->          'wi Cleared player %s\'s clipboard',
     'copy_clipboard_not_empty' -> 'ri Clipboard for player %s is not empty, use "/copy force" to overwrite existing clipboard data',//player
     'copy_force' ->               'ri Overwriting previous clipboard selection with new one',
     'copy_success' ->             'gi Successfully copied %s blocks and %s entities to clipboard',//blocks number, entity number
+    'cut_success' ->             'gi Successfully cut %s blocks and %s entities to clipboard',//blocks number, entity number
     'paste_no_clipboard' ->       'ri Cannot complete action, clipboard for player %s is empty',//player
 
     'langs_changed' ->            'gi Language changed to %s.',                             //language we changed to
@@ -1110,10 +1137,13 @@ global_lang_keys = global_default_lang = {
     'action_set' ->                'set',
     'action_flood' ->              'flood',
     'action_rotate' ->             'rotate',
+    'action_mirror' ->             'mirror',
     'action_move' ->               'move',
     'action_stack' ->              'stack',
     'action_expand' ->             'expand',
+    'action_cut' ->                'cut',
     'action_paste' ->              'paste',
+    'action_revolution_paste' ->   'revolution paste',
     'action_hollow' ->             'hollow',
     'action_drain' ->              'drain',
     'action_angel' ->              'angel block',
@@ -2085,7 +2115,8 @@ global_water_greenery = {'seagrass', 'tall_seagrass', 'kelp_plant', 'kelp'};
 global_air_greenery = {'grass', 'tall_grass', 'fern', 'large_fern'};
 
 set_block(pos, block, replacement, flags, extra)->(//use this function to set blocks
-	if( (flags~'a' && block!='air')|| !(flags~'a' && flags~'g' && has(global_air_greenery, str(block))),
+    //print([block, flags, (flags~'a' && block!='air'), (flags~'a' && flags~'g' && !has(global_air_greenery, str(block)))]);
+	if( (flags~'a' && block!='air') || !(flags~'a' && flags~'g' && has(global_air_greenery, str(block))),
         success=null;
         existing = block(pos);
         // undo expects positions (i.e triplets of positions), not blocks
@@ -2227,7 +2258,7 @@ remove_action_item(item, action) -> (
 get_entities(pos1, pos2, origin) -> (
     // this function expects pos1 and pos2 to be the negative- and positive-most corners of the areas
     // get_selection() returns postiions in this format already!
-    // origin is a vector to translate the entitie spsitions with; use 0 if not needed
+    // origin is a vector to translate the entity position with; use 0 if not needed
 
     center = (pos2 + pos1)/2;
     halfsize = (pos2 +1 - pos1)/2;
@@ -2560,6 +2591,7 @@ set_in_selection(block,replacement,flags)->
 (
     player=player();
     [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
     volume(pos1,pos2,set_block(pos(_),block,replacement,flags,{}));
     add_to_history('action_set', player)
 );
@@ -2768,8 +2800,72 @@ _outline(block, block_to_outline, force, flags) -> (
 rotate(centre, degrees, axis, flags)->(
     player=player();
     [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
+
+    r_flag = flags~'r';
+    replace_flags = if( 
+        r_flag && flags~'a', //make a copy of flags that doesn't have 'p'
+            replace_flags = copy(flags);
+            delete(replace_flags, 'a'),
+        //else, original flags is okay
+            flags
+    );
 
     rotation_map={};
+    rotation_matrix = _make_rotation_matrix(axis, degrees);
+
+    volume(pos1,pos2,
+        block=block(_);//todo rotating stairs etc.
+        new_pos = _mat_mul_vec(rotation_matrix, pos(_) - centre);
+        new_pos = new_pos + centre;
+        rotation_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
+
+        if(r_flag,
+            set_block(_, 'air', null , replace_flags, {});
+        );
+    );
+
+    for(rotation_map,
+        set_block(_,rotation_map:_,null,flags,{})
+    );
+
+    if(flags~'e', 
+        entities = get_entities(pos1, pos2, map(centre, floor(_)));
+        for(entities, _:'pos' = _mat_mul_vec(rotation_matrix, _:'pos'));
+        paste_entities(entities, map(centre, floor(_)));
+
+        //remove entities if flag requires it
+        if(r_flag,
+            for(entities,
+                global_removed_entities += _; //save for the undo fucntion
+                modify( _:'entity', 'remove') 
+            )
+        )
+    );
+
+    add_to_history('action_rotate', player)
+);
+
+rotate_clipboard(degrees, axis) -> (
+
+    rotation_matrix = _make_rotation_matrix(axis, degrees);
+    //rotate blocks
+    for(slice(global_clipboard, 1),
+        pos = _:0;
+        new_pos = _mat_mul_vec(rotation_matrix, pos);
+        _:0 = new_pos; //store new pos
+    );
+
+    //rotate entities
+    for(global_clipboard:0, 
+        _:'pos' = _mat_mul_vec(rotation_matrix, _:'pos');
+    );
+
+    _print(player(), 'rotated_clipboard');
+
+);
+
+_make_rotation_matrix(axis, degrees) -> (
     if( axis=='x',
         rotation_matrix=[
             [1,0,0],
@@ -2787,26 +2883,79 @@ rotate(centre, degrees, axis, flags)->(
             [sin(degrees),cos(degrees),0]
             [0,0,1],
         ]
+    )
+);
+
+mirror(centre, axis, flags) -> (
+    player=player();
+    [pos1,pos2]=_get_current_selection(player);
+    flags = _parse_flags(flags);
+
+    r_flag = flags~'r';
+    replace_flags = if( 
+        r_flag && flags~'a', //make a copy of flags that doesn't have 'p'
+            replace_flags = copy(flags);
+            delete(replace_flags, 'a'),
+        //else, original flags is okay
+            flags
     );
 
-    volume(pos1,pos2,
-        block=block(_);//todo rotating stairs etc.
-        new_pos = _mat_mul_vec(rotation_matrix, pos(_) - centre);
+    mirror_map = {};
+    volume(pos1, pos2, 
+        block = block(_);//todo rotating stairs etc.
+        new_pos = _mirror_pos(axis, pos(_) - centre);
         new_pos = new_pos + centre;
-        rotation_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
+        mirror_map:new_pos = block; //not setting now cos still querying, could mess up and set block we wanted to query
+
+        if(r_flag,
+            set_block(_, 'air', null , replace_flags, {});
+        );
     );
 
-    for(rotation_map,
-        set_block(_,rotation_map:_,null,flags,{})
+    for(mirror_map,
+        set_block(_, mirror_map:_, null, flags, {})
     );
 
     if(flags~'e', 
         entities = get_entities(pos1, pos2, map(centre, floor(_)));
-        for(entities, _:'pos' = _mat_mul_vec(rotation_matrix, _:'pos'));
+        for(entities, _:'pos' = _mirror_pos(axis, _:'pos'));
         paste_entities(entities, map(centre, floor(_)));
+
+        //remove entities if flag requires it
+        if(r_flag,
+            for(entities,
+                global_removed_entities += _; //save for the undo fucntion
+                modify( _:'entity', 'remove') 
+            )
+        )
     );
 
-    add_to_history('action_rotate', player)
+    add_to_history('action_mirror', player)
+);
+
+mirror_clipboard(axis) -> (
+
+    //mirror blocks
+    for(slice(global_clipboard, 1),
+        pos = _:0;
+        _mirror_pos(axis, pos) //mirrors the position in-place
+    );
+
+    //mirror entities
+    for(global_clipboard:0, 
+        _:'pos' = _mirror_pos(axis, _:'pos');
+    );
+
+    _print(player(), 'mirrored_clipboard')
+);
+
+_mirror_pos(axis, pos) -> (
+    axes = ['x', 'y', 'z'];
+    for(split(axis),
+        index = axes~_;
+        pos:index = -(pos:index);
+    );
+    pos
 );
 
 move(new_pos,flags)->(
@@ -2891,8 +3040,33 @@ _copy(origin, force)->(
     volume(pos1,pos2,
         global_clipboard+=[pos(_)-origin, block(_), biome(_)]//all the important stuff, can add more if the flags require it
     );
+);
 
-    _print(player,'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
+copy_sel(origin, force) -> (
+    _copy(origin, force);
+
+    _print(player(),'copy_success',length(global_clipboard)-1,length(global_clipboard:0));
+);
+
+cut(origin, force, flags) -> (
+    _copy(origin, force);
+
+    //delete copied region after copying
+    player = player();
+    if(!origin,origin=pos(player));
+    [pos1,pos2]=_get_current_selection(player);
+
+    volume(pos1,pos2,set_block(_, 'air', null , flags,{}));
+
+    if(flags~'e',
+        for(get_entities(pos1, pos2, origin),
+            global_removed_entities += _; //save for the undo fucntion
+            modify( _:'entity', 'remove') 
+        );
+    );
+
+    _print(player,'cut_success',length(global_clipboard)-1,length(global_clipboard:0));
+    add_to_history('action_cut', player)
 );
 
 paste(pos, flags)->(
@@ -2908,6 +3082,43 @@ paste(pos, flags)->(
         set_block(relative_pos + pos, old_block, null, flags, {'biome'->old_biome})
     );
     add_to_history('action_paste',player)
+);
+
+revolution_paste(origin, count, axis, flags) -> (
+    player = player();
+    if(!origin, origin = pos(player));
+    if(!global_clipboard, _error(player, 'paste_no_clipboard', player));
+    flags = _parse_flags(flags);
+
+    degrees = 360/count;
+
+    rotation_matrix = _make_rotation_matrix(axis, degrees);
+    temp_clipboard = copy(global_clipboard);
+
+    //iterate over blocks, rotate and palce them <count> times
+    for(slice(temp_clipboard, 1),
+        
+        [new_pos, old_block, old_biome] = _;
+        loop(count,
+            new_pos = _mat_mul_vec(rotation_matrix, new_pos);
+            set_block(new_pos + origin, old_block, null, flags, {'biome'->old_biome})
+        )
+    );
+
+    //rotate entities
+    if( flags~'e',
+        for(temp_clipboard:0, //the entities
+            e = _;
+            new_pos = e:'pos';
+            loop(count,
+                new_pos = _mat_mul_vec(rotation_matrix, new_pos);
+                new_e = spawn(e:'type', new_pos + origin, encode_nbt(e:'nbt')); //adjusted for average entity size, requires to know entity size for better precision
+                global_added_entities += new_e~'uuid';
+            )
+        )
+    );
+
+    add_to_history('action_revolution_paste', player)
 );
 
 tp_up(distance)-> (

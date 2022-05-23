@@ -84,6 +84,7 @@ case it was too confusing:
    s     keep block states of replaced block, if new block matches (handled by set_block)
    g     when replacing air or water, some greenery gets repalced too (handled by set_block)
    l     when registering a brush with this flag, the brush will trace for liquids as well as blocks
+   r     remove the selection after mirroring or rotating it
    ```
    Biomes are handled by the `set_block` function, but you need to input the previous biome as a map in the `extra` 
    argument: `{'biome' -> biome}`, where the variable `biome` is the biome at the position you copied from. No need to 
